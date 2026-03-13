@@ -1,6 +1,6 @@
 # IDL Timetable Management System
 
-**Complete Technical & User Documentation** IDL-TIMETABLE [tools.idl.edu.pk]
+**Complete Technical & User Documentation** [Live demo](tools.idl.edu.pk)
 
 | | |
 |---|---|
