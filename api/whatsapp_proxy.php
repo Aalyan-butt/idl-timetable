@@ -8,7 +8,7 @@ require_once '../includes/config.php';
 requireAuth();
 
 // Node server base URL — change this if your Node server address changes
-define('WA_NODE_URL', 'http://localhost:8080');
+define('WA_NODE_URL', 'http://localhost:3001');
 
 // Strip the /api/wa prefix to get the actual Node path
 $requestUri  = $_SERVER['REQUEST_URI'] ?? '';

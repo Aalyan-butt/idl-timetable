@@ -44,7 +44,9 @@ app.use(express.json({ limit: '100mb' }));
 // Allow cross-origin requests from the PHP app
 const allowed_origins = [
     'https://tools.idl.edu.pk',
-    'http://tools.idl.edu.pk', // optional if someone uses http
+    'http://tools.idl.edu.pk',
+    'http://localhost',
+    'http://127.0.0.1',
 ];
 
 app.use((req, res, next) => {
@@ -116,7 +118,7 @@ let _pool = null;
 async function getPool() {
     if (_pool) return _pool;
     _pool = mysql.createPool({
-        host: '10.0.2.27', user: 'aalyan', password: '7D9eA69WshnOp7rzxTv1', database: 'IDLtimetable',
+        host: 'localhost', user: 'root', password: '', database: 'idltimetable',
         waitForConnections: true, connectionLimit: 5,
         enableKeepAlive: true,      // prevent MySQL dropping idle connections
         keepAliveInitialDelay: 30000,

@@ -72,8 +72,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Session timeout: 8 hours
-if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity']) > 28800) {
+// Session timeout: 60 minutes
+if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity']) > 3600) {
     session_unset();
     session_destroy();
 }

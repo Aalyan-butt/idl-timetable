@@ -272,7 +272,7 @@ INSERT INTO `notifications` (`id`, `actor_username`, `actor_role`, `action_type`
 
 CREATE TABLE `parents` (
   `id` int(11) NOT NULL,
-  `student_id` int(11) NOT NULL,
+  `student_id` int(11) DEFAULT NULL,
   `parent_name` varchar(100) NOT NULL,
   `relationship` varchar(50) DEFAULT NULL,
   `cnic` varchar(20) DEFAULT NULL,
@@ -280,8 +280,10 @@ CREATE TABLE `parents` (
   `whatsapp` varchar(20) DEFAULT NULL,
   `email` varchar(100) DEFAULT NULL,
   `address` text DEFAULT NULL,
+  `family_code` varchar(3) DEFAULT NULL,
+  `photo` longtext DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp()
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2076,6 +2078,30 @@ ALTER TABLE `timetable`
 ALTER TABLE `users`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
 COMMIT;
+
+-- --------------------------------------------------------
+-- Table structure for class_subjects
+-- --------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `class_subjects` (
+  `id`           int(11)      NOT NULL AUTO_INCREMENT,
+  `class_id`     int(11)      NOT NULL,
+  `subject_name` varchar(255) NOT NULL,
+  `created_at`   timestamp    NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_class_subject` (`class_id`,`subject_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `subject_enrollments` (
+  `id`          int(11) NOT NULL AUTO_INCREMENT,
+  `subject_id`  int(11) NOT NULL,
+  `student_id`  int(11) NOT NULL,
+  `enrolled_at` timestamp NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_subject_student` (`subject_id`, `student_id`),
+  KEY `idx_subject_id` (`subject_id`),
+  KEY `idx_student_id` (`student_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
