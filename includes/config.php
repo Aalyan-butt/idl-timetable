@@ -5,6 +5,10 @@
  * Provides: DB connection, session, auth helpers, JSON response, notification logging.
  */
 
+// ─── Upload / payload limits ──────────────────────────────────────────────
+ini_set('post_max_size',       '64M');
+ini_set('upload_max_filesize', '64M');
+
 // ─── Error handling ───────────────────────────────────────────────────────
 // Never let PHP warnings/notices bleed into JSON responses
 ini_set('display_errors', 0);

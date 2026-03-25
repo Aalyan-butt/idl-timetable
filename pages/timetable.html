@@ -1,0 +1,65 @@
+
+      <div class="page-header">
+        <div>
+          <div class="page-title">Timetable</div>
+          <div class="page-subtitle">View and manage class schedules</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="position:relative;display:inline-block">
+            <button class="btn btn-pdf btn-sm page-action-btn" onclick="openDownloadMenu('timetable-dm', this)">📄 Download PDF</button>
+            <div id="timetable-dm" class="download-menu" style="display:none">
+              <div class="dm-scale-row">
+                <span class="dm-scale-label">Page Scale</span>
+                <div class="dm-scale-btns">
+                  <button type="button" class="dm-scale-btn" data-scale="70" onclick="setMenuScale(event,this)">70%</button>
+                  <button type="button" class="dm-scale-btn" data-scale="80" onclick="setMenuScale(event,this)">80%</button>
+                  <button type="button" class="dm-scale-btn dm-scale-active" data-scale="90" onclick="setMenuScale(event,this)">90%</button>
+                  <button type="button" class="dm-scale-btn" data-scale="100" onclick="setMenuScale(event,this)">100%</button>
+                </div>
+              </div>
+              <div class="download-divider"></div>
+              <div class="download-opt" onclick="downloadTimetableDoc('pdf','A4','portrait',getMenuScale(this.closest('.download-menu')))">📄 PDF — A4 Portrait</div>
+              <div class="download-opt" onclick="downloadTimetableDoc('pdf','A4','landscape',getMenuScale(this.closest('.download-menu')))">📄 PDF — A4 Landscape</div>
+              <div class="download-divider"></div>
+            </div>
+          </div>
+          <button class="btn btn-excel btn-sm page-action-btn" onclick="downloadGenericExcel('timetable-body',['Class','Subject','Teacher(s)','Days','Time'],'Timetable','IDL_Timetable')">📊 Download Excel</button>
+          <button class="btn btn-secondary admin-only page-action-btn" onclick="openImportModal('timetable')" style="gap:6px">⬆ Import CSV</button>
+          <button class="btn btn-primary admin-or-supervisor page-action-btn" onclick="openTimetableModal()">+ Add Slot</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <select id="tt-class-filter" onchange="loadTimetable()" style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-family:inherit;flex:1;min-width:160px">
+            <option value="">All Classes</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span style="font-size:0.88rem;color:var(--text-muted);font-weight:600">Days:</span>
+          <label style="display:flex;align-items:center;gap:4px;font-size:0.88rem;cursor:pointer"><input type="checkbox" value="Monday" class="tt-day-cb" onchange="loadTimetable()" checked style="accent-color:var(--accent)"> Mon</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:0.88rem;cursor:pointer"><input type="checkbox" value="Tuesday" class="tt-day-cb" onchange="loadTimetable()" checked style="accent-color:var(--accent)"> Tue</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:0.88rem;cursor:pointer"><input type="checkbox" value="Wednesday" class="tt-day-cb" onchange="loadTimetable()" checked style="accent-color:var(--accent)"> Wed</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:0.88rem;cursor:pointer"><input type="checkbox" value="Thursday" class="tt-day-cb" onchange="loadTimetable()" checked style="accent-color:var(--accent)"> Thu</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:0.88rem;cursor:pointer"><input type="checkbox" value="Friday" class="tt-day-cb" onchange="loadTimetable()" checked style="accent-color:var(--accent)"> Fri</label>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:6px">
+            <label style="font-size:0.82rem;color:var(--text-muted);white-space:nowrap">Show:</label>
+            <select id="tt-per-page" onchange="loadTimetable()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem">
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="0">All</option>
+            </select>
+            <span style="font-size:0.82rem;color:var(--text-muted)">records</span>
+          </div>
+          <span id="tt-count-label" style="font-size:0.82rem;color:var(--text-muted)"></span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap"><table>
+          <thead><tr><th>Class</th><th>Subject</th><th>Teacher(s)</th><th>Days</th><th>Time</th><th class="admin-only">Actions</th></tr></thead>
+          <tbody id="timetable-body"><tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)">Loading...</td></tr></tbody>
+        </table></div>
+      </div>
+    

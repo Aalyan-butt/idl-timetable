@@ -58,7 +58,7 @@ if ($method === 'GET') {
         }
         $placeholders = implode(',', array_fill(0, count($assignedUserIds), '?'));
         $stmt = $db->prepare(
-            "SELECT id, username, role, teacher_ids_perm, class_ids_perm, supervisor_teacher_ids, supervisor_class_ids, supervisor_user_ids, student_id, created_at
+            "SELECT id, username, role, teacher_ids_perm, class_ids_perm, supervisor_teacher_ids, supervisor_class_ids, supervisor_user_ids, student_id, teacher_id, created_at
              FROM users WHERE role = 'user' AND id IN ({$placeholders}) ORDER BY username"
         );
         $types = str_repeat('i', count($assignedUserIds));
@@ -69,7 +69,7 @@ if ($method === 'GET') {
         while ($row = $result->fetch_assoc()) $users[] = $row;
         jsonResponse($users);
     }
-    $result = $db->query('SELECT id, username, role, teacher_ids_perm, class_ids_perm, supervisor_teacher_ids, supervisor_class_ids, supervisor_user_ids, student_id, created_at FROM users ORDER BY username');
+    $result = $db->query('SELECT id, username, role, teacher_ids_perm, class_ids_perm, supervisor_teacher_ids, supervisor_class_ids, supervisor_user_ids, student_id, teacher_id, created_at FROM users ORDER BY username');
     $users = [];
     while ($row = $result->fetch_assoc()) $users[] = $row;
     jsonResponse($users);
@@ -88,6 +88,9 @@ if ($method === 'POST') {
     $supervisor_class_ids     = $data['supervisor_class_ids']     ?? '';
     $supervisor_user_ids      = $data['supervisor_user_ids']      ?? '';
     $student_id               = isset($data['student_id']) && $data['student_id'] !== '' ? intval($data['student_id']) : null;
+    $teacher_id               = isset($data['teacher_id'])  && $data['teacher_id']  !== '' ? intval($data['teacher_id'])  : null;
+    $parent_id                = isset($data['parent_id'])   && $data['parent_id']   !== '' ? intval($data['parent_id'])   : null;
+    $student_ids              = isset($data['student_ids'])  && $data['student_ids']  !== '' ? trim($data['student_ids'])  : null;
 
     if (empty($username) || empty($password)) jsonResponse(['error' => 'Username and password required'], 400);
     $allowedRoles = $isSA ? ['admin', 'user', 'superadmin', 'supervisor', 'student', 'parent'] : ['admin', 'user', 'supervisor', 'student', 'parent'];
@@ -98,16 +101,18 @@ if ($method === 'POST') {
     // Clear fields not relevant to role
     if ($role !== 'supervisor') { $supervisor_teacher_ids = ''; $supervisor_class_ids = ''; $supervisor_user_ids = ''; }
     if ($role !== 'user')       { $teacher_ids_perm = ''; $class_ids_perm = ''; }
-    if (!in_array($role, ['student', 'parent'])) { $student_id = null; }
+    if ($role !== 'student')    { $student_id = null; }
+    if ($role !== 'user')       { $teacher_id = null; }
+    if ($role !== 'parent')     { $parent_id = null; $student_ids = null; }
 
     $hashed = password_hash($password, PASSWORD_DEFAULT);
-    $stmt = $db->prepare('INSERT INTO users (username, password, role, teacher_ids_perm, class_ids_perm, supervisor_teacher_ids, supervisor_class_ids, supervisor_user_ids, student_id) VALUES (?,?,?,?,?,?,?,?,?)');
-    $stmt->bind_param('ssssssssi', $username, $hashed, $role, $teacher_ids_perm, $class_ids_perm, $supervisor_teacher_ids, $supervisor_class_ids, $supervisor_user_ids, $student_id);
+    $stmt = $db->prepare('INSERT INTO users (username, password, role, teacher_ids_perm, class_ids_perm, supervisor_teacher_ids, supervisor_class_ids, supervisor_user_ids, student_id, teacher_id, parent_id, student_ids) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
+    $stmt->bind_param('ssssssssiiss', $username, $hashed, $role, $teacher_ids_perm, $class_ids_perm, $supervisor_teacher_ids, $supervisor_class_ids, $supervisor_user_ids, $student_id, $teacher_id, $parent_id, $student_ids);
     if ($stmt->execute()) {
         $new_id = $db->insert_id;
         $roleLabel = ['admin'=>'Admin','user'=>'User','supervisor'=>'Supervisor','superadmin'=>'Super Admin','student'=>'Student','parent'=>'Parent'][$role] ?? $role;
         logNotification('add', 'user', $new_id, "{$username} ({$roleLabel})",
-            ['id'=>$new_id,'username'=>$username,'role'=>$role,'teacher_ids_perm'=>$teacher_ids_perm,'class_ids_perm'=>$class_ids_perm,'supervisor_teacher_ids'=>$supervisor_teacher_ids,'supervisor_class_ids'=>$supervisor_class_ids,'supervisor_user_ids'=>$supervisor_user_ids,'student_id'=>$student_id]);
+            ['id'=>$new_id,'username'=>$username,'role'=>$role,'teacher_ids_perm'=>$teacher_ids_perm,'class_ids_perm'=>$class_ids_perm,'supervisor_teacher_ids'=>$supervisor_teacher_ids,'supervisor_class_ids'=>$supervisor_class_ids,'supervisor_user_ids'=>$supervisor_user_ids,'student_id'=>$student_id,'teacher_id'=>$teacher_id]);
         jsonResponse(['success' => true, 'id' => $new_id]);
     } else {
         jsonResponse(['error' => 'Username already exists or failed to create'], 500);
@@ -145,34 +150,34 @@ if ($method === 'PUT') {
     $supervisor_class_ids     = $data['supervisor_class_ids']     ?? '';
     $supervisor_user_ids      = $data['supervisor_user_ids']      ?? '';
     $student_id               = isset($data['student_id']) && $data['student_id'] !== '' ? intval($data['student_id']) : null;
+    $teacher_id               = isset($data['teacher_id'])  && $data['teacher_id']  !== '' ? intval($data['teacher_id'])  : null;
+    $parent_id                = isset($data['parent_id'])   && $data['parent_id']   !== '' ? intval($data['parent_id'])   : null;
+    $student_ids              = isset($data['student_ids'])  && $data['student_ids']  !== '' ? trim($data['student_ids'])  : null;
 
     if (empty($username)) jsonResponse(['error' => 'Username required'], 400);
 
     if ($isSupv) {
-        // Supervisors can only update username/password; role stays 'user'
         $role = 'user';
-        $supervisor_teacher_ids = '';
-        $supervisor_class_ids   = '';
-        $supervisor_user_ids    = '';
-        $class_ids_perm         = '';
-        $student_id             = null;
+        $supervisor_teacher_ids = ''; $supervisor_class_ids = ''; $supervisor_user_ids = '';
+        $class_ids_perm = ''; $student_id = null; $teacher_id = null; $parent_id = null; $student_ids = null;
     } else {
         $allowedRoles = $isSA ? ['admin', 'user', 'superadmin', 'supervisor', 'student', 'parent'] : ['admin', 'user', 'supervisor', 'student', 'parent'];
         if (!in_array($role, $allowedRoles)) jsonResponse(['error' => 'Invalid role'], 400);
         if ($role === 'superadmin' && !$isSA) jsonResponse(['error' => 'Only Super Admin can assign Super Admin role'], 403);
         if ($role !== 'supervisor') { $supervisor_teacher_ids = ''; $supervisor_class_ids = ''; $supervisor_user_ids = ''; }
-        if ($role !== 'user')       { $teacher_ids_perm = ''; $class_ids_perm = ''; }
-        if (!in_array($role, ['student', 'parent'])) { $student_id = null; }
+        if ($role !== 'user')       { $teacher_ids_perm = ''; $class_ids_perm = ''; $teacher_id = null; }
+        if ($role !== 'student')    { $student_id = null; }
+        if ($role !== 'parent')     { $parent_id = null; $student_ids = null; }
     }
 
     if (!empty($password)) {
         if (strlen($password) < 6) jsonResponse(['error' => 'Password must be at least 6 characters'], 400);
         $hashed = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $db->prepare('UPDATE users SET username=?, role=?, password=?, teacher_ids_perm=?, class_ids_perm=?, supervisor_teacher_ids=?, supervisor_class_ids=?, supervisor_user_ids=?, student_id=? WHERE id=?');
-        $stmt->bind_param('ssssssssii', $username, $role, $hashed, $teacher_ids_perm, $class_ids_perm, $supervisor_teacher_ids, $supervisor_class_ids, $supervisor_user_ids, $student_id, $id);
+        $stmt = $db->prepare('UPDATE users SET username=?, role=?, password=?, teacher_ids_perm=?, class_ids_perm=?, supervisor_teacher_ids=?, supervisor_class_ids=?, supervisor_user_ids=?, student_id=?, teacher_id=?, parent_id=?, student_ids=? WHERE id=?');
+        $stmt->bind_param('sssssssssiiisi', $username, $role, $hashed, $teacher_ids_perm, $class_ids_perm, $supervisor_teacher_ids, $supervisor_class_ids, $supervisor_user_ids, $student_id, $teacher_id, $parent_id, $student_ids, $id);
     } else {
-        $stmt = $db->prepare('UPDATE users SET username=?, role=?, teacher_ids_perm=?, class_ids_perm=?, supervisor_teacher_ids=?, supervisor_class_ids=?, supervisor_user_ids=?, student_id=? WHERE id=?');
-        $stmt->bind_param('sssssssii', $username, $role, $teacher_ids_perm, $class_ids_perm, $supervisor_teacher_ids, $supervisor_class_ids, $supervisor_user_ids, $student_id, $id);
+        $stmt = $db->prepare('UPDATE users SET username=?, role=?, teacher_ids_perm=?, class_ids_perm=?, supervisor_teacher_ids=?, supervisor_class_ids=?, supervisor_user_ids=?, student_id=?, teacher_id=?, parent_id=?, student_ids=? WHERE id=?');
+        $stmt->bind_param('ssssssssiisi', $username, $role, $teacher_ids_perm, $class_ids_perm, $supervisor_teacher_ids, $supervisor_class_ids, $supervisor_user_ids, $student_id, $teacher_id, $parent_id, $student_ids, $id);
     }
 
     // Fetch old row for undo snapshot (after validation, before execute)

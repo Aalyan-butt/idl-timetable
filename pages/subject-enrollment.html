@@ -1,0 +1,137 @@
+
+      <div class="page-header">
+        <div>
+          <div class="page-title">Subject Enrollment</div>
+          <div class="page-subtitle">Enroll students in subjects</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <div style="position:relative;display:inline-block">
+            <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('se-dm', this)">&#128196; Download PDF</button>
+            <div id="se-dm" class="download-menu" style="display:none">
+              <div class="download-opt download-scale-row">
+                <span class="dscale-btn" onclick="setMenuScale('se-dm',100,this)">100%</span>
+                <span class="dscale-btn active" onclick="setMenuScale('se-dm',90,this)">90%</span>
+                <span class="dscale-btn" onclick="setMenuScale('se-dm',80,this)">80%</span>
+                <span class="dscale-btn" onclick="setMenuScale('se-dm',70,this)">70%</span>
+              </div>
+              <div class="download-opt" onclick="downloadSEPDF('portrait')">&#128196; PDF &mdash; A4 Portrait</div>
+              <div class="download-opt" onclick="downloadSEPDF('landscape')">&#128196; PDF &mdash; A4 Landscape</div>
+            </div>
+          </div>
+          <button class="btn btn-excel btn-sm" onclick="downloadSEExcel()">&#128202; Download Excel</button>
+          <button class="btn btn-primary admin-only" onclick="openSEEnrollModal()">+ Enroll Student</button>
+        </div>
+      </div>
+
+      <!-- Two independent filters -->
+      <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+        <div class="card" style="flex:1;min-width:240px;padding:14px 18px">
+          <label style="font-size:0.85rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:8px">&#128209; By Subject</label>
+          <div class="se-dd" id="se-dd-subject">
+            <div style="position:relative;display:flex;align-items:center">
+              <input class="se-dd-search" id="se-dd-subject-search" type="text" placeholder="Search subjects&#8230;"
+                oninput="seRenderPageSubjects(this.value);seDDOpen('subject')"
+                onfocus="seDDOpen('subject')"
+                onclick="event.stopPropagation()"
+                style="padding-right:28px">
+            </div>
+            <div id="se-dd-subject-tag" style="display:none;margin-top:6px"></div>
+            <div class="se-dd-panel" id="se-dd-subject-panel" style="display:none">
+              <div class="se-dd-list" id="se-dd-subject-list"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="flex:1;min-width:240px;padding:14px 18px">
+          <label style="font-size:0.85rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:8px">&#128100; By Student</label>
+          <div class="se-dd" id="se-dd-student">
+            <div style="position:relative;display:flex;align-items:center">
+              <input class="se-dd-search" id="se-dd-student-search" type="text" placeholder="Search students&#8230;"
+                oninput="seRenderPageStudents(this.value);seDDOpen('student')"
+                onfocus="seDDOpen('student')"
+                onclick="event.stopPropagation()"
+                style="padding-right:28px">
+            </div>
+            <div id="se-dd-student-tag" style="display:none;margin-top:6px"></div>
+            <div class="se-dd-panel" id="se-dd-student-panel" style="display:none">
+              <div class="se-dd-list" id="se-dd-student-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="se-enrollments-area">
+        <div class="card" style="text-align:center;padding:40px;color:var(--text-muted)">Loading&#8230;</div>
+      </div>
+    
+
+<div class="modal-overlay" id="se-enroll-modal-overlay" onclick="if(event.target===this)closeModal('se-enroll-modal-overlay')">
+      <div class="modal" style="max-width:600px">
+        <div class="modal-header">
+          <h3>Enroll Student</h3>
+          <button class="modal-close" onclick="closeModal('se-enroll-modal-overlay')">&#10005;</button>
+        </div>
+        <div class="modal-body" style="display:flex;flex-direction:column;gap:18px">
+          <!-- Select Students (multi) -->
+          <div class="form-group" style="margin:0">
+            <label style="font-size:0.85rem;font-weight:600">Students <span style="color:var(--danger)">*</span></label>
+            <div class="se-tag-input" id="se-student-tag-wrap" style="margin-top:4px" onclick="document.getElementById('se-student-search').focus()">
+              <input type="text" id="se-student-search" oninput="renderSEStudentList(this.value)"
+                onmousedown="_seModalInputMousedown('se-student-list', event)"
+                onfocusout="_seModalInputBlur('se-student-list')"
+                placeholder="Type to search students&#8230;">
+            </div>
+            <div id="se-student-list" style="display:none;margin-top:6px;max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;background:var(--surface)"></div>
+          </div>
+          <!-- Select Subjects (multi) -->
+          <div class="form-group" style="margin:0">
+            <label style="font-size:0.85rem;font-weight:600">Subjects <span style="color:var(--danger)">*</span></label>
+            <div class="se-tag-input" id="se-subject-tag-wrap" style="margin-top:4px" onclick="document.getElementById('se-subject-search').focus()">
+              <input type="text" id="se-subject-search" oninput="renderSESubjectList(this.value)"
+                onmousedown="_seModalInputMousedown('se-subject-list', event)"
+                onfocusout="_seModalInputBlur('se-subject-list')"
+                placeholder="Type to search subjects&#8230;">
+            </div>
+            <div id="se-subject-list" style="display:none;margin-top:6px;max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;background:var(--surface)"></div>
+          </div>
+          <div id="se-enroll-error" style="display:none;color:var(--danger);font-size:0.85rem;background:rgba(231,76,60,.1);padding:8px 12px;border-radius:6px"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('se-enroll-modal-overlay')">Cancel</button>
+          <button class="btn btn-primary" onclick="saveSEEnroll()">Enroll</button>
+        </div>
+      </div>
+    </div>
+
+<div class="modal-overlay" id="se-edit-modal-overlay" onclick="if(event.target===this)closeModal('se-edit-modal-overlay')">
+      <div class="modal" style="max-width:580px">
+        <div class="modal-header">
+          <h3>Edit Enrollment</h3>
+          <button class="modal-close" onclick="closeModal('se-edit-modal-overlay')">&#10005;</button>
+        </div>
+        <div class="modal-body" style="display:flex;flex-direction:column;gap:18px">
+          <!-- Student search -->
+          <div class="form-group" style="margin:0">
+            <label style="font-size:0.85rem;font-weight:600">Student <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="se-edit-student-search" oninput="renderSEEditStudentList(this.value)"
+              onmousedown="_seModalInputMousedown('se-edit-student-list', event)"
+              onfocusout="_seModalInputBlur('se-edit-student-list')"
+              placeholder="Type to search students&#8230;" style="margin-top:4px">
+            <div id="se-edit-student-list" style="display:none;margin-top:6px;max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;background:var(--surface)"></div>
+          </div>
+          <!-- Subject search -->
+          <div class="form-group" style="margin:0">
+            <label style="font-size:0.85rem;font-weight:600">Subject <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="se-edit-subject-search" oninput="renderSEEditSubjectList(this.value)"
+              onmousedown="_seModalInputMousedown('se-edit-subject-list', event)"
+              onfocusout="_seModalInputBlur('se-edit-subject-list')"
+              placeholder="Type to search subjects&#8230;" style="margin-top:4px">
+            <div id="se-edit-subject-list" style="display:none;margin-top:6px;max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;background:var(--surface)"></div>
+          </div>
+          <div id="se-edit-error" style="display:none;color:var(--danger);font-size:0.85rem;background:rgba(231,76,60,.1);padding:8px 12px;border-radius:6px"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('se-edit-modal-overlay')">Cancel</button>
+          <button class="btn btn-primary" onclick="saveSEEdit()">Save Changes</button>
+        </div>
+      </div>
+    </div>

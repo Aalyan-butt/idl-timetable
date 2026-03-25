@@ -1,0 +1,20 @@
+/* ===== SUBJECT ENROLLMENT CUSTOM DROPDOWN ===== */
+.se-dd { position:relative; }
+.se-dd-trigger { display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:0.88rem;user-select:none;gap:8px; }
+.se-dd-trigger:hover,.se-dd-trigger.open { border-color:var(--accent); }
+.se-dd-trigger span.se-dd-lbl { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;color:var(--text-muted); }
+.se-dd-trigger span.se-dd-lbl.has-value { color:var(--text); }
+.se-dd-panel { position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);z-index:300;overflow:hidden; }
+.se-dd-search { display:block;width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:0.85rem;font-family:inherit;outline:none;transition:border-color 0.2s; }
+.se-dd-search:focus { border-color:var(--accent); }
+.se-dd-list { max-height:220px;overflow-y:auto; }
+.se-dd-item { padding:9px 14px;cursor:pointer;font-size:0.88rem;border-bottom:1px solid var(--border); }
+.se-dd-item:last-child { border-bottom:none; }
+.se-dd-item:hover { background:var(--surface2); }
+.se-dd-item.se-selected { background:rgba(42,74,142,0.15);color:var(--accent);font-weight:600; }
+.se-tag-input { display:flex;flex-wrap:wrap;gap:5px;align-items:center;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);min-height:42px;cursor:text; }
+.se-tag-input:focus-within { border-color:var(--accent); }
+.se-tag-input input { border:none;background:transparent;color:var(--text);outline:none;font-size:0.88rem;flex:1;min-width:120px;padding:2px 4px;font-family:inherit; }
+.se-tag { display:inline-flex;align-items:center;gap:5px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.4);border-radius:5px;padding:3px 9px;font-size:0.8rem;color:var(--accent2);line-height:1.4;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.se-tag-remove { cursor:pointer;color:var(--text-muted);font-size:0.9rem;line-height:1;flex-shrink:0; }
+.se-tag-remove:hover { color:var(--danger); }

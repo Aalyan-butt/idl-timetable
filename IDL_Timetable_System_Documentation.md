@@ -1,891 +1,1007 @@
-# IDL Timetable Management System
+# IDL Institute — Timetable Management System
 
-**Complete Technical & User Documentation**
-
-| | |
-|---|---|
-| **Version** | 2.0 |
-| **Date** | March 8, 2026 |
-| **Author** | Aalyan Riasat |
-| **Platform** | PHP · MySQL · HTML/JavaScript (SPA) · Node.js (WhatsApp) |
-| **Prepared for** | Institute of Dynamic Learning — Internal Use |
+### System Documentation
 
 ---
 
 ## Table of Contents
 
-1. [Project Overview](#1-project-overview)
-2. [System Architecture](#2-system-architecture)
-3. [Technology Stack](#3-technology-stack)
-4. [Database Design](#4-database-design)
-5. [User Roles & Permissions](#5-user-roles--permissions)
-6. [Authentication & Sessions](#6-authentication--sessions)
-7. [Application Pages](#7-application-pages)
-8. [REST API Reference](#8-rest-api-reference)
-9. [Timetable Conflict Detection](#9-timetable-conflict-detection)
+1. [System Overview](#1-system-overview)
+2. [Technology Stack](#2-technology-stack)
+3. [Project Structure](#3-project-structure)
+4. [Database Schema](#4-database-schema)
+5. [User Roles &amp; Permissions](#5-user-roles--permissions)
+6. [API Reference](#6-api-reference)
+7. [Frontend Architecture](#7-frontend-architecture)
+8. [Page Modules](#8-page-modules)
+9. [Build System](#9-build-system)
 10. [WhatsApp Integration](#10-whatsapp-integration)
-11. [Notifications & Audit System](#11-notifications--audit-system)
-12. [Data Import](#12-data-import)
-13. [Download & Export](#13-download--export)
-14. [Security](#14-security)
-15. [Frontend Architecture](#15-frontend-architecture)
-16. [File Structure](#16-file-structure)
-17. [Installation Guide](#17-installation-guide)
-18. [Glossary](#18-glossary)
+11. [Setup &amp; Deployment](#11-setup--deployment)
+12. [Default Credentials](#12-default-credentials)
 
 ---
 
-## 1. Project Overview
+## 1. System Overview
 
-The IDL Timetable Management System is a web-based scheduling application for the Institute of Dynamic Learning. It allows administrators, supervisors, and authorized users to manage teachers, classes, and timetables through a single-page web interface.
+IDL Timetable Management System is a web-based single-page application (SPA) for managing a school's timetable, staff, students, and academic records. It supports multiple user roles with fine-grained permission control, real-time conflict detection, bulk import/export, WhatsApp notifications, AI assistant integration, and a full student performance tracking module.
 
-### What It Solves
+**Key capabilities:**
 
-- **Scheduling conflicts** — Automatic detection prevents double-booking teachers or overlapping class slots.
-- **Role-based access** — Each user sees only what they're permitted to access.
-- **Real-time tracking** — Shows which teachers are busy or free at any given time.
-- **WhatsApp messaging** — Send timetables and announcements directly to teachers via WhatsApp.
-- **Audit trail** — Every action by non-superadmin users is logged and can be undone.
-
-### Key Features
-
-| Feature | Description |
-|---------|-------------|
-| Single-Page App (SPA) | All pages load inside one `index.html` — no full-page reloads |
-| Dark Luxury UI | Navy/black background with gold (#C9A84C) accents, Cinzel + Times New Roman fonts |
-| 4 User Roles | Super Admin, Admin, Supervisor, User — with granular permissions |
-| Conflict Detection | Server-side overlap checks for both class slots and teacher assignments |
-| Multi-Teacher Slots | A single lesson can have multiple co-teachers |
-| Break Slots | Break periods inserted into timetables without teacher assignment |
-| WhatsApp Integration | Send messages/files to teachers via local Baileys server or UltraMsg cloud |
-| Bulk Messaging | Select multiple teachers and send in one operation with configurable delay |
-| PDF/DOC Export | Every data table exports to PDF (A4 Portrait/Landscape) or Word document |
-| CSV Import | Bulk import teachers, classes, and timetable data from CSV/Excel files |
-| Audit Log + Undo | Superadmin can view all actions and reverse any change |
-| Idle Auto-Logout | 8-hour server-side timeout + client-side visibility detection |
-| Pakistan Time Display | Dashboard shows live PST (UTC+5) for upcoming classes |
-| Responsive Design | Mobile-friendly with collapsible sidebar |
+- Timetable scheduling with teacher conflict detection and class slot overlap prevention
+- Comprehensive teacher and student HR/academic records
+- Student registration workflow with document uploads
+- Subject enrollment and class assignment
+- Performance tests, marks entry, and analysis
+- Parent portal with family schedule view
+- WhatsApp bulk messaging (free local server or paid UltraMsg API)
+- AI assistant (OpenAI) for timetable import formatting
+- Activity log with undo support (superadmin)
+- Role-based UI — each role sees only its relevant sections
+- Hash-based URL routing with browser back/forward support
+- Lazy-loaded page modules for fast initial load
 
 ---
 
-## 2. System Architecture
+## 2. Technology Stack
 
-The system follows a three-tier architecture:
+| Layer           | Technology                                    |
+| --------------- | --------------------------------------------- |
+| Frontend        | Vanilla JavaScript (ES2020+), HTML5, CSS3     |
+| Backend         | PHP 7.4+                                      |
+| Database        | MySQL 5.7+ / MariaDB                          |
+| Server          | Apache / Nginx (XAMPP, WAMP, Laragon)         |
+| Build Tool      | Node.js — Terser (JS minification), CleanCSS |
+| WhatsApp (free) | Node.js + whatsapp-web.js                     |
+| WhatsApp (paid) | UltraMsg REST API                             |
+| AI              | OpenAI API (configurable model)               |
+| Excel Import    | SheetJS (xlsx)                                |
+
+---
+
+## 3. Project Structure
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  BROWSER (Presentation Tier)                            │
-│  index.html — CSS + HTML + Vanilla JavaScript           │
-│  ↕ Fetch API (JSON)          ↕ Fetch API (JSON)         │
-├────────────────────────┬────────────────────────────────┤
-│  PHP API (Application) │  Node.js Server (WhatsApp)     │
-│  /api/*.php            │  wa-server/server.js            │
-│  ↕ MySQLi              │  ↕ mysql2/promise               │
-├────────────────────────┴────────────────────────────────┤
-│  MySQL Database (Data Tier)                             │
-│  Database: idltimetable                                  │
-│  Tables: classes, teachers, timetable, users, settings,  │
-│          notifications, superadmin_requests, wa_session   │
-└─────────────────────────────────────────────────────────┘
+idl_updated/
+│
+├── index.html                  # App shell (login screen + navigation + dashboard)
+│
+├── pages/                      # Lazy-loaded page fragments (fetched on first visit)
+│   ├── track.html
+│   ├── teachers.html
+│   ├── classes.html
+│   ├── timetable.html
+│   ├── search.html
+│   ├── user-classes.html
+│   ├── users.html
+│   ├── settings.html
+│   ├── notifications.html
+│   ├── students.html
+│   ├── student-notifications.html
+│   ├── class-enrollment.html
+│   ├── class-subjects.html         # Includes subject-modal-overlay
+│   ├── subject-enrollment.html     # Includes se-enroll & se-edit modal overlays
+│   ├── parent-information.html     # Includes parent-modal-overlay
+│   ├── student-profile.html
+│   ├── student-schedule.html
+│   ├── parent-schedule.html
+│   ├── performance-tests.html
+│   ├── performance-marks.html
+│   └── performance-analysis.html
+│
+├── js/                         # Source JavaScript (bundled at build time)
+│   ├── config.js               # API endpoints & global state variables
+│   ├── session.js              # Session persistence, idle timeout
+│   ├── utils.js                # Shared utilities, generic filterTable(), makeSearchable()
+│   ├── auth.js                 # Login/logout, role UI rendering, page restore
+│   ├── navigation.js           # showPage() routing, hash routing, all data loaders
+│   ├── settings.js             # School hours & settings page
+│   ├── teachers.js             # Teacher CRUD UI
+│   ├── whatsapp.js             # WhatsApp messaging UI
+│   ├── classes.js              # Class management UI
+│   ├── timetable.js            # Timetable builder, conflict UI
+│   ├── search.js               # Teacher schedule search, free slot tooltip
+│   ├── users.js                # User account management
+│   ├── notifications.js        # Activity log & undo UI (superadmin)
+│   ├── students.js             # Student registration, list, profile
+│   ├── subjects.js             # Subject management per class
+│   ├── enrollments.js          # Subject enrollment UI
+│   ├── parents.js              # Parent/family management
+│   ├── import-export.js        # Bulk import from Excel/CSV, export
+│   └── performance.js          # Performance tests, marks, analysis
+│
+├── css/                        # Source stylesheets (bundled at build time)
+│   ├── variables.css           # CSS custom properties (colors, radius, shadows)
+│   ├── base.css                # Reset, typography, buttons, alerts, toasts
+│   ├── login.css               # Login screen
+│   ├── layout.css              # App shell, sidebar, navbar, page grid
+│   ├── components.css          # Cards, tables, badges, modals, searchable select
+│   ├── timetable.css           # Timetable grid specific styles
+│   ├── search.css              # Search results
+│   ├── students.css            # Student list and form
+│   └── responsive.css          # Mobile / tablet breakpoints
+│
+├── api/                        # PHP REST endpoints
+│   ├── auth.php
+│   ├── teachers.php
+│   ├── classes.php
+│   ├── timetable.php
+│   ├── students.php
+│   ├── subjects.php
+│   ├── subject_enrollments.php
+│   ├── parents.php
+│   ├── users.php
+│   ├── settings.php
+│   ├── search.php
+│   ├── import.php
+│   ├── notifications.php
+│   ├── whatsapp.php
+│   ├── ai.php
+│   └── performance_tests.php
+│
+├── includes/
+│   └── config.php              # DB connection, session, auth helpers, security headers
+│
+├── assets/                     # Static files (images, icons etc.)
+│
+├── wa-server/                  # Node.js WhatsApp local server
+│   ├── server.js
+│   ├── package.json
+│   └── wa_session/             # Persisted WhatsApp session data
+│
+├── build.js                    # Production build script
+├── package.json                # Node.js dependencies (Terser, CleanCSS)
+├── idltimetable.sql            # Full database schema + seed data
+│
+└── dist/                       # Production output (upload this to server)
+    ├── index.html
+    ├── pages/
+    ├── assets/
+    │   ├── app.min.js
+    │   └── app.min.css
+    ├── api/
+    ├── includes/
+    └── idltimetable.sql
 ```
 
-### Request Flow
-
-1. User opens `index.html` → login screen renders.
-2. `doLogin()` sends `POST /api/auth.php?action=login` with credentials.
-3. Server validates, sets PHP session, returns role/permissions as JSON.
-4. JavaScript stores role in memory; shows appropriate sidebar and pages.
-5. User navigates to a page → JavaScript calls the relevant API endpoint.
-6. PHP checks session, queries DB, returns JSON.
-7. JavaScript renders the response into HTML tables/cards.
-8. For WhatsApp features, JavaScript calls the Node.js server directly (port 8080).
-
 ---
 
-## 3. Technology Stack
-
-| Layer | Technology | Details |
-|-------|-----------|---------|
-| Frontend | HTML5, CSS3, Vanilla JS (ES6+) | Single file SPA, no frameworks |
-| Fonts | Cinzel, Libre Baskerville | Google Fonts CDN |
-| Backend | PHP 8.x | MySQLi prepared statements |
-| Database | MySQL / MariaDB | utf8mb4 charset |
-| WhatsApp Server | Node.js + Express | Baileys library (WebSocket-based) |
-| WhatsApp Sessions | MySQL | Stored in `wa_session` table |
-| Password Hashing | bcrypt | PHP `password_hash()` |
-| PDF Export | Browser print API | Custom print stylesheets |
-| Excel Parsing | SheetJS (xlsx.full.min.js) | Client-side CSV/Excel import |
-
----
-
-## 4. Database Design
+## 4. Database Schema
 
 **Database name:** `idltimetable`
+**Charset:** `utf8mb4`
 
-### 4.1 Tables Overview
+### users
 
-| Table | Purpose |
-|-------|---------|
-| `classes` | Class/group names |
-| `teachers` | Teacher profiles (30+ fields) |
-| `timetable` | Scheduled lesson and break slots |
-| `users` | Login accounts with roles and permissions |
-| `settings` | Key-value configuration (school hours, WhatsApp, AI) |
-| `notifications` | Audit log of all CRUD actions |
-| `superadmin_requests` | Workflow requests for superadmin review |
-| `wa_session` | WhatsApp Baileys auth credentials per account |
+| Column                 | Type                  | Notes                                                |
+| ---------------------- | --------------------- | ---------------------------------------------------- |
+| id                     | INT AUTO_INCREMENT PK |                                                      |
+| username               | VARCHAR               | Unique                                               |
+| password               | VARCHAR               | Hashed                                               |
+| role                   | ENUM                  | admin, user, superadmin, supervisor, student, parent |
+| teacher_ids_perm       | TEXT                  | CSV — teacher IDs this user can view (user role)    |
+| class_ids_perm         | TEXT                  | CSV — class IDs this user can view (user role)      |
+| supervisor_teacher_ids | TEXT                  | CSV — teachers this supervisor manages              |
+| supervisor_class_ids   | TEXT                  | CSV — classes this supervisor manages               |
+| supervisor_user_ids    | TEXT                  | CSV — user accounts this supervisor manages         |
+| student_id             | INT                   | Linked student record (student role)                 |
+| teacher_id             | INT                   | Linked teacher record                                |
+| parent_id              | INT                   | Linked parent record (parent role)                   |
+| student_ids            | TEXT                  | CSV — all children's IDs (parent role)              |
+| created_at             | TIMESTAMP             |                                                      |
 
-### 4.2 Table: `classes`
+### teachers
 
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | INT, PK, AUTO_INCREMENT | Unique class ID |
-| `name` | VARCHAR(100), NOT NULL | Display name (e.g. "Level O Juniors") |
-| `created_at` | TIMESTAMP | Row creation time |
+| Column             | Type                  | Notes                            |
+| ------------------ | --------------------- | -------------------------------- |
+| id                 | INT AUTO_INCREMENT PK |                                  |
+| title              | ENUM                  | Sir, Mam, Ms.                    |
+| name               | VARCHAR               |                                  |
+| designation        | VARCHAR               |                                  |
+| religion           | VARCHAR               |                                  |
+| gender             | VARCHAR               |                                  |
+| joining_date       | DATE                  |                                  |
+| nic_number         | VARCHAR               |                                  |
+| employment_type    | VARCHAR               |                                  |
+| per_lecture_amount | DECIMAL               |                                  |
+| role               | VARCHAR               |                                  |
+| work_experience    | TEXT                  |                                  |
+| qualification      | TEXT                  |                                  |
+| marital_status     | VARCHAR               |                                  |
+| phone              | VARCHAR               |                                  |
+| whatsapp           | VARCHAR               | Preferred for WhatsApp messaging |
+| blood_group        | VARCHAR               |                                  |
+| email              | VARCHAR               |                                  |
+| date_of_birth      | DATE                  |                                  |
+| place_of_birth     | VARCHAR               |                                  |
+| address            | TEXT                  |                                  |
+| starting_salary    | DECIMAL               |                                  |
+| current_salary     | DECIMAL               |                                  |
+| bank_name          | VARCHAR               |                                  |
+| bank_account_type  | ENUM                  | account, iban                    |
+| bank_account_no    | VARCHAR               |                                  |
+| notes              | TEXT                  |                                  |
+| photo              | LONGTEXT              | Base64 data URI or file path     |
+| cnic_front         | LONGTEXT              |                                  |
+| cnic_back          | LONGTEXT              |                                  |
+| relationship_name  | VARCHAR               |                                  |
+| leaving_date       | DATE                  |                                  |
+| leaving_reason     | TEXT                  |                                  |
+| created_at         | TIMESTAMP             |                                  |
 
-### 4.3 Table: `teachers`
+### students
 
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | INT, PK, AUTO_INCREMENT | Unique teacher ID |
-| `title` | VARCHAR(10) | Sir, Mam, or Ms. |
-| `name` | VARCHAR(100) | Full name |
-| `designation` | VARCHAR | Job designation |
-| `religion` | VARCHAR | Religion |
-| `gender` | VARCHAR | Gender |
-| `joining_date` | DATE | Date joined |
-| `nic_number` | VARCHAR | National ID number |
-| `employment_type` | VARCHAR | Permanent, Contract, etc. |
-| `per_lecture_amount` | DECIMAL | Per-lecture payment rate |
-| `role` | VARCHAR | Teacher, Vice Principal, etc. |
-| `work_experience` | VARCHAR | Years/description |
-| `qualification` | VARCHAR | Degree/certification |
-| `marital_status` | VARCHAR | Marital status |
-| `phone` | VARCHAR | Phone number |
-| `whatsapp` | VARCHAR | WhatsApp number (used for bulk messaging) |
-| `blood_group` | VARCHAR | Blood group |
-| `email` | VARCHAR | Email address |
-| `date_of_birth` | DATE | DOB |
-| `place_of_birth` | VARCHAR | Birthplace |
-| `address` | TEXT | Full address |
-| `starting_salary` | DECIMAL | Starting salary |
-| `current_salary` | DECIMAL | Current salary |
-| `bank_account_no` | VARCHAR | Bank account number |
-| `notes` | TEXT | Additional notes |
-| `photo` | BLOB/path | Teacher photo |
-| `cnic_front` | BLOB/path | CNIC front image |
-| `cnic_back` | BLOB/path | CNIC back image |
-| `relationship_name` | VARCHAR | Emergency contact name |
-| `created_at` | TIMESTAMP | Row creation time |
+| Column               | Type                  | Notes                                                 |
+| -------------------- | --------------------- | ----------------------------------------------------- |
+| id                   | INT AUTO_INCREMENT PK |                                                       |
+| sr_number            | VARCHAR               | Auto-generated sequential                             |
+| gr_number            | VARCHAR               | Auto-generated sequential                             |
+| student_name         | VARCHAR               |                                                       |
+| class_id             | INT                   | FK → classes                                         |
+| date_of_birth        | DATE                  |                                                       |
+| gender               | VARCHAR               |                                                       |
+| religion             | VARCHAR               |                                                       |
+| caste                | VARCHAR               |                                                       |
+| place_of_birth       | VARCHAR               |                                                       |
+| nationality          | VARCHAR               |                                                       |
+| nic_passport         | VARCHAR               |                                                       |
+| b_form               | VARCHAR               |                                                       |
+| blood_group          | VARCHAR               |                                                       |
+| physical_handicap    | VARCHAR               |                                                       |
+| photo                | LONGTEXT              |                                                       |
+| student_mobile       | VARCHAR               |                                                       |
+| mother_phone         | VARCHAR               |                                                       |
+| mother_name          | VARCHAR               |                                                       |
+| mother_profession    | VARCHAR               |                                                       |
+| mother_nic           | VARCHAR               |                                                       |
+| guardian_phone       | VARCHAR               |                                                       |
+| emergency_contact    | VARCHAR               |                                                       |
+| student_address      | TEXT                  |                                                       |
+| student_city         | VARCHAR               |                                                       |
+| father_name          | VARCHAR               |                                                       |
+| father_cnic          | VARCHAR               | Used to group siblings and auto-create parent records |
+| father_phone         | VARCHAR               |                                                       |
+| father_occupation    | VARCHAR               |                                                       |
+| father_designation   | VARCHAR               |                                                       |
+| father_email         | VARCHAR               |                                                       |
+| father_address       | TEXT                  |                                                       |
+| father_relationship  | VARCHAR               |                                                       |
+| fee_1/2/3/4_type     | VARCHAR               |                                                       |
+| fee_1/2/3/4_amount   | DECIMAL               |                                                       |
+| test_date            | DATE                  | Admission test                                        |
+| test_for_class       | VARCHAR               |                                                       |
+| total_test_marks     | INT                   |                                                       |
+| total_obtained_marks | INT                   |                                                       |
+| registration_status  | ENUM                  | pending, confirmed, rejected                          |
+| document1/2/3        | LONGTEXT              | Uploaded documents                                    |
+| created_at           | TIMESTAMP             |                                                       |
 
-### 4.4 Table: `timetable`
+### classes
 
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | INT, PK, AUTO_INCREMENT | Unique slot ID |
-| `class_id` | INT, FK → classes.id | Which class this slot belongs to |
-| `teacher_id` | INT | Primary teacher (0 for breaks) |
-| `teacher_ids` | VARCHAR(500) | Comma-separated IDs for co-teaching slots |
-| `day_group` | VARCHAR(50) | Preset label (e.g. "Mon–Tue", "Mon–Fri") |
-| `days` | VARCHAR(100) | Comma-separated days (e.g. "Monday,Tuesday") |
-| `start_time` | TIME | Lesson start (HH:MM) |
-| `end_time` | TIME | Lesson end (HH:MM) |
-| `subject` | VARCHAR(200) | Subject name (or "Break" if is_break=1) |
-| `is_break` | TINYINT(1) | 1 = break slot, no teacher required |
-| `created_at` | TIMESTAMP | Row creation time |
+| Column     | Type                  | Notes  |
+| ---------- | --------------------- | ------ |
+| id         | INT AUTO_INCREMENT PK |        |
+| name       | VARCHAR               | Unique |
+| created_at | TIMESTAMP             |        |
 
-### 4.5 Table: `users`
+### timetable
 
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | INT, PK, AUTO_INCREMENT | Unique user ID |
-| `username` | VARCHAR(100), UNIQUE | Login username |
-| `password` | VARCHAR(255) | bcrypt hash |
-| `role` | ENUM | 'superadmin', 'admin', 'supervisor', 'user' |
-| `teacher_ids_perm` | VARCHAR(500) | Teachers a "user" role can view |
-| `class_ids_perm` | VARCHAR(500) | Classes a "user" role can view |
-| `supervisor_teacher_ids` | VARCHAR(500) | Teachers a supervisor manages |
-| `supervisor_class_ids` | VARCHAR(500) | Classes a supervisor manages |
-| `supervisor_user_ids` | VARCHAR(500) | Users a supervisor can edit |
-| `created_at` | TIMESTAMP | Account creation time |
+| Column      | Type                  | Notes                                          |
+| ----------- | --------------------- | ---------------------------------------------- |
+| id          | INT AUTO_INCREMENT PK |                                                |
+| class_id    | INT                   | FK → classes                                  |
+| teacher_id  | INT                   | Primary teacher FK → teachers                 |
+| teacher_ids | VARCHAR               | CSV — all teachers (for multi-teacher slots)  |
+| day_group   | VARCHAR               | Preset label (Mon-Fri, Mon-Thu, etc.)          |
+| days        | VARCHAR               | CSV — Monday,Tuesday,…                       |
+| start_time  | TIME                  |                                                |
+| end_time    | TIME                  |                                                |
+| subject     | VARCHAR               |                                                |
+| is_break    | TINYINT               | 1 = break slot (excluded from conflict checks) |
+| created_at  | TIMESTAMP             |                                                |
 
-### 4.6 Table: `settings`
+### parents
 
-| Column | Type | Description |
-|--------|------|-------------|
-| `key` | VARCHAR(50), PK | Setting name |
-| `value` | LONGTEXT | Setting value |
+| Column      | Type                  | Notes                                  |
+| ----------- | --------------------- | -------------------------------------- |
+| id          | INT AUTO_INCREMENT PK |                                        |
+| student_id  | INT                   | FK → students (first child)           |
+| parent_name | VARCHAR               | From father_name                       |
+| cnic        | VARCHAR               | Unique — father_cnic                  |
+| phone       | VARCHAR               |                                        |
+| photo       | LONGTEXT              |                                        |
+| email       | VARCHAR               |                                        |
+| whatsapp    | VARCHAR               |                                        |
+| address     | TEXT                  |                                        |
+| profession  | VARCHAR               |                                        |
+| gender      | VARCHAR               |                                        |
+| notes       | TEXT                  |                                        |
+| doc1 / doc2 | LONGTEXT              |                                        |
+| family_code | VARCHAR               | Auto-assigned unique family identifier |
 
-**Standard keys:**
+### class_subjects
 
-| Key | Default | Purpose |
-|-----|---------|---------|
-| `school_start` / `school_end` | 08:00 / 13:00 | Fallback school hours |
-| `monday_start` / `monday_end` | 08:00 / 13:00 | Per-day override (empty = day off) |
-| `tuesday_start` / `tuesday_end` | 08:00 / 13:00 | " |
-| `wednesday_start`–`thursday_end` | 08:00 / 13:00 | " |
-| `friday_start` / `friday_end` | 08:00 / 12:00 | Shortened Friday |
-| `saturday_*` / `sunday_*` | (empty) | Non-school days |
-| `wa_provider` | local | 'local' (Baileys) or 'ultramsg' |
-| `wa_local_url` | http://localhost:8080 | Node.js server URL |
-| `wa_instance` / `wa_api_key` | — | UltraMsg cloud credentials |
-| `wa_delay_ms` | — | Delay between bulk messages |
-| `openai_api_key` / `openai_model` | — | AI settings (reserved) |
+| Column       | Type                  | Notes                            |
+| ------------ | --------------------- | -------------------------------- |
+| id           | INT AUTO_INCREMENT PK |                                  |
+| class_id     | INT                   | FK → classes                    |
+| subject_name | VARCHAR               |                                  |
+| created_at   | TIMESTAMP             | Unique: (class_id, subject_name) |
 
-### 4.7 Table: `notifications`
+### subject_enrollments
 
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | INT, PK, AUTO_INCREMENT | Notification ID |
-| `actor_username` | VARCHAR | Who performed the action |
-| `actor_role` | VARCHAR | Their role |
-| `action_type` | ENUM | 'add', 'edit', 'delete' |
-| `entity_type` | ENUM | 'teacher', 'class', 'timetable', 'user' |
-| `entity_id` | INT | ID of affected record |
-| `entity_name` | VARCHAR | Human-readable label |
-| `snapshot_data` | LONGTEXT (JSON) | Old row data for undo support |
-| `created_at` | TIMESTAMP | When the action occurred |
+| Column      | Type                  | Notes                            |
+| ----------- | --------------------- | -------------------------------- |
+| id          | INT AUTO_INCREMENT PK |                                  |
+| subject_id  | INT                   | FK → class_subjects             |
+| student_id  | INT                   | FK → students                   |
+| enrolled_at | TIMESTAMP             | Unique: (subject_id, student_id) |
 
-### 4.8 Table: `superadmin_requests`
+### performance_tests
 
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | INT, PK | Request ID |
-| `teacher_id` | INT | Teacher the request concerns |
-| `class_ids` | VARCHAR(500) | Comma-separated class IDs |
-| `note` | VARCHAR(500) | Optional notes |
-| `status` | ENUM | 'pending', 'approved', 'rejected' |
-| `created_at` | TIMESTAMP | Request creation time |
+| Column               | Type                  | Notes                          |
+| -------------------- | --------------------- | ------------------------------ |
+| id                   | INT AUTO_INCREMENT PK |                                |
+| test_name            | VARCHAR               | Required                       |
+| test_date            | DATE                  |                                |
+| marks_entry_deadline | DATE                  |                                |
+| total_marks          | DECIMAL               |                                |
+| class_id             | INT                   | FK → classes                  |
+| subject_id           | INT                   | FK → class_subjects           |
+| teacher_id           | INT                   | FK → teachers                 |
+| notify_teacher       | TINYINT               | 1 = WhatsApp notification sent |
+| coverage_details     | TEXT                  |                                |
+| status               | ENUM                  | Empty, Incomplete, Done        |
 
-### 4.9 Table: `wa_session`
+### settings
 
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | VARCHAR, PK | Composite key: `accountId:credType` |
-| `data` | MEDIUMTEXT (JSON) | Encrypted Baileys auth state |
-| `updated_at` | TIMESTAMP | Last update time |
+| Column | Type       | Notes              |
+| ------ | ---------- | ------------------ |
+| key    | VARCHAR PK | Setting identifier |
+| value  | TEXT       |                    |
+
+**Common setting keys:** `school_start`, `school_end`, `monday_start` … `sunday_end`, `wa_provider`, `wa_local_url`, `wa_api_url`, `wa_instance`, `wa_api_key`, `wa_delay_ms`, `openai_api_key`, `openai_model`
+
+### notifications
+
+| Column         | Type                  | Notes                                |
+| -------------- | --------------------- | ------------------------------------ |
+| id             | INT AUTO_INCREMENT PK |                                      |
+| actor_username | VARCHAR               | Who performed the action             |
+| actor_role     | VARCHAR               |                                      |
+| action_type    | ENUM                  | add, edit, delete                    |
+| entity_type    | VARCHAR               | teacher, class, timetable, user      |
+| entity_id      | INT                   |                                      |
+| entity_name    | VARCHAR               | Human-readable label                 |
+| snapshot_data  | JSON                  | Full record before change (for undo) |
+| created_at     | TIMESTAMP             |                                      |
+
+### student_comments
+
+| Column          | Type                  | Notes          |
+| --------------- | --------------------- | -------------- |
+| id              | INT AUTO_INCREMENT PK |                |
+| student_id      | INT                   | FK → students |
+| comment         | TEXT                  |                |
+| author_username | VARCHAR               |                |
+| author_role     | VARCHAR               |                |
+| created_at      | TIMESTAMP             |                |
+
+### superadmin_requests
+
+| Column     | Type                  | Notes                       |
+| ---------- | --------------------- | --------------------------- |
+| id         | INT AUTO_INCREMENT PK |                             |
+| teacher_id | INT                   |                             |
+| class_ids  | TEXT                  |                             |
+| note       | TEXT                  |                             |
+| status     | ENUM                  | pending, approved, rejected |
+| created_at | TIMESTAMP             |                             |
 
 ---
 
 ## 5. User Roles & Permissions
 
-Permissions are enforced both client-side (UI visibility) and server-side (API guards).
+| Role                 | Level   | Key Capabilities                                                                                                |
+| -------------------- | ------- | --------------------------------------------------------------------------------------------------------------- |
+| **superadmin** | Highest | Everything below + notifications/undo, AI settings, WhatsApp config, manage all users including admins          |
+| **admin**      | High    | Manage teachers, classes, timetable, students, parents, subjects, enrollments, users (non-superadmin), settings |
+| **supervisor** | Medium  | Manage only assigned teachers/classes/users (scoped by CSV permission fields)                                   |
+| **user**       | Low     | View-only: see assigned teachers/classes and their timetable                                                    |
+| **student**    | Portal  | View own class schedule and upcoming lessons                                                                    |
+| **parent**     | Portal  | View schedules of all linked children                                                                           |
 
-| Role | Code | Capabilities |
-|------|------|-------------|
-| **Super Admin** | `superadmin` | Full unrestricted access. Can create superadmin accounts. Can force-override teacher conflicts. Manages audit log and undo. |
-| **Admin** | `admin` | Full CRUD on teachers, classes, timetable, users. Can configure settings and WhatsApp. Cannot override teacher conflicts. Cannot create superadmin accounts. |
-| **Supervisor** | `supervisor` | Restricted admin — manages only assigned teachers, classes, and users. Can add/edit timetable slots for assigned classes. |
-| **User** | `user` | Read-only. Views only assigned teachers and classes. Can search schedules and download PDFs. |
+### CSS Visibility Classes
 
-### Permission Fields
+Apply to HTML elements to automatically show/hide by role:
 
-- **User role:** `teacher_ids_perm` and `class_ids_perm` control what data they can see.
-- **Supervisor role:** `supervisor_teacher_ids`, `supervisor_class_ids`, and `supervisor_user_ids` define their management scope.
-- Empty permission fields = no access to that resource type.
+| Class                    | Visible To                    |
+| ------------------------ | ----------------------------- |
+| `.admin-only`          | admin, superadmin             |
+| `.superadmin-only`     | superadmin only               |
+| `.admin-or-supervisor` | admin, superadmin, supervisor |
+| `.supervisor-only`     | supervisor only               |
+| `.user-only`           | user (viewer) role            |
+| `.student-only`        | student role                  |
+| `.parent-only`         | parent role                   |
 
----
+### Permission Fields (supervisor / user roles)
 
-## 6. Authentication & Sessions
-
-### Login Process
-
-1. User submits username + password.
-2. Server fetches user, runs `password_verify()` against bcrypt hash.
-3. On success: `session_regenerate_id(true)`, stores user data in session.
-4. Returns role + permissions as JSON; browser renders appropriate UI.
-
-### Session Lifecycle
-
-| Event | Behavior |
-|-------|----------|
-| Login | New session ID generated, `last_activity` set |
-| API request | `last_activity` refreshed |
-| Idle > 8 hours (server) | Session destroyed on next API call |
-| Tab hidden > auto-detect (client) | Visibility-change triggers logout |
-| Manual logout | Session destroyed immediately |
-
-### Cookie Security
-
-- `HttpOnly` — not accessible via JavaScript
-- `SameSite=Strict` — blocks cross-site requests
-- `Secure` — HTTPS-only when served over HTTPS
+| Field                      | Used By    | Effect                               |
+| -------------------------- | ---------- | ------------------------------------ |
+| `teacher_ids_perm`       | user       | Can view only listed teachers        |
+| `class_ids_perm`         | user       | Can view only listed classes         |
+| `supervisor_teacher_ids` | supervisor | Can manage only listed teachers      |
+| `supervisor_class_ids`   | supervisor | Can manage only listed classes       |
+| `supervisor_user_ids`    | supervisor | Can manage only listed user accounts |
 
 ---
 
-## 7. Application Pages
+## 6. API Reference
 
-### 7.1 Login Screen
+All endpoints require an active PHP session unless stated otherwise. Request and response format is JSON.
 
-Centered card with IDL logo, username/password fields, and Sign In button. Shows error messages for invalid credentials.
+### `api/auth.php`
 
-### 7.2 Dashboard
+| Method | Query              | Auth        | Description                                                                                         |
+| ------ | ------------------ | ----------- | --------------------------------------------------------------------------------------------------- |
+| POST   | `?action=login`  | None        | Login. Body:`{username, password}`. Returns full user object with role and all permission fields. |
+| POST   | `?action=logout` | requireAuth | Terminate session                                                                                   |
+| GET    | `?action=check`  | None        | Returns `{authenticated, user}` or `{authenticated: false}`. Also resets idle timer.            |
 
-- **Stats cards:** Total Teachers, Classes, Timetable Slots, System Users
-- **Upcoming classes:** Live card showing next scheduled lessons for current Pakistan time (auto-refreshes)
-- **Recent entries:** Last 10 timetable slots (admin/supervisor view)
-
-### 7.3 Track Teachers
-
-Real-time teacher availability view.
-
-- **Day checkboxes** — filter by any day combination (Mon–Fri)
-- **Time range pickers** — narrow the time window
-- **Teacher filter dropdown** — view one or all teachers
-- **Status badges:** 🟢 FREE, 🔴 BUSY, 🟡 UPCOMING
-- **Free slot tooltip** — click the free icon on a teacher to see their available time gaps
-- **Download** — export as PDF or DOC (A4 Portrait/Landscape)
-
-### 7.4 Teachers Management
-
-Full teacher profile management.
-
-- **Table columns:** Title, Name, Designation, Phone, WhatsApp, Actions
-- **Search:** Live filter by name
-- **Add/Edit modal:** 30+ fields across categories:
-  - Personal (Title, Name, DOB, Gender, Religion, Marital Status, Blood Group)
-  - Professional (Designation, Role, Joining Date, Employment Type, Experience, Qualification)
-  - Contact (Phone, WhatsApp, Email, Address)
-  - Financial (Starting Salary, Current Salary, Per-Lecture Rate, Bank Account)
-  - Documents (Photo upload with preview, CNIC Front/Back, Emergency Contact, Notes)
-- **Draft auto-save** to localStorage
-- **Bulk import** from CSV/Excel
-- **Download** as PDF or DOC
-
-### 7.5 Classes Management
-
-- **Table columns:** Class Name, Date Added, Actions
-- **Search:** Live filter by name
-- **Add/Edit modal:** Single "Class Name" field
-- **Bulk import** from CSV
-- **Download** as PDF or DOC
-
-### 7.6 Timetable Management
-
-The core scheduling page.
-
-- **Filters:** Class dropdown, Day checkboxes (Mon–Fri), Time range pickers
-- **Table columns:** Class, Subject, Teacher(s), Days, Time, Actions
-- **Add/Edit Slot modal:**
-  - Class selector
-  - Teacher(s) multi-select (supports co-teaching — hold Ctrl/Cmd)
-  - Subject text input
-  - Day preset buttons: Mon–Tue, Wed–Thu, Fri, Mon–Thu, Mon–Fri, Clear
-  - Individual day toggles (Mon through Fri)
-  - Start/End time pickers
-  - Break checkbox — hides teacher/subject fields, sets subject to "Break"
-- **Conflict detection:** Server checks both class-slot overlaps and teacher double-bookings (see [Section 9](#9-timetable-conflict-detection))
-- **Download** as PDF or DOC (A4, with scale options)
-
-### 7.7 Teacher Schedule Search
-
-- **Searchable teacher dropdown** — select by name
-- **Day filter** — Mon–Fri checkboxes
-- **Time range** — from/to dropdowns
-- **Results:** Class, Subject, Co-teachers, Days, Start/End Time
-- **Free slot tooltip** — shows gaps where the teacher is available
-- **Download** selected teacher's schedule as PDF/DOC
-- Users (view-only role) can only search teachers in their `teacher_ids_perm` list
-
-### 7.8 User-Role Views
-
-When a "user" role logs in, they see simplified pages:
-
-- **Classes:** Only classes assigned via `class_ids_perm`
-- **Timetable:** Filtered to assigned classes, with day/class dropdowns and day checkboxes
-- No add/edit/delete buttons — view and download only
-
-### 7.9 Users Administration
-
-Admin and Supervisor page for managing accounts.
-
-- **Table columns:** Username, Role (color-coded badge), Access Level, Created Date, Actions
-- **Search:** Filter by username or role
-- **Add/Edit User modal:**
-  - Username, Password (min 6 chars; blank on edit = keep existing)
-  - Role selector (Superadmin option only visible to superadmins)
-  - For "user" role: teacher/class permission checkboxes with search
-  - For "supervisor" role: assign teachers, classes, and user accounts to manage
-- **Restrictions:** Cannot delete own account; cannot delete superadmin unless you are superadmin
-
-### 7.10 Settings
-
-Admin-only configuration page.
-
-- **School Hours:** Default start/end times + per-day overrides (Mon–Sun). Empty = day off.
-- **Save:** Single button saves all values at once
-
-### 7.11 Notifications (Superadmin Only)
-
-- Activity feed showing all CRUD actions by non-superadmin users
-- **Columns:** Actor, Role, Action, Entity, Timestamp
-- **Actions:** Delete notification, **Undo** (reverses the change using stored snapshot)
-
-### 7.12 Super Admin Requests
-
-Workflow panel visible only to superadmins:
-
-- Submit a request specifying a teacher and classes
-- All requests listed with Pending/Approved/Rejected badges
-- Superadmins can approve or reject pending requests
-- Sidebar badge shows count of pending requests
+Session timeout: 8 hours server-side, 60 minutes client-side idle timer.
 
 ---
 
-## 8. REST API Reference
+### `api/teachers.php`
 
-All endpoints are in `/api/`. All return `Content-Type: application/json`. HTTP status codes: 200, 201, 400, 401, 403, 404, 409, 500.
+| Method | Query     | Auth                      | Description                                    |
+| ------ | --------- | ------------------------- | ---------------------------------------------- |
+| GET    | —        | requireAuth               | List all teachers (supervisors: assigned only) |
+| GET    | `?id=X` | requireAuth               | Single teacher with all fields                 |
+| POST   | —        | requireAdmin              | Create teacher                                 |
+| PUT    | `?id=X` | requireAdmin / supervisor | Update teacher (supervisors: assigned only)    |
+| DELETE | `?id=X` | requireAdmin / supervisor | Delete teacher                                 |
 
-### 8.1 auth.php
+---
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `?action=login` | No | Login. Body: `{username, password}` → returns role + permissions |
-| POST | `?action=logout` | Yes | Destroy session |
-| GET | `?action=check` | Optional | Returns `{authenticated, role, username, ...}` |
+### `api/classes.php`
 
-### 8.2 teachers.php
+| Method | Query     | Auth                      | Description                                   |
+| ------ | --------- | ------------------------- | --------------------------------------------- |
+| GET    | —        | requireAuth               | List all classes (supervisors: assigned only) |
+| POST   | —        | requireAdmin              | Create class                                  |
+| PUT    | `?id=X` | requireAdmin / supervisor | Update class                                  |
+| DELETE | `?id=X` | requireAdmin / supervisor | Delete class                                  |
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/` or `?id=X` | Authenticated | List all or get one. Supervisors see only assigned |
-| POST | `/` | Admin | Create. Body: `{title, name, ...30+ fields}` |
-| PUT | `?id=X` | Admin/Supervisor | Update teacher |
-| DELETE | `?id=X` | Admin/Supervisor | Delete teacher |
+Changes are logged to `notifications` table for undo support.
 
-All mutations are logged to `notifications` table (except superadmin actions).
+---
 
-### 8.3 classes.php
+### `api/timetable.php`
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/` or `?id=X` | Authenticated | List all or get one |
-| POST | `/` | Admin | Create. Body: `{name}` |
-| PUT | `?id=X` | Admin/Supervisor | Update class name |
-| DELETE | `?id=X` | Admin/Supervisor | Delete class |
+| Method | Query             | Auth               | Description                            |
+| ------ | ----------------- | ------------------ | -------------------------------------- |
+| GET    | —                | requireAuth        | All slots (supervisors: assigned only) |
+| GET    | `?id=X`         | requireAuth        | Single slot                            |
+| GET    | `?class_id=X`   | requireAuth        | All slots for a class                  |
+| GET    | `?teacher_id=X` | requireAuth        | All non-break slots for a teacher      |
+| POST   | —                | admin / supervisor | Create slot                            |
+| PUT    | `?id=X`         | admin / supervisor | Update slot                            |
+| DELETE | `?id=X`         | admin / supervisor | Delete slot                            |
 
-### 8.4 timetable.php
+**Conflict detection:**
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/` | Authenticated | All slots (supervisor-filtered) |
-| GET | `?class_id=X` | Authenticated | Slots for a specific class |
-| GET | `?teacher_id=X` | Authenticated | Non-break slots for a teacher |
-| GET | `?id=X` | Authenticated | Single slot |
-| POST | `/` | Admin/Supervisor | Create slot (see conflict detection) |
-| PUT | `?id=X` | Admin/Supervisor | Update slot |
-| DELETE | `?id=X` | Admin/Supervisor | Delete slot |
+- **Class overlap** — prevents two slots for the same class overlapping on the same day
+- **Teacher conflict** — prevents a teacher being double-booked (checks `teacher_id` and all IDs in `teacher_ids` CSV)
+- Admins: receive 409 with `conflicts[]`, may force with `force_conflict: true` / `force_overlap: true`
+- Supervisors: receive 403 on conflict, cannot force
 
-**Create/Update body:**
-```json
-{
-  "class_id": 2,
-  "teacher_ids": "5,12",
-  "subject": "Mathematics",
-  "day_group": "mon-fri",
-  "days": "Monday,Tuesday,Wednesday,Thursday,Friday",
-  "start_time": "09:00",
-  "end_time": "09:45",
-  "is_break": false,
-  "force_overlap": false
-}
+---
+
+### `api/students.php`
+
+| Method | Query / Action                    | Auth           | Description                              |
+| ------ | --------------------------------- | -------------- | ---------------------------------------- |
+| GET    | —                                | requireAuth    | List all students                        |
+| GET    | `?id=X`                         | requireAuth    | Single student                           |
+| GET    | `?action=my_schedule`           | student/parent | Own or children's schedule               |
+| GET    | `?action=my_children`           | parent         | All linked children                      |
+| GET    | `?action=siblings&cnic=X`       | requireAuth    | Students sharing father_cnic             |
+| GET    | `?action=next_gr`               | requireAdmin   | Preview next GR# and SR#                 |
+| GET    | `?action=comments&student_id=X` | requireAdmin   | Student comments                         |
+| POST   | —                                | requireAdmin   | Create student (auto-generates GR#, SR#) |
+| POST   | `?action=confirm&id=X`          | requireAdmin   | Confirm registration                     |
+| POST   | `?action=comments`              | requireAdmin   | Add comment                              |
+| PUT    | `?id=X`                         | requireAdmin   | Update student                           |
+| DELETE | `?id=X`                         | requireAdmin   | Delete student                           |
+| DELETE | `?action=comments&id=X`         | requireAdmin   | Delete comment                           |
+
+---
+
+### `api/users.php`
+
+| Method | Query / Action          | Auth                     | Description                             |
+| ------ | ----------------------- | ------------------------ | --------------------------------------- |
+| GET    | —                      | requireAdminOrSupervisor | List users (supervisors: assigned only) |
+| GET    | `?action=sa_requests` | requireSuperAdmin        | Pending superadmin requests             |
+| POST   | —                      | requireAdminOrSupervisor | Create user                             |
+| POST   | `?action=sa_request`  | requireSuperAdmin        | Submit request                          |
+| PUT    | `?id=X`               | requireAdminOrSupervisor | Update user                             |
+| PUT    | `?action=sa_approve`  | requireSuperAdmin        | Approve request                         |
+| PUT    | `?action=sa_reject`   | requireSuperAdmin        | Reject request                          |
+| DELETE | `?id=X`               | requireAdminOrSupervisor | Delete user (cannot delete self)        |
+
+---
+
+### `api/subjects.php`
+
+| Method | Query           | Auth         | Description                                                  |
+| ------ | --------------- | ------------ | ------------------------------------------------------------ |
+| GET    | `?class_id=X` | requireAdmin | List subjects for class (auto-seeds from timetable subjects) |
+| POST   | —              | requireAdmin | Create subject                                               |
+| PUT    | `?id=X`       | requireAdmin | Rename subject                                               |
+| DELETE | `?id=X`       | requireAdmin | Delete subject                                               |
+
+---
+
+### `api/subject_enrollments.php`
+
+| Method | Query                       | Auth         | Description                                    |
+| ------ | --------------------------- | ------------ | ---------------------------------------------- |
+| GET    | `?action=all_subjects`    | requireAdmin | All class_subjects with class names            |
+| GET    | `?action=all_enrollments` | requireAdmin | All enrollments with student + subject details |
+| GET    | `?subject_id=X`           | requireAdmin | Enrollments for a subject                      |
+| GET    | `?student_id=X`           | requireAdmin | Enrollments for a student                      |
+| POST   | —                          | requireAdmin | Enroll student in subject                      |
+| PUT    | `?id=X`                   | requireAdmin | Update enrollment                              |
+| DELETE | `?id=X`                   | requireAdmin | Remove enrollment                              |
+
+---
+
+### `api/parents.php`
+
+| Method | Query            | Auth         | Description                                              |
+| ------ | ---------------- | ------------ | -------------------------------------------------------- |
+| GET    | —               | requireAdmin | All parent families grouped by CNIC with children array  |
+| POST   | `?action=seed` | requireAdmin | Auto-create parent records from student father_cnic data |
+| POST   | —               | requireAdmin | Create parent                                            |
+| PUT    | `?id=X`        | requireAdmin | Update parent                                            |
+| DELETE | `?id=X`        | requireAdmin | Delete parent                                            |
+
+---
+
+### `api/settings.php`
+
+| Method | Query   | Auth              | Description                                     |
+| ------ | ------- | ----------------- | ----------------------------------------------- |
+| GET    | —      | requireAuth       | All settings as key-value map                   |
+| POST   | —      | requireAdmin      | Save school hours and per-day overrides         |
+| POST   | `?ai` | requireSuperAdmin | Save AI settings (openai_api_key, openai_model) |
+
+---
+
+### `api/search.php`
+
+| Method | Query             | Auth        | Description                                  |
+| ------ | ----------------- | ----------- | -------------------------------------------- |
+| GET    | `?teacher_id=X` | requireAuth | Teacher info + all non-break timetable slots |
+
+---
+
+### `api/import.php`
+
+| Method | Query               | Auth         | Description                                                |
+| ------ | ------------------- | ------------ | ---------------------------------------------------------- |
+| POST   | `?type=teachers`  | requireAdmin | Bulk import teachers. Detects duplicates by name+title.    |
+| POST   | `?type=classes`   | requireAdmin | Bulk import classes. Detects duplicates.                   |
+| POST   | `?type=timetable` | requireAdmin | Bulk import slots with conflict detection + force override |
+
+Returns: `{inserted, skipped, errors[], conflicts[]}`
+
+---
+
+### `api/notifications.php`
+
+| Method | Query                 | Auth              | Description                        |
+| ------ | --------------------- | ----------------- | ---------------------------------- |
+| GET    | —                    | requireSuperAdmin | All activity notifications         |
+| DELETE | `?id=X`             | requireSuperAdmin | Remove one notification            |
+| POST   | `?action=undo`      | requireSuperAdmin | Reverse action using snapshot_data |
+| POST   | `?action=clear_all` | requireSuperAdmin | Delete all notifications           |
+
+---
+
+### `api/whatsapp.php`
+
+| Method | Body `action`      | Provider | Description                               |
+| ------ | -------------------- | -------- | ----------------------------------------- |
+| POST   | `status`           | local    | Connection status                         |
+| POST   | `get_qr`           | local    | QR code for pairing                       |
+| POST   | `logout`           | local    | Disconnect number                         |
+| POST   | `send_message`     | both     | Single text message                       |
+| POST   | `send_file`        | both     | File via URL                              |
+| POST   | `send_file_upload` | local    | Uploaded file (base64)                    |
+| POST   | `bulk_send`        | both     | Multiple teachers with configurable delay |
+
+Phone normalization: uses `whatsapp` field first, falls back to `phone`. Auto-converts to `+92` E.164 format.
+
+---
+
+### `api/ai.php`
+
+| Method | Auth              | Description                                                                                                                                                       |
+| ------ | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST   | requireSuperAdmin | Chat with OpenAI. System prompt includes teacher list, class list, timetable. Supports 12-turn history. Detects `TIMETABLE_IMPORT_DATA` marker for auto-import. |
+
+---
+
+### `api/performance_tests.php`
+
+| Method | Query     | Auth         | Description                                                 |
+| ------ | --------- | ------------ | ----------------------------------------------------------- |
+| GET    | —        | requireAuth  | List all performance tests with class/subject/teacher names |
+| GET    | `?id=X` | requireAuth  | Single test                                                 |
+| POST   | —        | requireAdmin | Create test                                                 |
+| PUT    | `?id=X` | requireAdmin | Update test                                                 |
+| DELETE | `?id=X` | requireAdmin | Delete test                                                 |
+
+---
+
+## 7. Frontend Architecture
+
+### Single-Page Application
+
+`index.html` is the only HTML file served. All navigation is client-side with no page reloads.
+
+### Lazy Page Loading
+
+Pages are fetched on demand the first time they are visited:
+
+1. `index.html` contains the app shell: login screen, navigation sidebar, and the **dashboard** (pre-loaded for instant first paint)
+2. All other 21 pages are empty stub elements: `<div class="page" id="page-NAME"></div>`
+3. When `showPage('teachers')` is first called, it fetches `pages/teachers.html`, injects the HTML into the stub, and calls `initAllSelects()`
+4. Once fetched, the page stays in the DOM — subsequent visits never re-fetch
+
+**Result:** Initial HTML reduced from ~214 KB to ~116 KB (46% reduction).
+
+### Hash-Based URL Routing
+
+The active page is always reflected in the URL:
+
+- Navigating to Teachers → URL: `index.html#teachers`
+- Refresh → hash is read and that page is restored
+- Browser back/forward → `hashchange` event fires and switches to the correct page
+- Sharing a URL → user lands on the correct page after login
+
+### Session & Page Restore on Refresh
+
+1. PHP session checked via `api/auth.php?action=check`
+2. If valid, `showApp(false)` runs
+3. Reads `window.location.hash` first, falls back to `localStorage.idl_last_page`
+4. Students/parents are restricted to their own pages only
+5. Page element existence is verified by `document.getElementById('page-' + name)` — no hardcoded page list needed
+
+### Session Idle Timeout
+
+- **Client:** 60 minutes tracking mousemove, mousedown, keydown, touchstart, scroll, click
+- **Server:** 8-hour timeout
+- **Tab hidden:** separate countdown starts when tab loses focus
+- On expiry: session cleared, login shown with expiry message
+
+### Searchable Select (`makeSearchable`)
+
+All `<select>` elements in modals are enhanced with a custom searchable dropdown:
+
+- Native `<select>` hidden (`display:none`); custom `.ss-wrapper > .ss-display + .ss-dropdown` created
+- Typing in the search box filters options in real-time
+- Dispatches `change` event on the native select (compatible with `onchange` attributes)
+- `wrapper._ssRefresh()` — call after programmatically setting a value to sync the UI
+- `initAllSelects()` — called after modal open and after lazy page injection
+
+### Generic Table Filter (`filterTable`)
+
+Defined in `utils.js`. All per-page filter functions delegate here:
+
+```javascript
+filterTable(searchId, tbodyId, emptyLabel, colspan, perPageId, countLabelId)
 ```
 
-### 8.5 users.php
+- Filters rows by search term
+- Supports per-page pagination with count label (`X records` / `Showing Y of X`)
+- Shows empty state row when no results match
+- Named wrappers (`filterTeachers()`, `filterClasses()`, etc.) preserve existing HTML `oninput=""` attributes
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/` | Admin/Supervisor | List users (supervisors see only assigned) |
-| POST | `/` | Admin | Create user |
-| PUT | `?id=X` | Admin/Supervisor | Update user |
-| DELETE | `?id=X` | Admin/Supervisor | Delete user |
-| GET | `?action=sa_requests` | Superadmin | List all workflow requests |
-| POST | `?action=sa_request` | Superadmin | Create request |
-| PUT | `?action=sa_approve&id=X` | Superadmin | Approve request |
-| PUT | `?action=sa_reject&id=X` | Superadmin | Reject request |
+### Global State
 
-### 8.6 search.php
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `?teacher_id=X` | Authenticated | Returns `{teacher, slots[], count}`. Excludes break slots |
-
-### 8.7 settings.php
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/` | Authenticated | All settings as key-value object |
-| POST | `/` | Admin | Save school hours + daily overrides |
-| POST | `?ai` | Superadmin | Save AI settings (openai_api_key, openai_model) |
-
-### 8.8 notifications.php
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/` | Superadmin | List all audit notifications |
-| DELETE | `?id=X` | Superadmin | Delete a notification |
-| POST | `?id=X&action=undo` | Superadmin | Undo the action (restore from snapshot) |
-
-### 8.9 import.php
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `?type=teachers` | Admin | Bulk import teachers from CSV rows |
-| POST | `?type=classes` | Admin | Bulk import classes |
-| POST | `?type=timetable` | Admin | Bulk import timetable slots (with conflict detection) |
-
-### 8.10 whatsapp.php
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `?action=status` | Admin | Connection status (local provider) |
-| GET | `?action=get_qr` | Admin | QR code as base64 image |
-| POST | `action=send_message` | Admin | Send text to one number |
-| POST | `action=send_file` | Admin | Send file via URL |
-| POST | `action=send_file_upload` | Admin | Send base64-encoded file (local only) |
-| POST | `action=bulk_send` | Admin | Send to multiple teachers |
-| POST | `action=logout` | Admin | Disconnect WhatsApp session |
+| Variable                  | Purpose                                                              |
+| ------------------------- | -------------------------------------------------------------------- |
+| `currentUser`           | Logged-in user with role and all permission fields                   |
+| `schoolSettings`        | School hours and per-day overrides                                   |
+| `teachers[]`            | Cached teacher list (loaded at app start)                            |
+| `classes[]`             | Cached class list (loaded at app start)                              |
+| `timetableSlots[]`      | Cached timetable (used for auto-select teacher in Performance Tests) |
+| `_notificationsCache[]` | Notification list (superadmin only, polled every 60s)                |
 
 ---
 
-## 9. Timetable Conflict Detection
+## 8. Page Modules
 
-Two independent checks run on every CREATE and UPDATE:
+### Dashboard
 
-### 9.1 Class Slot Overlap
+Stats cards (teachers, classes, timetable entries, students), next scheduled class, recent timetable entries. Students see today's upcoming classes. Parents see all children's today schedule.
 
-Ensures no two entries for the same class overlap in time on the same day.
+### Track
 
-**Logic:**
-1. Fetch all existing slots for `class_id`
-2. Find overlapping days between new and existing entries
-3. Check time intersection: `new_start < existing_end AND new_end > existing_start`
-4. If conflict found → return **409** with details
+Day/time tracker: shows which teachers are currently teaching, free, or have upcoming classes. Filterable by day and time range.
 
-**Class conflicts are always hard-blocked** — no override available, even for superadmins.
+### Teachers
 
-### 9.2 Teacher Double-Booking
+Full CRUD with photo, CNIC front/back, bank details, salary. WhatsApp messaging per teacher. CSV import. Supervisor access scoped to assigned teachers.
 
-Ensures no teacher is in two places at the same time.
+### Classes
 
-**Logic:**
-1. For each teacher ID in the incoming slot, fetch their existing slots
-2. Uses both `teacher_id` field and `FIND_IN_SET` on `teacher_ids` for co-teaching
-3. Same day overlap + time overlap check
-4. If conflict found:
-   - **Admin** → 409 hard block
-   - **Superadmin** → warning returned; frontend shows "Add Anyway" dialog
-   - Superadmin confirms → re-sends with `force_overlap: true` → server skips teacher check
+Simple CRUD — class name only. Deletion cascades to timetable slots and subjects.
 
-**Edit safety:** During updates, the current slot's ID is excluded from conflict queries to prevent false positives.
+### Timetable
+
+Slot builder with day preset buttons (Mon-Fri, Mon-Thu, Wed-Thu, Fri, All Days, custom). Conflict detection with visual warning. Admin can force conflicts; supervisors cannot.
+
+### Search
+
+Search teacher schedules by name. Free slot tooltip shows available time windows per day (click to pin).
+
+### Users
+
+Create/edit viewer, supervisor, student, parent accounts. Assign teacher/class permissions via checkbox lists. Superadmin can manage admin accounts. Cannot delete own account.
+
+### User Classes
+
+Assign which classes a viewer-role user can see.
+
+### Settings
+
+School start/end times with per-day overrides (e.g. Friday ends at 12:00). AI API key and model. WhatsApp provider selection and credentials.
+
+### Students
+
+Full registration form: personal info, family (father/mother details), fee structure (4 fee types), admission test results, documents. Auto-generates GR# and SR#. Status workflow: pending → confirmed / rejected. Sibling detection by father CNIC. Admin comments per student.
+
+### Class Enrollment
+
+Bulk-assign students to classes.
+
+### Class Subjects
+
+Manage the subject catalogue for each class. Auto-seeded from timetable subject names.
+
+### Subject Enrollment
+
+Enroll individual students into specific subjects.
+
+### Parents / Family Information
+
+Auto-seed parent records from student father CNIC data. Family groups show all siblings. Edit contact details and documents per parent.
+
+### Student Profile
+
+Full read-only view of a student's complete record.
+
+### Student Schedule
+
+Student-facing view of their class timetable.
+
+### Parent Schedule
+
+Parent-facing view of all children's timetables.
+
+### Notifications *(superadmin only)*
+
+Activity log of all add/edit/delete actions. One-click undo using stored JSON snapshots. Clear all option.
+
+### Performance Tests
+
+Create and manage academic assessments:
+
+- Test name, date, deadline, total marks, class, subject, teacher, status
+- Status lifecycle: Empty → Incomplete → Done
+- Search bar + filters (status, class, subject, teacher, date range)
+- Auto-selects teacher from timetable when class + subject are chosen
+- Subject dropdown blocked (with error) if class not selected first
+
+### Performance Marks
+
+Mark entry for created performance tests.
+
+### Performance Analysis
+
+Analytics and reporting on student performance data.
+
+---
+
+## 9. Build System
+
+Run the production build with:
+
+```bash
+node build.js
+```
+
+**Steps:**
+
+1. Concatenates all CSS → minifies with CleanCSS (level 2) → `dist/assets/app.min.css`
+2. Concatenates all JS → minifies with Terser (2 passes, mangle on) → `dist/assets/app.min.js`
+3. Patches `index.html`: replaces individual `<link>`/`<script>` tags with single bundled files (cache-busting `?v=timestamp`) → `dist/index.html`
+4. Copies `api/`, `includes/`, `assets/`, `pages/`, `idltimetable.sql` → `dist/`
+
+**Bundle sizes (approximate):**
+
+| Asset      | Raw     | Minified |
+| ---------- | ------- | -------- |
+| JavaScript | ~428 KB | ~321 KB  |
+| CSS        | ~41 KB  | ~33 KB   |
+| HTML       | ~116 KB | —       |
+
+**Install build dependencies:**
+
+```bash
+npm install    # installs terser and clean-css
+```
+
+**JS bundle order (must match):**
+
+```
+config.js → session.js → utils.js → auth.js → navigation.js →
+settings.js → teachers.js → whatsapp.js → classes.js → timetable.js →
+search.js → users.js → notifications.js → students.js → subjects.js →
+enrollments.js → parents.js → import-export.js → performance.js
+```
+
+> **Adding a new page:** (1) Add a `<div class="page" id="page-NAME"></div>` stub in `index.html`. (2) Create `pages/NAME.html` with the page content. (3) Add a `if (name === 'NAME') loadNAME();` line in `showPage()` in `navigation.js`. No changes needed to `auth.js` — it checks DOM existence automatically.
+
+> **Adding a new JS file:** Add it to `JS_FILES` in `build.js` at the correct position.
 
 ---
 
 ## 10. WhatsApp Integration
 
-The system supports two WhatsApp providers:
+### Two Providers
 
-### 10.1 Local Provider (Baileys) — Free
+| Provider                          | Cost     | Requirements                          |
+| --------------------------------- | -------- | ------------------------------------- |
+| **Local** (whatsapp-web.js) | Free     | Node.js running on same server as PHP |
+| **UltraMsg**                | Paid API | Cloud-based, no local server needed   |
 
-A Node.js Express server (`wa-server/server.js`) that connects to WhatsApp via the Baileys library (pure WebSocket — no browser needed).
-
-**Server endpoints:**
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/status?account=USER_ID` | GET | Connection status |
-| `/qr?account=USER_ID` | GET | QR code as PNG data URL |
-| `/send-message` | POST | Send text message |
-| `/send-file` | POST | Send file from URL |
-| `/send-file-upload` | POST | Send base64-encoded file |
-| `/reset` | POST | Clear session, generate new QR |
-| `/logout` | POST | Graceful logout |
-
-**Key features:**
-- **Per-user sessions:** Each user ID gets a separate WhatsApp connection. Multiple users can connect different WhatsApp numbers simultaneously.
-- **MySQL session storage:** Auth credentials stored in `wa_session` table — survives server restarts.
-- **Auto-reconnect:** Exponential backoff (1.3× multiplier, 15s max) with retry counter. Only clears session after 5 consecutive failures.
-- **Health check:** 60-second interval ping when connected to detect stale connections.
-- **MySQL keep-alive:** Connection pool with `enableKeepAlive: true` to prevent timeout disconnects.
-
-**Frontend flow:**
-1. User opens WhatsApp modal → frontend calls `/status` to check connection state.
-2. If not connected and no stored credentials → shows QR code from `/qr` endpoint.
-3. User scans QR with their phone → connection established.
-4. If credentials exist but disconnected → shows "Resuming session…" with auto-reconnect.
-5. Once connected → shows green "Connected" bar with phone number.
-
-### 10.2 UltraMsg Provider (Cloud API) — Paid
-
-Uses external UltraMsg cloud service:
-- Configured via `wa_instance` and `wa_api_key` in settings
-- Endpoints: `/messages/chat`, `/messages/document`
-- Requires public file URLs (no direct upload)
-- Managed through PHP proxy (`api/whatsapp.php`)
-
-### 10.3 WhatsApp Modal Features
-
-- **QR Code panel** — scan to connect (local provider only)
-- **Connected status bar** — shows phone number and "Change Number" button
-- **Message tab:**
-  - Searchable teacher list with checkboxes for recipient selection
-  - Message textarea
-- **File tab:**
-  - Drag-drop file upload zone
-  - File info display
-  - Caption textarea
-- **Delay slider** — configurable ms between bulk messages
-- **Progress bar** — visual feedback during bulk sending
-
----
-
-## 11. Notifications & Audit System
-
-Every CRUD action performed by non-superadmin users is automatically logged to the `notifications` table.
-
-### What Gets Logged
-
-- **Action types:** Add, Edit, Delete
-- **Entity types:** Teacher, Class, Timetable, User
-- **Snapshot:** Full JSON of the old row data (for undo capability)
-
-### Undo Logic
-
-Superadmins can reverse any logged action:
-
-| Original Action | Undo Behavior |
-|----------------|---------------|
-| Add | Deletes the entity |
-| Edit | Restores old field values from snapshot |
-| Delete | Re-inserts the entity from snapshot |
-
----
-
-## 12. Data Import
-
-Admin users can bulk import data from CSV or Excel files.
-
-### Supported Import Types
-
-| Type | Expected Columns | Behavior |
-|------|-----------------|----------|
-| Teachers | title, name | Duplicates skipped |
-| Classes | name | Duplicates skipped |
-| Timetable | class, teacher(s), subject, days, start_time, end_time | Conflicts returned for manual resolution |
-
-- **Client-side parsing** — uses SheetJS library (`xlsx.full.min.js`) to parse Excel/CSV in the browser
-- **Conflict detection** — timetable imports check for overlaps before inserting
-- **Force rows** — user can approve individual conflicting rows to insert anyway
-
----
-
-## 13. Download & Export
-
-Every data page has a download button with format options.
-
-### Supported Formats
-
-| Format | Method | Output |
-|--------|--------|--------|
-| PDF | Browser print dialog | Opens print-styled page in new window |
-| DOC | Blob download | Microsoft Word-compatible HTML document |
-
-### Pages with Download Support
-
-| Page | Function | Content Exported |
-|------|----------|-----------------|
-| Track Teachers | `downloadTrackDoc()` | Teacher availability grid with status |
-| Teachers | `downloadTableDoc()` | Teachers table |
-| Classes | `downloadTableDoc()` | Classes table |
-| Timetable | `downloadTimetableDoc()` | Full timetable for selected filters |
-| Teacher Search | `downloadSearchDoc()` | Selected teacher's schedule |
-| Teacher Availability | `downloadAvailabilityDoc()` | Individual teacher's free/busy schedule |
-| User Classes | `downloadTableDoc()` | User's assigned classes |
-| User Timetable | `downloadUserTimetableDoc()` | User's filtered timetable |
-
-### Options
-
-- **Page size:** A4
-- **Orientation:** Portrait or Landscape
-- **Scale:** 70%, 80%, 90% (default), 100%
-
----
-
-## 14. Security
-
-| Threat | Mitigation |
-|--------|-----------|
-| SQL Injection | All queries use MySQLi prepared statements with bound parameters |
-| XSS | `X-XSS-Protection: 1; mode=block` header; careful DOM construction |
-| CSRF | `SameSite=Strict` session cookie; same-origin CORS policy |
-| Clickjacking | `X-Frame-Options: SAMEORIGIN` header |
-| Password Theft | bcrypt hashing via `password_hash()`; raw passwords never stored |
-| Session Hijacking | `session_regenerate_id(true)` on login; HttpOnly + Secure + SameSite cookies |
-| Privilege Escalation | Server-side role checks on every API call; superadmin role assignable only by superadmin |
-| Content Sniffing | `X-Content-Type-Options: nosniff` header |
-| Stray Output | `ob_start()` / `ob_end_clean()` before JSON responses to prevent PHP warning leakage |
-
----
-
-## 15. Frontend Architecture
-
-The entire frontend is a single `index.html` file (~5,400 lines) with embedded CSS, HTML, and JavaScript. No build tools or frameworks.
-
-### Structure
-
-| Section | Lines (approx.) | Content |
-|---------|-----------------|---------|
-| CSS | 1–560 | Styles, variables, responsive media queries |
-| HTML | 560–1800 | Login, sidebar, all pages, modals |
-| JavaScript | 1800–5475 | API calls, state management, UI logic |
-
-### SPA Routing
-
-`showPage(name)` toggles visibility. Each page is a `<div class="page">` — only the active one is displayed.
-
-### Design System
-
-| Variable | Value | Usage |
-|----------|-------|-------|
-| `--bg` | `#05050e` | Page background |
-| `--surface` | `#080818` | Cards/modals |
-| `--accent` | `#c9a84c` | Gold brand color |
-| `--text` | `#ffffff` | Primary text |
-| `--text-muted` | `#9090b8` | Secondary text |
-| `--danger` | `#ff5555` | Delete/error actions |
-| `--success` | `#44cc88` | Success states |
-
-### Responsive Breakpoints
-
-| Breakpoint | Behavior |
-|-----------|----------|
-| ≤ 768px | Hamburger sidebar, action buttons wrap to grid, full-width filters, smaller QR code |
-| ≤ 400px | Single-column buttons, reduced padding, smaller fonts, narrower timetable grid |
-
-### Key Components
-
-- **Searchable Select** — `makeSearchable()` transforms any `<select>` into a custom dropdown with live typed filtering and multi-select support
-- **Toast Notifications** — `toast(msg, type)` shows auto-dismissing messages (success/error)
-- **Modal System** — Full-screen overlays with centered cards, managed via `closeModal()`/open functions
-- **Free Slot Tooltip** — Click-lockable tooltip showing teacher's available time gaps
-
----
-
-## 16. File Structure
-
-```
-idl_updated/
-├── index.html                        ← Main SPA (CSS + HTML + JavaScript)
-├── idltimetable.sql                  ← Database schema + seed data
-├── package.json                      ← Root package metadata
-├── README.md                         ← Project readme
-├── IDL_Timetable_System_Documentation.docx  ← This documentation (Word)
-│
-├── includes/
-│   └── config.php                    ← DB connection, session management,
-│                                       auth helpers, CORS, notification logging
-│
-├── api/
-│   ├── auth.php                      ← Login / logout / session check
-│   ├── teachers.php                  ← Teacher CRUD + audit logging
-│   ├── classes.php                   ← Class CRUD + audit logging
-│   ├── timetable.php                 ← Timetable CRUD + conflict detection
-│   ├── users.php                     ← User CRUD + superadmin requests
-│   ├── search.php                    ← Teacher schedule lookup
-│   ├── settings.php                  ← School hours + WA + AI config
-│   ├── notifications.php             ← Audit log + undo (superadmin)
-│   ├── import.php                    ← Bulk CSV/Excel import
-│   ├── whatsapp.php                  ← WhatsApp messaging proxy
-│   ├── whatsapp_proxy.php            ← CORS proxy for Node.js server
-│   └── ai.php                        ← AI endpoints (reserved)
-│
-├── assets/
-│   └── xlsx.full.min.js              ← SheetJS library for Excel parsing
-│
-└── wa-server/
-    ├── server.js                     ← WhatsApp Baileys server (Node.js)
-    ├── package.json                  ← Node.js dependencies
-    ├── start.ps1                     ← PowerShell start script
-    └── wa_session/                   ← Local session files (backup)
-```
-
----
-
-## 17. Installation Guide
-
-### Prerequisites
-
-- PHP 8.x with MySQLi extension
-- MySQL 5.7+ / MariaDB 10.3+
-- Apache (XAMPP, WAMP, Laragon, or any LAMP stack)
-- Node.js 18+ (for WhatsApp server)
-
-### Step 1 — Database
-
-1. Open phpMyAdmin or MySQL CLI
-2. Create database: `CREATE DATABASE idltimetable;`
-3. Import `idltimetable.sql` into the database
-
-### Step 2 — PHP Configuration
-
-Edit `includes/config.php`:
-```php
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_NAME', 'idltimetable');
-```
-
-### Step 3 — Web Server
-
-Place the project folder in your web server root:
-- **XAMPP:** `C:/xampp/htdocs/idl_updated/`
-- **WAMP:** `C:/wamp64/www/idl_updated/`
-
-Visit: `http://localhost/idl_updated/`
-
-### Step 4 — WhatsApp Server (Optional)
+### Local Server Setup
 
 ```bash
 cd wa-server
-npm install
-node server.js
+npm install          # first run downloads Chromium (~150 MB)
+node server.js       # starts HTTP server on port 3000
 ```
 
-Server starts on `http://localhost:8080`.
+In app Settings → WhatsApp:
 
-Make sure `WA_NODE` in `index.html` matches:
-```javascript
-const WA_NODE = 'http://localhost:8080';
+- Provider: `local`
+- Local Server URL: `http://localhost:3000`
+
+Scan the QR code in Settings to pair your phone. Session saved in `wa-server/wa_session/` and persists across restarts.
+
+**Keep running in production:**
+
+```bash
+npm install -g pm2
+pm2 start wa-server/server.js --name whatsapp
+pm2 save
 ```
 
-### Step 5 — First Login
+### UltraMsg Setup
 
-Log in with the superadmin account from the SQL dump. Then:
-1. Change the default password immediately
-2. Create dedicated accounts for staff
-3. Configure school hours in Settings
+In Settings → WhatsApp:
+
+- Provider: `ultramsg`
+- API URL: `https://api.ultramsg.com`
+- Instance ID: your UltraMsg instance ID
+- API Key: your UltraMsg token
+
+### Local Server Endpoints
+
+| Endpoint              | Method | Description                            |
+| --------------------- | ------ | -------------------------------------- |
+| `/status`           | GET    | Connection status                      |
+| `/qr`               | GET    | QR code PNG for phone pairing          |
+| `/send-message`     | POST   | `{phone, message}`                   |
+| `/send-file`        | POST   | `{phone, url, filename, caption}`    |
+| `/send-file-upload` | POST   | `{phone, base64, filename, caption}` |
+| `/logout`           | POST   | Disconnect number                      |
+
+### Bulk Messaging
+
+Set `wa_delay_ms` in Settings (default 1000 ms) to control the delay between messages when bulk-sending to multiple teachers.
 
 ---
 
-## 18. Glossary
+## 11. Setup & Deployment
 
-| Term | Definition |
-|------|-----------|
-| **SPA** | Single-Page Application — loads one HTML page and updates dynamically |
-| **CRUD** | Create, Read, Update, Delete — the four basic data operations |
-| **Baileys** | Open-source WhatsApp Web library using WebSocket (no browser) |
-| **Timetable Slot** | One scheduled session: class + teacher(s) + subject + days + time range |
-| **Break Slot** | Timetable entry with `is_break=1` — rest period, no teacher assigned |
-| **Co-teaching** | Multiple teachers assigned to a single slot via `teacher_ids` |
-| **Day Group** | Preset label for common day combinations (Mon–Tue, Mon–Fri, etc.) |
-| **Conflict** | Two slots overlapping in time and day for the same class or teacher |
-| **Force Conflict** | Superadmin override to insert a slot despite teacher double-booking |
-| **Supervisor** | Restricted admin role managing only an assigned subset of data |
-| **PST** | Pakistan Standard Time (UTC+5) |
-| **bcrypt** | Password hashing algorithm (PHP `PASSWORD_DEFAULT`) |
+### Requirements
+
+- PHP 7.4+ with MySQLi extension
+- MySQL 5.7+ or MariaDB 10.3+
+- Apache or Nginx (XAMPP / WAMP / Laragon / Linux)
+- Node.js 18+ (for build tool and optional WhatsApp server)
+
+### Development Setup
+
+1. **Place files in web server root:**
+
+   ```
+   XAMPP: C:/xampp/htdocs/idl_updated/
+   WAMP:  C:/wamp64/www/idl_updated/
+   Linux: /var/www/html/idl_updated/
+   ```
+2. **Create database:**
+
+   ```sql
+   source idltimetable.sql
+   ```
+
+   Or import `idltimetable.sql` via phpMyAdmin.
+3. **Configure database** in `includes/config.php`:
+
+   ```php
+   define('DB_HOST', 'localhost');
+   define('DB_USER', 'root');
+   define('DB_PASS', '');
+   define('DB_NAME', 'idltimetable');
+   ```
+4. **Open the app:**
+
+   ```
+   http://localhost/idl_updated/
+   ```
+
+### Production Deployment
+
+1. Build:
+
+   ```bash
+   npm install
+   node build.js
+   ```
+2. Upload the entire `dist/` folder to your web server.
+3. Import `dist/idltimetable.sql` on the production database.
+4. Update `dist/includes/config.php` with production credentials.
+5. Ensure the PHP session directory is writable.
+6. (If using local WhatsApp) Start the wa-server on the same machine.
+
+### PHP Upload Limits
+
+`includes/config.php` sets these automatically at runtime:
+
+```
+upload_max_filesize = 64M
+post_max_size = 64M
+```
+
+If the server's `php.ini` enforces lower limits, add to `.htaccess`:
+
+```apache
+php_value upload_max_filesize 64M
+php_value post_max_size 64M
+```
 
 ---
 
-*IDL Timetable Management System — Version 2.0 — March 8, 2026*
-*Prepared by Aalyan Riasat · Institute of Dynamic Learning · Confidential*
+## 12. Default Credentials
+
+| Username       | Password     | Role                                              |
+| -------------- | ------------ | ------------------------------------------------- |
+| `superadmin` | `admin123` | Super Admin — full access + notifications + undo |
+| `admin`      | `admin123` | Admin — manage all data                          |
+
+> **Change these passwords immediately after first login.**
+
+To create additional users, log in as admin/superadmin and navigate to the **Users** page.
+
+---
+
+*Documentation reflects the current state of IDL Timetable System — March 2026.*

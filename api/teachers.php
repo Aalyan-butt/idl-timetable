@@ -60,12 +60,16 @@ function extractTeacherData($data) {
         'address'            => trim($data['address']            ?? ''),
         'starting_salary'    => (isset($data['starting_salary']) && $data['starting_salary'] !== '' ? (float)$data['starting_salary'] : null),
         'current_salary'     => (isset($data['current_salary'])  && $data['current_salary']  !== '' ? (float)$data['current_salary']  : null),
+        'bank_name'          => trim($data['bank_name']          ?? ''),
+        'bank_account_type'  => in_array($data['bank_account_type'] ?? '', ['account','iban']) ? $data['bank_account_type'] : 'account',
         'bank_account_no'    => trim($data['bank_account_no']    ?? ''),
         'notes'              => trim($data['notes']              ?? ''),
         'photo'              => trim($data['photo']              ?? ''),
         'cnic_front'         => trim($data['cnic_front']         ?? ''),
         'cnic_back'          => trim($data['cnic_back']          ?? ''),
         'relationship_name'  => trim($data['relationship_name']  ?? ''),
+        'leaving_date'       => (trim($data['leaving_date']      ?? '') ?: null),
+        'leaving_reason'     => (trim($data['leaving_reason']    ?? '') ?: null),
     ];
 }
 
@@ -78,14 +82,15 @@ if ($method === 'POST') {
     if (empty($f['title']) || empty($f['name'])) jsonResponse(['error' => 'Title and name required'], 400);
     if (!in_array($f['title'], ['Sir', 'Mam', 'Ms.'])) jsonResponse(['error' => 'Title must be Sir, Mam or Ms.'], 400);
 
-    $stmt = $db->prepare('INSERT INTO teachers (title,name,designation,religion,gender,joining_date,nic_number,employment_type,per_lecture_amount,role,work_experience,qualification,marital_status,phone,whatsapp,blood_group,email,date_of_birth,place_of_birth,address,starting_salary,current_salary,bank_account_no,notes,photo,cnic_front,cnic_back,relationship_name) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
-    $stmt->bind_param('ssssssssdsssssssssssddssssss',
+    $stmt = $db->prepare('INSERT INTO teachers (title,name,designation,religion,gender,joining_date,nic_number,employment_type,per_lecture_amount,role,work_experience,qualification,marital_status,phone,whatsapp,blood_group,email,date_of_birth,place_of_birth,address,starting_salary,current_salary,bank_name,bank_account_type,bank_account_no,notes,photo,cnic_front,cnic_back,relationship_name,leaving_date,leaving_reason) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+    $stmt->bind_param('ssssssssdsssssssssssddssssssssss',
         $f['title'],$f['name'],$f['designation'],$f['religion'],$f['gender'],$f['joining_date'],
         $f['nic_number'],$f['employment_type'],$f['per_lecture_amount'],$f['role'],
         $f['work_experience'],$f['qualification'],$f['marital_status'],$f['phone'],$f['whatsapp'],
         $f['blood_group'],$f['email'],$f['date_of_birth'],$f['place_of_birth'],$f['address'],
-        $f['starting_salary'],$f['current_salary'],$f['bank_account_no'],$f['notes'],
-        $f['photo'],$f['cnic_front'],$f['cnic_back'],$f['relationship_name']
+        $f['starting_salary'],$f['current_salary'],$f['bank_name'],$f['bank_account_type'],$f['bank_account_no'],$f['notes'],
+        $f['photo'],$f['cnic_front'],$f['cnic_back'],$f['relationship_name'],
+        $f['leaving_date'],$f['leaving_reason']
     );
     if ($stmt->execute()) {
         $new_id = $db->insert_id;
@@ -117,14 +122,15 @@ if ($method === 'PUT') {
     $old_stmt->execute();
     $old_row = $old_stmt->get_result()->fetch_assoc();
 
-    $stmt = $db->prepare('UPDATE teachers SET title=?,name=?,designation=?,religion=?,gender=?,joining_date=?,nic_number=?,employment_type=?,per_lecture_amount=?,role=?,work_experience=?,qualification=?,marital_status=?,phone=?,whatsapp=?,blood_group=?,email=?,date_of_birth=?,place_of_birth=?,address=?,starting_salary=?,current_salary=?,bank_account_no=?,notes=?,photo=?,cnic_front=?,cnic_back=?,relationship_name=? WHERE id=?');
-    $stmt->bind_param('ssssssssdsssssssssssddssssssi',
+    $stmt = $db->prepare('UPDATE teachers SET title=?,name=?,designation=?,religion=?,gender=?,joining_date=?,nic_number=?,employment_type=?,per_lecture_amount=?,role=?,work_experience=?,qualification=?,marital_status=?,phone=?,whatsapp=?,blood_group=?,email=?,date_of_birth=?,place_of_birth=?,address=?,starting_salary=?,current_salary=?,bank_name=?,bank_account_type=?,bank_account_no=?,notes=?,photo=?,cnic_front=?,cnic_back=?,relationship_name=?,leaving_date=?,leaving_reason=? WHERE id=?');
+    $stmt->bind_param('ssssssssdsssssssssssddssssssssssi',
         $f['title'],$f['name'],$f['designation'],$f['religion'],$f['gender'],$f['joining_date'],
         $f['nic_number'],$f['employment_type'],$f['per_lecture_amount'],$f['role'],
         $f['work_experience'],$f['qualification'],$f['marital_status'],$f['phone'],$f['whatsapp'],
         $f['blood_group'],$f['email'],$f['date_of_birth'],$f['place_of_birth'],$f['address'],
-        $f['starting_salary'],$f['current_salary'],$f['bank_account_no'],$f['notes'],
-        $f['photo'],$f['cnic_front'],$f['cnic_back'],$f['relationship_name'],$id
+        $f['starting_salary'],$f['current_salary'],$f['bank_name'],$f['bank_account_type'],$f['bank_account_no'],$f['notes'],
+        $f['photo'],$f['cnic_front'],$f['cnic_back'],$f['relationship_name'],
+        $f['leaving_date'],$f['leaving_reason'],$id
     );
     if ($stmt->execute()) {
         logNotification('edit', 'teacher', $id, "{$f['title']} {$f['name']}", $old_row);

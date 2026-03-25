@@ -1,0 +1,43 @@
+/* ===== SEARCH PAGE STYLES ===== */
+.search-bar { display: flex; gap: 10px; margin-bottom: 20px; }
+.search-bar input, .search-bar select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 11px 16px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.search-bar input:focus, .search-bar select:focus { border-color: var(--accent); }
+.search-bar input { flex: 1; }
+
+/* Search results free-slot tooltip */
+#free-tooltip {
+  position: fixed;
+  z-index: 9999;
+  background: #09091e;
+  border: 1px solid rgba(201,168,76,0.35);
+  border-radius: 10px;
+  padding: 12px 16px;
+  min-width: 200px;
+  max-width: 320px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  pointer-events: none;
+  display: none;
+}
+#free-tooltip.locked { pointer-events: auto; }
+#free-tooltip .tooltip-title {
+  font-family: 'Cinzel', serif;
+  font-size: 0.78rem;
+  color: var(--accent);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+#free-tooltip .tooltip-slot { padding: 3px 0; color: var(--success); }
+#free-tooltip .tooltip-empty { color: var(--text-muted); font-style: italic; }

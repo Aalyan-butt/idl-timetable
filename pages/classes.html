@@ -1,0 +1,54 @@
+
+      <div class="page-header">
+        <div>
+          <div class="page-title">Classes</div>
+          <div class="page-subtitle">Manage institute classes</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="position:relative;display:inline-block">
+            <button class="btn btn-pdf btn-sm page-action-btn" onclick="openDownloadMenu('classes-dm', this)">📄 Download PDF</button>
+            <div id="classes-dm" class="download-menu" style="display:none">
+              <div class="dm-scale-row">
+                <span class="dm-scale-label">Page Scale</span>
+                <div class="dm-scale-btns">
+                  <button type="button" class="dm-scale-btn" data-scale="70" onclick="setMenuScale(event,this)">70%</button>
+                  <button type="button" class="dm-scale-btn" data-scale="80" onclick="setMenuScale(event,this)">80%</button>
+                  <button type="button" class="dm-scale-btn dm-scale-active" data-scale="90" onclick="setMenuScale(event,this)">90%</button>
+                  <button type="button" class="dm-scale-btn" data-scale="100" onclick="setMenuScale(event,this)">100%</button>
+                </div>
+              </div>
+              <div class="download-divider"></div>
+              <div class="download-opt" onclick="downloadTableDoc('classes-body','classes_list',['Class Name'],'pdf','A4','portrait',getMenuScale(this.closest('.download-menu')))">📄 PDF — A4 Portrait</div>
+              <div class="download-opt" onclick="downloadTableDoc('classes-body','classes_list',['Class Name'],'pdf','A4','landscape',getMenuScale(this.closest('.download-menu')))">📄 PDF — A4 Landscape</div>
+              <div class="download-divider"></div>
+            </div>
+          </div>
+          <button class="btn btn-excel btn-sm page-action-btn" onclick="downloadGenericExcel('classes-body',['Class Name'],'Classes','IDL_Classes')">📊 Download Excel</button>
+          <button class="btn btn-secondary admin-only page-action-btn" onclick="openImportModal('classes')" style="gap:6px">⬆ Import CSV</button>
+          <button class="btn btn-primary admin-only page-action-btn" onclick="openClassModal()">+ Add Class</button>
+        </div>
+      </div>
+      <div class="page-search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="classes-search" oninput="filterClasses()" placeholder="Search by class name…">
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px">
+          <label style="font-size:0.82rem;color:var(--text-muted);white-space:nowrap">Show:</label>
+          <select id="classes-per-page" onchange="filterClasses()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem">
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="0">All</option>
+          </select>
+          <span style="font-size:0.82rem;color:var(--text-muted)">records</span>
+        </div>
+        <span id="classes-count-label" style="font-size:0.82rem;color:var(--text-muted)"></span>
+      </div>
+      <div class="card">
+        <div class="table-wrap"><table>
+          <thead><tr><th>Class Name</th><th>Added</th><th class="admin-only">Actions</th></tr></thead>
+          <tbody id="classes-body"><tr><td colspan="3" style="text-align:center;padding:24px;color:var(--text-muted)">Loading...</td></tr></tbody>
+        </table></div>
+      </div>
+    

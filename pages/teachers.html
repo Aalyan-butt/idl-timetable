@@ -1,0 +1,78 @@
+
+      <div class="page-header">
+        <div>
+          <div class="page-title">Teachers</div>
+          <div class="page-subtitle">Manage institute teachers</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="position:relative;display:inline-block">
+            <button class="btn btn-pdf btn-sm page-action-btn" onclick="openDownloadMenu('teachers-dm', this)">📄 Download PDF</button>
+            <div id="teachers-dm" class="download-menu" style="display:none">
+              <div class="dm-scale-row">
+                <span class="dm-scale-label">Page Scale</span>
+                <div class="dm-scale-btns">
+                  <button type="button" class="dm-scale-btn" data-scale="70" onclick="setMenuScale(event,this)">70%</button>
+                  <button type="button" class="dm-scale-btn" data-scale="80" onclick="setMenuScale(event,this)">80%</button>
+                  <button type="button" class="dm-scale-btn dm-scale-active" data-scale="90" onclick="setMenuScale(event,this)">90%</button>
+                  <button type="button" class="dm-scale-btn" data-scale="100" onclick="setMenuScale(event,this)">100%</button>
+                </div>
+              </div>
+              <div class="download-divider"></div>
+              <div class="download-opt" onclick="downloadTableDoc('teachers-body','teachers_list',['Title','Name'],'pdf','A4','portrait',getMenuScale(this.closest('.download-menu')))">📄 PDF — A4 Portrait</div>
+              <div class="download-opt" onclick="downloadTableDoc('teachers-body','teachers_list',['Title','Name'],'pdf','A4','landscape',getMenuScale(this.closest('.download-menu')))">📄 PDF — A4 Landscape</div>
+              <div class="download-divider"></div>
+            </div>
+          </div>
+          <button class="btn btn-excel btn-sm page-action-btn" onclick="downloadGenericExcel('teachers-body',['Title','Name'],'Teachers','IDL_Teachers')">📊 Download Excel</button>
+          <button class="btn btn-secondary admin-only page-action-btn" onclick="openImportModal('teachers')" style="gap:6px">⬆ Import CSV</button>
+          <button class="btn btn-primary admin-only page-action-btn" onclick="openTeacherModal()">+ Add Teacher</button>
+          <button class="btn btn-secondary admin-only page-action-btn" onclick="openWAModal()" style="background:#25d366;border-color:#25d366;color:#fff">💬 WhatsApp</button>
+        </div>
+      </div>
+      <div class="page-search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="teachers-search" oninput="filterTeachers()" placeholder="Search by name or title…">
+      </div>
+      <div class="card" style="margin-bottom:10px;padding:10px 16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="toggleTeacherFilterPanel()">
+          <span style="font-weight:600;font-size:0.88rem;color:var(--accent);letter-spacing:.3px">&#9881; Column Visibility</span>
+          <span id="tm-filter-caret" style="font-size:0.8rem;color:var(--text-muted);transition:transform .2s">&#9660;</span>
+        </div>
+        <div id="tm-col-filter-body" style="display:none;margin-top:12px">
+          <div id="tm-col-checkboxes" style="display:flex;flex-wrap:wrap;gap:6px 14px"></div>
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <button class="btn btn-secondary" style="font-size:0.78rem;padding:4px 12px" onclick="setAllTeacherCols(true)">Select All</button>
+            <button class="btn btn-secondary" style="font-size:0.78rem;padding:4px 12px" onclick="setAllTeacherCols(false)">Deselect All</button>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px">
+          <label style="font-size:0.82rem;color:var(--text-muted);white-space:nowrap">Show:</label>
+          <select id="teachers-per-page" onchange="filterTeachers()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem">
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="0">All</option>
+          </select>
+          <span style="font-size:0.82rem;color:var(--text-muted)">records</span>
+        </div>
+        <span id="teachers-count-label" style="font-size:0.82rem;color:var(--text-muted)"></span>
+      </div>
+      <div class="card">
+        <div class="table-wrap"><table id="teachers-table">
+          <thead><tr>
+            <th data-col="col-tm-photo">Photo</th>
+            <th data-col="col-tm-title">Title</th>
+            <th data-col="col-tm-name">Name</th>
+            <th data-col="col-tm-designation">Designation</th>
+            <th data-col="col-tm-phone">Phone</th>
+            <th data-col="col-tm-employment">Employment</th>
+            <th data-col="col-tm-joining">Joining Date</th>
+            <th data-col="col-tm-added">Added</th>
+            <th data-col="col-tm-actions" class="admin-only">Actions</th>
+          </tr></thead>
+          <tbody id="teachers-body"><tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">Loading...</td></tr></tbody>
+        </table></div>
+      </div>
+    

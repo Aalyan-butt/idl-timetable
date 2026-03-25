@@ -1,0 +1,99 @@
+
+      <div class="page-header">
+        <div>
+          <div class="page-title">Students</div>
+          <div class="page-subtitle">Manage student registrations</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-primary admin-only" onclick="openStudentModal()">+ Add Student</button>
+          <div style="position:relative;display:inline-block">
+            <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('students-dm', this)">📄 Download PDF</button>
+            <div id="students-dm" class="download-menu" style="display:none">
+              <div class="dm-scale-row">
+                <span class="dm-scale-label">Page Scale</span>
+                <div class="dm-scale-btns">
+                  <button type="button" class="dm-scale-btn" data-scale="70" onclick="setMenuScale(event,this)">70%</button>
+                  <button type="button" class="dm-scale-btn" data-scale="80" onclick="setMenuScale(event,this)">80%</button>
+                  <button type="button" class="dm-scale-btn dm-scale-active" data-scale="90" onclick="setMenuScale(event,this)">90%</button>
+                  <button type="button" class="dm-scale-btn" data-scale="100" onclick="setMenuScale(event,this)">100%</button>
+                </div>
+              </div>
+              <div class="download-divider"></div>
+              <div class="download-opt" onclick="bulkDownloadPDF('portrait')">📄 PDF — Portrait</div>
+              <div class="download-opt" onclick="bulkDownloadPDF('landscape')">📄 PDF — Landscape</div>
+              <div class="download-divider"></div>
+            </div>
+          </div>
+          <button class="btn btn-excel btn-sm" onclick="bulkDownloadExcel()">📊 Download Excel</button>
+        </div>
+      </div>
+
+      <div class="page-search-wrap">
+        <span class="search-icon">&#128269;</span>
+        <input type="text" id="students-search" oninput="filterStudents()" placeholder="Search by name, class, phone… (use comma to search multiple, e.g: Ali, Ahmed)">
+      </div>
+
+      <!-- Column Visibility Filter -->
+      <div class="card" style="margin-bottom:10px;padding:10px 16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="toggleStudentFilterPanel()">
+          <span style="font-weight:600;font-size:0.88rem;color:var(--accent);letter-spacing:.3px">&#9881; Column Visibility</span>
+          <span id="st-filter-caret" style="font-size:0.8rem;color:var(--text-muted);transition:transform .2s">&#9660;</span>
+        </div>
+        <div id="st-col-filter-body" style="display:none;margin-top:12px">
+          <div id="st-col-checkboxes" style="display:flex;flex-wrap:wrap;gap:6px 14px"></div>
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <button class="btn btn-secondary" style="font-size:0.78rem;padding:4px 12px" onclick="setAllStudentCols(true)">Select All</button>
+            <button class="btn btn-secondary" style="font-size:0.78rem;padding:4px 12px" onclick="setAllStudentCols(false)">Deselect All</button>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px">
+          <label style="font-size:0.82rem;color:var(--text-muted);white-space:nowrap">Show:</label>
+          <select id="students-per-page" onchange="filterStudents()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem">
+            <option value="0">All</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="75">75</option>
+            <option value="100">100</option>
+          </select>
+          <span style="font-size:0.82rem;color:var(--text-muted)">records</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <label style="font-size:0.82rem;color:var(--text-muted);white-space:nowrap">Sort:</label>
+          <select id="students-sort" onchange="filterStudents()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem">
+            <option value="">Default</option>
+            <option value="az">A → Z</option>
+            <option value="za">Z → A</option>
+          </select>
+        </div>
+        <span id="students-count-label" style="font-size:0.82rem;color:var(--text-muted);margin-left:4px"></span>
+      </div>
+      <div class="card">
+        <div class="table-wrap"><table id="students-table">
+          <thead><tr>
+            <th data-col="col-sr" style="min-width:42px">Sr.#</th>
+            <th data-col="col-photo" style="min-width:54px">Photo</th>
+            <th data-col="col-reg-date" style="min-width:110px">Registration Date</th>
+            <th data-col="col-reg-no" style="min-width:80px">Reg#</th>
+            <th data-col="col-name" style="min-width:140px">Name</th>
+            <th data-col="col-class" style="min-width:90px">Class</th>
+            <th data-col="col-dob" style="min-width:100px">Date of Birth</th>
+            <th data-col="col-age" style="min-width:80px">Current Age</th>
+            <th data-col="col-parent-name" style="min-width:130px">Parent Name</th>
+            <th data-col="col-father-cnic" style="min-width:140px">Father/Guardian CNIC</th>
+            <th data-col="col-parent-phone" style="min-width:110px">Parent Phone</th>
+            <th data-col="col-total-marks" style="min-width:90px">Total Marks</th>
+            <th data-col="col-obtained-marks" style="min-width:100px">Obtained Marks</th>
+            <th data-col="col-address" style="min-width:140px">Address</th>
+            <th data-col="col-status" style="min-width:100px">Status</th>
+            <th data-col="col-prev-school" style="min-width:130px">Previous School</th>
+            <th data-col="col-remarks" style="min-width:130px">Registration Remarks</th>
+            <th data-col="col-handler" style="min-width:120px">Enquiry Handled By</th>
+            <th data-col="col-actions" style="min-width:110px">Actions</th>
+          </tr></thead>
+          <tbody id="students-body"><tr><td colspan="18" style="text-align:center;padding:24px;color:var(--text-muted)">Loading...</td></tr></tbody>
+        </table></div>
+      </div>
+
+    

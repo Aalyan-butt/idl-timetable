@@ -1,0 +1,122 @@
+
+      <div class="page-header">
+        <div>
+          <div class="page-title">Performance Tests</div>
+          <div class="page-subtitle">Create and manage student performance tests</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-primary admin-only" onclick="openPTModal()">+ Add Test</button>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="card" style="margin-bottom:10px;padding:12px 16px">
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:1.1rem;color:var(--text-muted)">&#128269;</span>
+          <input type="text" id="pt-search-input" placeholder="Search by test name, class, subject or teacher…"
+            oninput="filterPerformanceTests()"
+            style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.9rem;outline:none">
+        </div>
+      </div>
+
+      <!-- Column Visibility -->
+      <div class="card" style="margin-bottom:10px;padding:10px 16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="togglePTFilterPanel()">
+          <span style="font-weight:600;font-size:0.88rem;color:var(--accent);letter-spacing:.3px">&#9881; Column Visibility</span>
+          <span id="pt-filter-caret" style="font-size:0.8rem;color:var(--text-muted);transition:transform .2s">&#9660;</span>
+        </div>
+        <div id="pt-col-filter-body" style="display:none;margin-top:12px">
+          <div id="pt-col-checkboxes" style="display:flex;flex-wrap:wrap;gap:6px 14px"></div>
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <button class="btn btn-secondary" style="font-size:0.78rem;padding:4px 12px" onclick="setAllPTCols(true)">Select All</button>
+            <button class="btn btn-secondary" style="font-size:0.78rem;padding:4px 12px" onclick="setAllPTCols(false)">Deselect All</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="card" style="margin-bottom:10px;padding:14px 16px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;align-items:end">
+          <div class="form-group" style="margin:0">
+            <label style="font-size:0.78rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em">Status</label>
+            <select id="pt-filter-status" onchange="filterPerformanceTests()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem;width:100%">
+              <option value="">Any Status</option>
+              <option value="Empty">Empty</option>
+              <option value="Incomplete">Incomplete</option>
+              <option value="Done">Done</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label style="font-size:0.78rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em">Class</label>
+            <select id="pt-filter-class" onchange="filterPerformanceTests()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem;width:100%">
+              <option value="">All Classes</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label style="font-size:0.78rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em">Subject</label>
+            <select id="pt-filter-subject" onchange="filterPerformanceTests()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem;width:100%">
+              <option value="">All Subjects</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label style="font-size:0.78rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em">Teacher</label>
+            <select id="pt-filter-teacher" onchange="filterPerformanceTests()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem;width:100%">
+              <option value="">All Teachers</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label style="font-size:0.78rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em">Date From</label>
+            <input type="date" id="pt-filter-date-from" onchange="filterPerformanceTests()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem;width:100%;box-sizing:border-box">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label style="font-size:0.78rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em">Date To</label>
+            <input type="date" id="pt-filter-date-to" onchange="filterPerformanceTests()" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem;width:100%;box-sizing:border-box">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label style="font-size:0.78rem;opacity:0">Reset</label>
+            <button class="btn btn-secondary" style="width:100%;padding:7px 14px;font-size:0.85rem" onclick="resetPTFilters()">&#8635; Reset Filters</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Records count + per-page -->
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px">
+          <label style="font-size:0.82rem;color:var(--text-muted);white-space:nowrap">Show:</label>
+          <select id="pt-per-page" onchange="filterPerformanceTests()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem">
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="0">All</option>
+          </select>
+          <span style="font-size:0.82rem;color:var(--text-muted)">records</span>
+        </div>
+        <span id="pt-count-label" style="font-size:0.82rem;color:var(--text-muted);margin-left:4px"></span>
+      </div>
+
+      <!-- Table -->
+      <div class="card">
+        <div class="table-wrap">
+          <table id="pt-table">
+            <thead><tr>
+              <th data-col="col-pt-sr"       style="min-width:48px">Sr.#</th>
+              <th data-col="col-pt-name"     style="min-width:160px">Test Name</th>
+              <th data-col="col-pt-status"   style="min-width:100px">Status</th>
+              <th data-col="col-pt-mstatus"  style="min-width:110px">Marks Status</th>
+              <th data-col="col-pt-date"     style="min-width:100px">Test Date</th>
+              <th data-col="col-pt-deadline" style="min-width:120px">Entry Deadline</th>
+              <th data-col="col-pt-class"    style="min-width:100px">Class</th>
+              <th data-col="col-pt-subject"  style="min-width:110px">Subject</th>
+              <th data-col="col-pt-marks"    style="min-width:70px">Marks</th>
+              <th data-col="col-pt-teacher"  style="min-width:120px">Teacher</th>
+              <th data-col="col-pt-coverage" style="min-width:150px">Coverage</th>
+              <th data-col="col-pt-created"  style="min-width:100px">Created</th>
+              <th data-col="col-pt-actions"  style="min-width:110px">Actions</th>
+            </tr></thead>
+            <tbody id="pt-body">
+              <tr><td colspan="13" style="text-align:center;padding:28px;color:var(--text-muted)">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    

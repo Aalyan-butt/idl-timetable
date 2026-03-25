@@ -1,7 +1,14 @@
 {
+  "scripts": {
+    "build": "node build.js"
+  },
   "dependencies": {
     "@hapi/boom": "^10.0.1",
     "@whiskeysockets/baileys": "^7.0.0-rc.9",
     "pino": "^10.3.1"
+  },
+  "devDependencies": {
+    "clean-css": "^5.3.3",
+    "terser": "^5.46.0"
   }
 }

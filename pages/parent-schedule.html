@@ -1,0 +1,51 @@
+
+      <div class="page-header">
+        <div>
+          <div class="page-title">Children's Schedule</div>
+          <div class="page-subtitle" id="parent-schedule-subtitle">Timetable for your children</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="position:relative;display:inline-block">
+            <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('ps-dm', this)">📄 Download PDF</button>
+            <div id="ps-dm" class="download-menu" style="display:none">
+              <div class="dm-scale-row">
+                <span class="dm-scale-label">Page Scale</span>
+                <div class="dm-scale-btns">
+                  <button type="button" class="dm-scale-btn" data-scale="70" onclick="setMenuScale(event,this)">70%</button>
+                  <button type="button" class="dm-scale-btn" data-scale="80" onclick="setMenuScale(event,this)">80%</button>
+                  <button type="button" class="dm-scale-btn dm-scale-active" data-scale="90" onclick="setMenuScale(event,this)">90%</button>
+                  <button type="button" class="dm-scale-btn" data-scale="100" onclick="setMenuScale(event,this)">100%</button>
+                </div>
+              </div>
+              <div class="download-divider"></div>
+              <div class="download-opt" onclick="downloadTableDoc('sched-table-body',getParentSchedFilename(),['Subject','Teacher','Days','Time'],'pdf','A4','portrait',getMenuScale(this.closest('.download-menu')),getParentSchedTitle())">📄 PDF — A4 Portrait</div>
+              <div class="download-opt" onclick="downloadTableDoc('sched-table-body',getParentSchedFilename(),['Subject','Teacher','Days','Time'],'pdf','A4','landscape',getMenuScale(this.closest('.download-menu')),getParentSchedTitle())">📄 PDF — A4 Landscape</div>
+              <div class="download-divider"></div>
+            </div>
+          </div>
+          <button class="btn btn-excel btn-sm" onclick="downloadGenericExcel('sched-table-body',['Subject','Teacher','Days','Time'],getParentSchedTitle(),getParentSchedFilename())">📊 Download Excel</button>
+        </div>
+      </div>
+      <div id="parent-children-selector" style="margin-bottom:12px;display:none">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <select id="parent-child-select" onchange="loadParentChildSchedule()" style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-family:inherit;flex:1;min-width:160px"></select>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span style="font-size:0.88rem;color:var(--text-muted);font-weight:600">Days:</span>
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.88rem;cursor:pointer"><input type="checkbox" value="Monday" class="ps-day-cb" onchange="applyParentScheduleFilter()" checked style="accent-color:var(--accent)"> Mon</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.88rem;cursor:pointer"><input type="checkbox" value="Tuesday" class="ps-day-cb" onchange="applyParentScheduleFilter()" checked style="accent-color:var(--accent)"> Tue</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.88rem;cursor:pointer"><input type="checkbox" value="Wednesday" class="ps-day-cb" onchange="applyParentScheduleFilter()" checked style="accent-color:var(--accent)"> Wed</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.88rem;cursor:pointer"><input type="checkbox" value="Thursday" class="ps-day-cb" onchange="applyParentScheduleFilter()" checked style="accent-color:var(--accent)"> Thu</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.88rem;cursor:pointer"><input type="checkbox" value="Friday" class="ps-day-cb" onchange="applyParentScheduleFilter()" checked style="accent-color:var(--accent)"> Fri</label>
+
+          </div>
+          <div>
+            <input type="text" id="ps-subject-filter" oninput="applyParentScheduleFilter()" placeholder="Search subject…" style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:8px;font-family:inherit;width:220px">
+          </div>
+        </div>
+      </div>
+      <div id="parent-schedule-body">
+        <div class="card"><p style="color:var(--text-muted);text-align:center;padding:28px">Loading…</p></div>
+      </div>
+    

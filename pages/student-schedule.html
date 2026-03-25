@@ -1,0 +1,32 @@
+
+      <div class="page-header">
+        <div>
+          <div class="page-title">My Class Schedule</div>
+          <div class="page-subtitle" id="student-schedule-subtitle">Your assigned class timetable</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="position:relative;display:inline-block">
+            <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('ss-dm', this)">📄 Download PDF</button>
+            <div id="ss-dm" class="download-menu" style="display:none">
+              <div class="dm-scale-row">
+                <span class="dm-scale-label">Page Scale</span>
+                <div class="dm-scale-btns">
+                  <button type="button" class="dm-scale-btn" data-scale="70" onclick="setMenuScale(event,this)">70%</button>
+                  <button type="button" class="dm-scale-btn" data-scale="80" onclick="setMenuScale(event,this)">80%</button>
+                  <button type="button" class="dm-scale-btn dm-scale-active" data-scale="90" onclick="setMenuScale(event,this)">90%</button>
+                  <button type="button" class="dm-scale-btn" data-scale="100" onclick="setMenuScale(event,this)">100%</button>
+                </div>
+              </div>
+              <div class="download-divider"></div>
+              <div class="download-opt" onclick="downloadTableDoc('sched-table-body','my_schedule',['Subject','Teacher','Days','Time'],'pdf','A4','portrait',getMenuScale(this.closest('.download-menu')))">📄 PDF — A4 Portrait</div>
+              <div class="download-opt" onclick="downloadTableDoc('sched-table-body','my_schedule',['Subject','Teacher','Days','Time'],'pdf','A4','landscape',getMenuScale(this.closest('.download-menu')))">📄 PDF — A4 Landscape</div>
+              <div class="download-divider"></div>
+            </div>
+          </div>
+          <button class="btn btn-excel btn-sm" onclick="downloadGenericExcel('sched-table-body',['Subject','Teacher','Days','Time'],'My Schedule','IDL_My_Schedule')">📊 Download Excel</button>
+        </div>
+      </div>
+      <div id="student-schedule-body">
+        <div class="card"><p style="color:var(--text-muted);text-align:center;padding:28px">Loading…</p></div>
+      </div>
+    

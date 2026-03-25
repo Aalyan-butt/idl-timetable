@@ -26,7 +26,7 @@ if ($method === 'POST' && $action === 'login') {
     try {
         $db = getDB();
         debug_log('DB connection OK');
-        $stmt = $db->prepare('SELECT id, username, password, role, teacher_ids_perm, class_ids_perm, supervisor_teacher_ids, supervisor_class_ids, supervisor_user_ids, student_id FROM users WHERE username = ?');
+        $stmt = $db->prepare('SELECT id, username, password, role, teacher_ids_perm, class_ids_perm, supervisor_teacher_ids, supervisor_class_ids, supervisor_user_ids, student_id, parent_id, student_ids FROM users WHERE username = ?');
         if ($stmt === false) {
             debug_log('Prepare failed: ' . $db->error);
             jsonResponse(['error' => 'DB prepare failed', 'debug' => $db->error], 500);
@@ -51,6 +51,8 @@ if ($method === 'POST' && $action === 'login') {
         $_SESSION['supervisor_class_ids']   = $user['supervisor_class_ids']   ?? '';
         $_SESSION['supervisor_user_ids']    = $user['supervisor_user_ids']    ?? '';
         $_SESSION['student_id']             = $user['student_id'] ?? null;
+        $_SESSION['parent_id']              = $user['parent_id'] ?? null;
+        $_SESSION['student_ids']            = $user['student_ids'] ?? '';
         $_SESSION['last_activity']          = time();
 
         debug_log('Password verified, login success');
@@ -66,7 +68,9 @@ if ($method === 'POST' && $action === 'login') {
             'supervisor_teacher_ids' => $user['supervisor_teacher_ids'] ?? '',
             'supervisor_class_ids'   => $user['supervisor_class_ids']   ?? '',
             'supervisor_user_ids'    => $user['supervisor_user_ids']    ?? '',
-            'student_id'             => $user['student_id'] ?? null
+            'student_id'             => $user['student_id'] ?? null,
+            'parent_id'              => $user['parent_id'] ?? null,
+            'student_ids'            => $user['student_ids'] ?? ''
         ]);
     } else {
         debug_log('Invalid credentials');
@@ -104,7 +108,9 @@ if ($method === 'GET' && $action === 'check') {
             'supervisor_teacher_ids' => $_SESSION['supervisor_teacher_ids'] ?? '',
             'supervisor_class_ids'   => $_SESSION['supervisor_class_ids']   ?? '',
             'supervisor_user_ids'    => $_SESSION['supervisor_user_ids']    ?? '',
-            'student_id'             => $_SESSION['student_id'] ?? null
+            'student_id'             => $_SESSION['student_id'] ?? null,
+            'parent_id'              => $_SESSION['parent_id'] ?? null,
+            'student_ids'            => $_SESSION['student_ids'] ?? ''
         ]);
     } else {
         debug_log('Session check: not authenticated');

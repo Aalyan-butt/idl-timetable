@@ -1,0 +1,296 @@
+
+      <div class="page-header">
+        <div>
+          <div class="page-title">Settings</div>
+          <div class="page-subtitle">Configure school schedule and system preferences</div>
+        </div>
+      </div>
+
+      <div id="settings-msg" style="display:none;margin-bottom:16px;max-width:660px"></div>
+
+      <!-- SCHOOL HOURS CARD -->
+      <div class="card" style="max-width:660px;margin-bottom:24px">
+        <div class="card-title" style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:1.1rem">🕐</span> School Hours
+        </div>
+        <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:20px;font-family:'Times New Roman',serif;line-height:1.6">
+          Set the default school start and end times. Add class-specific overrides below for junior/senior differences.
+        </p>
+
+        <!-- Default School Hours -->
+        <div style="padding:16px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.18);border-radius:10px;margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+            <div style="width:3px;height:16px;background:var(--accent);border-radius:2px"></div>
+            <span style="font-size:0.78rem;color:var(--accent);font-family:'Cinzel',serif;letter-spacing:1px;text-transform:uppercase">Default Hours</span>
+          </div>
+          <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+            <div class="form-group" style="margin:0;flex:1;min-width:150px">
+              <label style="margin-bottom:6px;font-size:0.82rem">Start Time</label>
+              <input type="time" id="settings-start" value="08:00" class="settings-time-input">
+            </div>
+            <div style="color:var(--text-muted);font-size:1rem;padding-top:20px">→</div>
+            <div class="form-group" style="margin:0;flex:1;min-width:150px">
+              <label style="margin-bottom:6px;font-size:0.82rem">End Time</label>
+              <input type="time" id="settings-end" value="14:00" class="settings-time-input">
+            </div>
+          </div>
+        </div>
+
+        <!-- School Hours by Day — Smooth Accordion -->
+        <div class="settings-accord" style="margin-bottom:18px">
+          <div class="settings-accord-hdr" onclick="toggleAccordion('school-by-day')">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:0.85rem">📅</span>
+              <span>School Hours by Day</span>
+            </div>
+            <span id="school-by-day-arrow" class="accord-arrow">▼</span>
+          </div>
+          <div id="school-by-day" class="accord-body">
+            <div style="padding:14px 16px 8px">
+              <p style="font-size:0.83rem;color:var(--text-muted);margin-bottom:14px;font-family:'Times New Roman',serif">
+                Override hours for specific days. Leave blank to use default hours above.
+              </p>
+              <div id="day-timings"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Class-Specific Overrides -->
+        <div style="border-top:1px solid rgba(201,168,76,0.1);padding-top:16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <div style="width:3px;height:16px;background:var(--accent);border-radius:2px"></div>
+            <span style="font-size:0.78rem;color:var(--accent);font-family:'Cinzel',serif;letter-spacing:1px;text-transform:uppercase">Class-Specific Hours</span>
+          </div>
+          <p style="font-size:0.83rem;color:var(--text-muted);margin-bottom:14px;font-family:'Times New Roman',serif">
+            Override timings per class (e.g. juniors vs seniors).
+          </p>
+
+          <!-- Dynamic class entries -->
+          <div id="class-entries" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"></div>
+
+          <!-- Add Class Row — custom searchable dropdown -->
+          <div class="settings-add-class-row">
+            <div class="ss-wrapper" id="settings-class-wrapper" style="flex:1;min-width:180px">
+              <div class="ss-display" id="settings-class-display" tabindex="0"
+                   onclick="settingsClassOpen()" onkeydown="if(event.key==='Enter'||event.key===' ')settingsClassOpen()">
+                <span id="settings-class-display-text" style="color:var(--text-muted)">Select a class...</span>
+                <span style="font-size:0.7rem;opacity:0.6">▼</span>
+              </div>
+              <div class="ss-dropdown" id="settings-class-dropdown">
+                <div class="ss-search">
+                  <input type="text" id="settings-class-search" placeholder="Type to search..."
+                         oninput="settingsClassFilter(this.value)" onclick="event.stopPropagation()">
+                </div>
+                <div id="settings-class-list" class="ss-list" style="max-height:220px"></div>
+              </div>
+            </div>
+            <input type="hidden" id="settings-class-value">
+            <button class="settings-add-btn" onclick="addClassEntry()">
+              <span>+</span> Add Class Hours
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save Button -->
+      <button class="btn btn-primary settings-save-btn" onclick="saveSettings()">
+         Save All Settings
+      </button>
+
+      <style>
+        .settings-time-input {
+          background: var(--surface2);
+          border: 1px solid var(--border);
+          color: var(--text);
+          padding: 10px 14px;
+          border-radius: 8px;
+          font-family: inherit;
+          font-size: 0.95rem;
+          width: 100%;
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .settings-time-input:focus {
+          outline: none;
+          border-color: var(--accent);
+          box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
+        }
+
+        /* Accordion */
+        .settings-accord {
+          border: 1px solid rgba(201,168,76,0.15);
+          border-radius: 10px;
+          overflow: hidden;
+        }
+        .settings-accord-hdr {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 13px 16px;
+          cursor: pointer;
+          background: rgba(201,168,76,0.04);
+          user-select: none;
+          font-family: 'Cinzel', serif;
+          font-size: 0.84rem;
+          color: var(--accent);
+          letter-spacing: 0.4px;
+          transition: background 0.15s;
+        }
+        .settings-accord-hdr:hover { background: rgba(201,168,76,0.09); }
+        .accord-arrow {
+          font-size: 0.72rem;
+          color: var(--text-muted);
+          transition: transform 0.28s ease;
+          display: inline-block;
+        }
+        .accord-body {
+          max-height: 0;
+          overflow: hidden;
+          transition: max-height 0.32s ease;
+        }
+
+        /* Day row */
+        .settings-day-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 10px 12px;
+          border-radius: 8px;
+          border: 1px solid rgba(201,168,76,0.09);
+          background: rgba(255,255,255,0.015);
+          margin-bottom: 7px;
+          flex-wrap: wrap;
+          transition: border-color 0.15s;
+        }
+        .settings-day-row:hover { border-color: rgba(201,168,76,0.22); }
+        .settings-day-label {
+          min-width: 95px;
+          font-family: 'Cinzel', serif;
+          font-size: 0.8rem;
+          color: var(--accent);
+          letter-spacing: 0.8px;
+        }
+        .settings-time-pair {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+          flex: 1;
+          flex-wrap: wrap;
+        }
+        .settings-time-cell { display: flex; align-items: center; gap: 7px; }
+        .settings-time-lbl {
+          font-size: 0.75rem;
+          color: var(--text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          min-width: 32px;
+        }
+        .settings-time-sm {
+          background: var(--surface2);
+          border: 1px solid var(--border);
+          color: var(--text);
+          padding: 7px 11px;
+          border-radius: 7px;
+          font-family: 'Times New Roman', serif;
+          font-size: 0.93rem;
+          min-width: 128px;
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .settings-time-sm:focus {
+          outline: none;
+          border-color: var(--accent);
+          box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+        }
+
+        /* Class entry block */
+        .class-entry-block {
+          border: 1px solid rgba(201,168,76,0.22);
+          border-left: 3px solid var(--accent);
+          border-radius: 10px;
+          overflow: hidden;
+          background: rgba(201,168,76,0.02);
+        }
+        .class-entry-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 11px 14px;
+          background: rgba(201,168,76,0.08);
+          border-bottom: 1px solid rgba(201,168,76,0.12);
+        }
+        .class-entry-name {
+          font-family: 'Cinzel', serif;
+          font-size: 0.88rem;
+          color: var(--accent2);
+          letter-spacing: 0.5px;
+        }
+        .class-entry-remove {
+          background: rgba(255,85,85,0.1);
+          border: 1px solid rgba(255,85,85,0.25);
+          color: #ff7777;
+          border-radius: 6px;
+          width: 26px; height: 26px;
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer;
+          font-size: 0.9rem;
+          transition: background 0.15s, border-color 0.15s;
+        }
+        .class-entry-remove:hover {
+          background: rgba(255,85,85,0.22);
+          border-color: rgba(255,85,85,0.5);
+        }
+        .class-sub-accord { border-top: 1px solid rgba(201,168,76,0.1); }
+        .class-sub-accord-hdr {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 10px 14px;
+          cursor: pointer;
+          user-select: none;
+          font-size: 0.82rem;
+          color: var(--text-muted);
+          font-family: 'Times New Roman', serif;
+          transition: background 0.15s, color 0.15s;
+        }
+        .class-sub-accord-hdr:hover { background: rgba(201,168,76,0.05); color: var(--text-soft); }
+
+        /* Add class row */
+        .settings-add-class-row {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+        .settings-add-btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 10px 20px;
+          background: linear-gradient(135deg, rgba(201,168,76,0.18), rgba(201,168,76,0.08));
+          border: 1px solid rgba(201,168,76,0.4);
+          color: var(--accent2);
+          border-radius: 9px;
+          font-family: 'Cinzel', serif;
+          font-size: 0.82rem;
+          letter-spacing: 0.3px;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.1s;
+          height: 44px;
+        }
+        .settings-add-btn:hover {
+          background: linear-gradient(135deg, rgba(201,168,76,0.3), rgba(201,168,76,0.14));
+          border-color: var(--accent);
+          color: var(--accent3);
+          transform: translateY(-1px);
+        }
+        .settings-add-btn:active { transform: translateY(0); }
+
+        .settings-save-btn {
+          padding: 12px 20px;
+          font-size: 0.95rem;
+          letter-spacing: 0.5px;
+          margin-bottom: 40px;
+          width: auto;
+        }
+      </style>
+

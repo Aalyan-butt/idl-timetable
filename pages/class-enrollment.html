@@ -1,0 +1,64 @@
+
+      <div class="page-header">
+        <div>
+          <div class="page-title">Class Enrollment</div>
+          <div class="page-subtitle">Assign or update class for students</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="position:relative;display:inline-block">
+            <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('ce-dm', this)">📄 Download PDF</button>
+            <div id="ce-dm" class="download-menu" style="display:none">
+              <div class="dm-scale-row">
+                <span class="dm-scale-label">Page Scale</span>
+                <div class="dm-scale-btns">
+                  <button type="button" class="dm-scale-btn" data-scale="70" onclick="setMenuScale(event,this)">70%</button>
+                  <button type="button" class="dm-scale-btn" data-scale="80" onclick="setMenuScale(event,this)">80%</button>
+                  <button type="button" class="dm-scale-btn dm-scale-active" data-scale="90" onclick="setMenuScale(event,this)">90%</button>
+                  <button type="button" class="dm-scale-btn" data-scale="100" onclick="setMenuScale(event,this)">100%</button>
+                </div>
+              </div>
+              <div class="download-divider"></div>
+              <div class="download-opt" onclick="downloadTableDoc('ce-body','class_enrollment',['#','Student Name','GR #','Father Name','Current Class'],'pdf','A4','portrait',getMenuScale(this.closest('.download-menu')))">📄 PDF — A4 Portrait</div>
+              <div class="download-opt" onclick="downloadTableDoc('ce-body','class_enrollment',['#','Student Name','GR #','Father Name','Current Class'],'pdf','A4','landscape',getMenuScale(this.closest('.download-menu')))">📄 PDF — A4 Landscape</div>
+              <div class="download-divider"></div>
+            </div>
+          </div>
+          <button class="btn btn-excel btn-sm" onclick="downloadGenericExcel('ce-body',['#','Student Name','GR #','Father Name','Current Class'],'Class Enrollment','IDL_Class_Enrollment')">📊 Download Excel</button>
+        </div>
+      </div>
+      <div class="page-search-wrap">
+        <span class="search-icon">&#128269;</span>
+        <input type="text" id="ce-search" oninput="filterClassEnrollment()" placeholder="Search by name, GR#, father name…">
+      </div>
+      <!-- Filter tabs -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+        <button id="ce-tab-all"      onclick="setCETab('all')"      class="btn btn-secondary" style="font-size:0.82rem;padding:5px 16px;background:var(--accent);color:#05050e;border-color:var(--accent)">All</button>
+        <button id="ce-tab-assigned" onclick="setCETab('assigned')" class="btn btn-secondary" style="font-size:0.82rem;padding:5px 16px">Assigned</button>
+        <button id="ce-tab-unassigned" onclick="setCETab('unassigned')" class="btn btn-secondary" style="font-size:0.82rem;padding:5px 16px">Not Assigned</button>
+        <span id="ce-count-label" style="font-size:0.82rem;color:var(--text-muted);margin-left:6px"></span>
+        <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
+          <label style="font-size:0.82rem;color:var(--text-muted);white-space:nowrap">Show:</label>
+          <select id="ce-per-page" onchange="filterClassEnrollment()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem">
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="0">All</option>
+          </select>
+          <span style="font-size:0.82rem;color:var(--text-muted)">records</span>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="table-wrap">
+          <table id="ce-table" style="width:100%">
+            <thead><tr>
+              <th style="min-width:40px">#</th>
+              <th style="min-width:140px">Student Name</th>
+              <th style="min-width:80px">GR #</th>
+              <th style="min-width:140px">Father Name</th>
+              <th style="min-width:220px">Assign / Update Class</th>
+            </tr></thead>
+            <tbody id="ce-body"><tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    

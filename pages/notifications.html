@@ -1,0 +1,19 @@
+
+      <div class="page-header">
+        <div>
+          <div class="page-title">Notifications</div>
+          <div class="page-subtitle">Activity log — all changes made by admins and supervisors</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span id="notif-count-label" style="font-size:0.85rem;color:var(--text-muted)"></span>
+          <button class="btn btn-danger btn-sm" onclick="clearAllNotifications()">✕ Clear All</button>
+        </div>
+      </div>
+      <div class="page-search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="notif-search" oninput="filterNotifications()" placeholder="Search by username, action, type…">
+      </div>
+      <div id="notifications-list">
+        <div class="card"><p style="color:var(--text-muted);text-align:center;padding:28px">Loading…</p></div>
+      </div>
+    

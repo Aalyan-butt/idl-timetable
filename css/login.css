@@ -1,0 +1,38 @@
+/* ===== LOGIN SCREEN ===== */
+#login-screen {
+  min-height: 100vh; height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at 50% 0%, #0a0a2e 0%, var(--bg) 65%);
+  position: relative; overflow: hidden; padding: 16px; box-sizing: border-box;
+}
+#login-screen::before {
+  content: '';
+  position: absolute; top: -150px; left: 50%; transform: translateX(-50%);
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 65%);
+  pointer-events: none;
+}
+.login-card {
+  background: linear-gradient(160deg, #0a0a20 0%, #080818 60%, #050510 100%);
+  border: 1px solid rgba(201,168,76,0.35);
+  border-radius: 20px; padding: 52px 46px;
+  width: 440px; max-width: 94vw; max-height: 96vh;
+  overflow-y: auto; box-sizing: border-box;
+  box-shadow: var(--shadow), 0 0 100px rgba(201,168,76,0.07), inset 0 1px 0 rgba(201,168,76,0.12);
+}
+@media (max-height: 700px) {
+  .login-card { padding: 24px 30px; }
+  .login-logo { margin-bottom: 16px !important; gap: 8px !important; }
+  .login-logo img { width: 80px !important; height: 80px !important; }
+  .login-logo .brand { font-size: 1.8rem !important; }
+}
+@media (max-width: 480px) {
+  .login-card { padding: 28px 22px; }
+  .login-logo img { width: 120px !important; height: 120px !important; }
+  .login-logo .brand { font-size: 2rem !important; }
+  .login-logo { margin-bottom: 24px !important; gap: 10px !important; }
+}
+.login-logo { text-align: center; margin-bottom: 38px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.login-logo img { width: 209px; height: 209px; border-radius: 50%; object-fit: cover; border: 2.5px solid rgba(201,168,76,0.55); box-shadow: 0 0 30px rgba(201,168,76,0.25), 0 0 60px rgba(201,168,76,0.08); }
+.login-logo .brand { font-family: 'Cinzel', serif; font-size: 2.6rem; color: var(--accent); letter-spacing: 8px; line-height: 1; font-weight: 700; }
+.login-logo .tagline { font-family: 'Times New Roman', serif; font-size: 0.78rem; color: var(--text-muted); letter-spacing: 3px; text-transform: uppercase; margin-top: 2px; }

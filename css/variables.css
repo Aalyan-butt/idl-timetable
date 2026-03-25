@@ -1,0 +1,26 @@
+/* ===== CSS CUSTOM PROPERTIES ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #05050e;
+  --surface: #080818;
+  --surface2: #0d0d22;
+  --surface3: #111132;
+  --border: rgba(201,168,76,0.2);
+  --border2: rgba(255,255,255,0.06);
+  --accent: #c9a84c;
+  --accent2: #e8c97a;
+  --accent3: #f5e0a0;
+  --navy: #1a1a5e;
+  --navy2: #0d0d3b;
+  --text: #ffffff;
+  --text-soft: #e0e0f0;
+  --text-muted: #9090b8;
+  --danger: #ff5555;
+  --success: #44cc88;
+  --info: #4488ff;
+  --pdf-btn: #1a4db8;
+  --radius: 10px;
+  --shadow: 0 8px 40px rgba(0,0,0,0.8);
+  --gold-glow: 0 0 30px rgba(201,168,76,0.2);
+}

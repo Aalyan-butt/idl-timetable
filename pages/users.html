@@ -1,0 +1,53 @@
+
+      <div class="page-header">
+        <div>
+          <div class="page-title">Users</div>
+          <div class="page-subtitle">Manage system access</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="position:relative;display:inline-block">
+            <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('users-dm', this)">📄 Download PDF</button>
+            <div id="users-dm" class="download-menu" style="display:none">
+              <div class="dm-scale-row">
+                <span class="dm-scale-label">Page Scale</span>
+                <div class="dm-scale-btns">
+                  <button type="button" class="dm-scale-btn" data-scale="70" onclick="setMenuScale(event,this)">70%</button>
+                  <button type="button" class="dm-scale-btn" data-scale="80" onclick="setMenuScale(event,this)">80%</button>
+                  <button type="button" class="dm-scale-btn dm-scale-active" data-scale="90" onclick="setMenuScale(event,this)">90%</button>
+                  <button type="button" class="dm-scale-btn" data-scale="100" onclick="setMenuScale(event,this)">100%</button>
+                </div>
+              </div>
+              <div class="download-divider"></div>
+              <div class="download-opt" onclick="downloadTableDoc('users-body','users_list',['Username','Role','Schedule Access','Created'],'pdf','A4','portrait',getMenuScale(this.closest('.download-menu')))">📄 PDF — A4 Portrait</div>
+              <div class="download-opt" onclick="downloadTableDoc('users-body','users_list',['Username','Role','Schedule Access','Created'],'pdf','A4','landscape',getMenuScale(this.closest('.download-menu')))">📄 PDF — A4 Landscape</div>
+              <div class="download-divider"></div>
+            </div>
+          </div>
+          <button class="btn btn-excel btn-sm" onclick="downloadGenericExcel('users-body',['Username','Role','Schedule Access','Created'],'Users','IDL_Users')">📊 Download Excel</button>
+          <button class="btn btn-primary admin-only" onclick="openUserModal()">+ Add User</button>
+        </div>
+      </div>
+      <div class="page-search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="users-search" oninput="filterUsers()" placeholder="Search by username or role…">
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px">
+          <label style="font-size:0.82rem;color:var(--text-muted);white-space:nowrap">Show:</label>
+          <select id="users-per-page" onchange="filterUsers()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem">
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="0">All</option>
+          </select>
+          <span style="font-size:0.82rem;color:var(--text-muted)">records</span>
+        </div>
+        <span id="users-count-label" style="font-size:0.82rem;color:var(--text-muted)"></span>
+      </div>
+      <div class="card">
+        <div class="table-wrap"><table>
+          <thead><tr><th>Username</th><th>Role</th><th>Schedule Access</th><th>Created</th><th>Actions</th></tr></thead>
+          <tbody id="users-body"><tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">Loading...</td></tr></tbody>
+        </table></div>
+      </div>
+    

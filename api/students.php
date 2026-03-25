@@ -107,7 +107,7 @@ if ($action === 'siblings') {
     if (!$father_cnic) { jsonResponse([]); exit(); }
 
     debug_log('Siblings lookup for father_cnic=' . $father_cnic);
-    $stmt2 = $db->prepare('SELECT s.id, s.student_name, s.gr_number, s.class_id, c.name as class_name FROM students s LEFT JOIN classes c ON c.id=s.class_id WHERE s.father_cnic=? ORDER BY s.student_name');
+    $stmt2 = $db->prepare('SELECT s.id, s.student_name, s.gr_number, s.class_id, s.photo, c.name as class_name FROM students s LEFT JOIN classes c ON c.id=s.class_id WHERE s.father_cnic=? ORDER BY s.student_name');
     $stmt2->bind_param('s', $father_cnic);
     $stmt2->execute();
     $result   = $stmt2->get_result();
@@ -123,23 +123,11 @@ if ($action === 'my_schedule') {
     if (!$student_id) { jsonResponse(['error' => 'No student linked'], 400); exit(); }
 
     if ($role === 'parent') {
-        $myStudentId = intval($_SESSION['student_id'] ?? 0);
-        if ($myStudentId) {
-            $stmt = $db->prepare('SELECT father_cnic FROM students WHERE id=?');
-            $stmt->bind_param('i', $myStudentId);
-            $stmt->execute();
-            $parentRow = $stmt->get_result()->fetch_assoc();
-            if ($parentRow && !empty($parentRow['father_cnic'])) {
-                $stmt2 = $db->prepare('SELECT id FROM students WHERE father_cnic=? AND id=?');
-                $stmt2->bind_param('si', $parentRow['father_cnic'], $student_id);
-                $stmt2->execute();
-                if (!$stmt2->get_result()->fetch_assoc()) {
-                    jsonResponse(['error' => 'Access denied'], 403);
-                    exit();
-                }
-            } else {
-                $student_id = $myStudentId;
-            }
+        $studentIdsStr = trim($_SESSION['student_ids'] ?? '');
+        $allowedIds = $studentIdsStr ? array_values(array_filter(array_map('intval', explode(',', $studentIdsStr)))) : [];
+        if (empty($allowedIds)) { jsonResponse(['error' => 'No children linked to your account'], 400); exit(); }
+        if (!$student_id || !in_array($student_id, $allowedIds)) {
+            $student_id = $allowedIds[0];
         }
     }
 
@@ -167,19 +155,17 @@ if ($action === 'my_schedule') {
 // ── Parent: get all children ────────────────────────────────────
 if ($action === 'my_children') {
     if ($role !== 'parent') { jsonResponse(['error' => 'Parent access required'], 403); exit(); }
-    $myStudentId = intval($_SESSION['student_id'] ?? 0);
-    if (!$myStudentId) { jsonResponse([]); exit(); }
+    $studentIdsStr = trim($_SESSION['student_ids'] ?? '');
+    if (!$studentIdsStr) { jsonResponse(['children' => []]); exit(); }
 
-    debug_log('Parent my_children for student_id=' . $myStudentId);
-    $stmt = $db->prepare('SELECT father_cnic FROM students WHERE id=?');
-    $stmt->bind_param('i', $myStudentId);
-    $stmt->execute();
-    $row = $stmt->get_result()->fetch_assoc();
-    if (!$row || empty($row['father_cnic'])) { jsonResponse([]); exit(); }
+    $ids = array_values(array_filter(array_map('intval', explode(',', $studentIdsStr))));
+    if (empty($ids)) { jsonResponse(['children' => []]); exit(); }
 
-    $cnic  = $row['father_cnic'];
-    $stmt2 = $db->prepare('SELECT s.*, c.name as class_name FROM students s LEFT JOIN classes c ON c.id=s.class_id WHERE s.father_cnic=? ORDER BY s.student_name');
-    $stmt2->bind_param('s', $cnic);
+    debug_log('Parent my_children for student_ids=' . $studentIdsStr);
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    $types = str_repeat('i', count($ids));
+    $stmt2 = $db->prepare("SELECT s.*, c.name as class_name FROM students s LEFT JOIN classes c ON c.id=s.class_id WHERE s.id IN ({$placeholders}) ORDER BY s.student_name");
+    $stmt2->bind_param($types, ...$ids);
     $stmt2->execute();
     $result   = $stmt2->get_result();
     $children = [];
@@ -227,7 +213,8 @@ $studentFields = [
     'fee_1_type', 'fee_1_amount', 'fee_2_type', 'fee_2_amount',
     'fee_3_type', 'fee_3_amount', 'fee_4_type', 'fee_4_amount',
     'test_date', 'test_for_class', 'total_test_marks', 'total_obtained_marks',
-    'registration_status'
+    'registration_status',
+    'document1', 'document2', 'document3',
 ];
 
 // ── Fee fields treated as decimals ──────────────────────────────
@@ -324,6 +311,18 @@ if ($method === 'POST') {
     } else {
         jsonResponse(['error' => 'Failed to create student: ' . $db->error], 500);
     }
+    exit();
+}
+
+if ($method === 'PUT' && $action === 'set_class') {
+    if (!in_array($role, ['admin', 'superadmin'])) { jsonResponse(['error' => 'Admin access required'], 403); exit(); }
+    $data     = json_decode(file_get_contents('php://input'), true);
+    $id       = intval($data['id'] ?? 0);
+    $class_id = isset($data['class_id']) && $data['class_id'] !== '' ? intval($data['class_id']) : null;
+    if (!$id) { jsonResponse(['error' => 'ID required'], 400); exit(); }
+    $stmt = $db->prepare('UPDATE students SET class_id=? WHERE id=?');
+    $stmt->bind_param('ii', $class_id, $id);
+    if ($stmt->execute()) { jsonResponse(['success' => true]); } else { jsonResponse(['error' => $db->error], 500); }
     exit();
 }
 

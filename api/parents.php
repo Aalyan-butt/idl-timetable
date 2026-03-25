@@ -41,11 +41,20 @@ if ($method === 'GET') {
 
     $result = $db->query(
         "SELECT
+            MIN(p.id)           AS id,
             MIN(p.family_code)  AS family_code,
             p.cnic              AS father_cnic,
             MIN(p.photo)        AS photo,
             MIN(p.parent_name)  AS parent_name,
             MIN(p.phone)        AS parent_phone,
+            MIN(p.email)        AS email,
+            MIN(p.whatsapp)     AS whatsapp,
+            MIN(p.address)      AS address,
+            MIN(p.profession)   AS profession,
+            MIN(p.gender)       AS gender,
+            MIN(p.notes)        AS notes,
+            MIN(p.doc1)         AS doc1,
+            MIN(p.doc2)         AS doc2,
             GROUP_CONCAT(
                 CONCAT(s.student_name, IFNULL(CONCAT(' (', c.name, ')'), ''))
                 ORDER BY s.student_name SEPARATOR '||'
@@ -59,6 +68,7 @@ if ($method === 'GET') {
          ORDER BY CAST(MIN(p.family_code) AS UNSIGNED) ASC"
     );
 
+    if (!$result) jsonResponse(['error' => 'DB error: ' . $db->error], 500);
     $rows = [];
     while ($row = $result->fetch_assoc()) {
         $row['children'] = $row['children_str'] ? explode('||', $row['children_str']) : [];
@@ -74,7 +84,15 @@ if ($method === 'POST') {
     $cnic        = trim($data['father_cnic']  ?? '');
     $parent_name = trim($data['parent_name']  ?? '');
     $phone       = trim($data['parent_phone'] ?? '');
-    $photo       = $data['photo'] ?? null;
+    $photo       = $data['photo']       ?? null;
+    $email       = trim($data['email']      ?? '');
+    $whatsapp    = trim($data['whatsapp']   ?? '');
+    $address     = trim($data['address']    ?? '');
+    $profession  = trim($data['profession'] ?? '');
+    $gender      = trim($data['gender']     ?? '');
+    $notes       = trim($data['notes']      ?? '');
+    $doc1        = $data['doc1'] ?? null;
+    $doc2        = $data['doc2'] ?? null;
 
     if (!$cnic)        jsonResponse(['error' => 'CNIC is required'], 400);
     if (!$parent_name) jsonResponse(['error' => 'Parent name is required'], 400);
@@ -92,8 +110,8 @@ if ($method === 'POST') {
     $maxRow = $maxRes ? $maxRes->fetch_assoc() : [];
     $code   = str_pad(($maxRow['max_code'] ? intval($maxRow['max_code']) : 0) + 1, 3, '0', STR_PAD_LEFT);
 
-    $stmt = $db->prepare('INSERT INTO parents (parent_name, cnic, phone, photo, family_code) VALUES (?,?,?,?,?)');
-    $stmt->bind_param('sssss', $parent_name, $cnic, $phone, $photo, $code);
+    $stmt = $db->prepare('INSERT INTO parents (parent_name, cnic, phone, photo, email, whatsapp, address, profession, gender, notes, doc1, doc2, family_code) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)');
+    $stmt->bind_param('sssssssssssss', $parent_name, $cnic, $phone, $photo, $email, $whatsapp, $address, $profession, $gender, $notes, $doc1, $doc2, $code);
     if (!$stmt->execute()) jsonResponse(['error' => $db->error], 500);
     jsonResponse(['id' => $db->insert_id, 'family_code' => $code]);
 }
@@ -104,12 +122,20 @@ if ($method === 'PUT') {
     $cnic        = trim($data['father_cnic']  ?? '');
     $parent_name = trim($data['parent_name']  ?? '');
     $phone       = trim($data['parent_phone'] ?? '');
-    $photo       = $data['photo'] ?? null;
+    $photo       = $data['photo']       ?? null;
+    $email       = trim($data['email']      ?? '');
+    $whatsapp    = trim($data['whatsapp']   ?? '');
+    $address     = trim($data['address']    ?? '');
+    $profession  = trim($data['profession'] ?? '');
+    $gender      = trim($data['gender']     ?? '');
+    $notes       = trim($data['notes']      ?? '');
+    $doc1        = $data['doc1'] ?? null;
+    $doc2        = $data['doc2'] ?? null;
 
     if (!$cnic) jsonResponse(['error' => 'cnic required'], 400);
 
-    $stmt = $db->prepare('UPDATE parents SET parent_name=?, phone=?, photo=? WHERE cnic=?');
-    $stmt->bind_param('ssss', $parent_name, $phone, $photo, $cnic);
+    $stmt = $db->prepare('UPDATE parents SET parent_name=?, phone=?, photo=?, email=?, whatsapp=?, address=?, profession=?, gender=?, notes=?, doc1=?, doc2=? WHERE cnic=?');
+    $stmt->bind_param('ssssssssssss', $parent_name, $phone, $photo, $email, $whatsapp, $address, $profession, $gender, $notes, $doc1, $doc2, $cnic);
     if (!$stmt->execute()) jsonResponse(['error' => $db->error], 500);
     jsonResponse(['success' => true]);
 }
