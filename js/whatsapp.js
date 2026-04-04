@@ -149,18 +149,26 @@ function waShowConnected(statusText) {
   document.getElementById('wa-connected-name').textContent  = statusText || 'Ready to send messages';
   document.getElementById('wa-send-area').style.display     = '';
 
-  // Poll every 5s to detect drops
+  // Poll every 8s to detect real drops.
+  // Require 2 consecutive disconnected responses before switching UI —
+  // Baileys does brief internal restarts (~2-3s) that would otherwise
+  // cause false "Resuming" flicker on every keepalive cycle.
+  let waDisconnectStreak = 0;
   waQrPollTimer = setInterval(async () => {
     if (!waModalIsOpen) { clearInterval(waQrPollTimer); return; }
     try {
       const d = await waFetch('/status?account=' + waAccountId());
-      if (!d.connected) {
-        clearInterval(waQrPollTimer);
-        // Has creds → just resuming; no creds → needs QR
-        if (d.hasCreds) waShowResuming(); else waShowQR();
+      if (d.connected) {
+        waDisconnectStreak = 0; // reset on any connected response
+      } else {
+        waDisconnectStreak++;
+        if (waDisconnectStreak >= 2) {
+          clearInterval(waQrPollTimer);
+          if (d.hasCreds) waShowResuming(); else waShowQR();
+        }
       }
     } catch(e) { /* server blip — keep polling, don't flip state */ }
-  }, 5000);
+  }, 8000);
 }
 
 /* ── STATE 2: Resuming (has creds, temporarily disconnected) ──────────────── */

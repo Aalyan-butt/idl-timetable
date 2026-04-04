@@ -16,6 +16,7 @@
 8. [Page Modules](#8-page-modules)
 9. [Build System](#9-build-system)
 10. [WhatsApp Integration](#10-whatsapp-integration)
+10.5. [Security: Credential Encryption](#105-security-credential-encryption)
 11. [Setup &amp; Deployment](#11-setup--deployment)
 12. [Default Credentials](#12-default-credentials)
 
@@ -107,7 +108,8 @@ idl_updated/
 │   ├── enrollments.js          # Subject enrollment UI
 │   ├── parents.js              # Parent/family management
 │   ├── import-export.js        # Bulk import from Excel/CSV, export
-│   └── performance.js          # Performance tests, marks, analysis
+│   ├── performance.js          # Performance tests, marks, analysis
+│   └── profile-popup.js        # Bio profile popup panels (teacher, student, parent)
 │
 ├── css/                        # Source stylesheets (bundled at build time)
 │   ├── variables.css           # CSS custom properties (colors, radius, shadows)
@@ -135,11 +137,27 @@ idl_updated/
 │   ├── import.php
 │   ├── notifications.php
 │   ├── whatsapp.php
+│   ├── whatsapp_proxy.php      # PHP proxy — forwards /api/wa/* to Node.js server
 │   ├── ai.php
-│   └── performance_tests.php
+│   ├── performance_tests.php
+│   ├── performance_marks.php   # Mark entry & history per test / per student
+│   ├── migrate.php             # One-time migration runner utility (delete after use)
+│   └── notif_debug.php         # Notification debug utility
 │
 ├── includes/
-│   └── config.php              # DB connection, session, auth helpers, security headers
+│   └── config.php              # DB connection, session, auth helpers, AES encryption, security headers
+│
+├── migrations/                 # Incremental SQL migration scripts (safe to re-run)
+│   ├── 001_create_students_table.sql
+│   ├── 002_add_admission_enquiry_fields.sql
+│   ├── 003_add_student_id_to_users.sql
+│   ├── 004_create_parent_families.sql
+│   ├── 005_add_teacher_id_to_users.sql
+│   ├── 006_add_plain_password.sql
+│   ├── 007_add_parent_extra_fields.sql
+│   ├── 008_add_parent_id_to_users.sql
+│   ├── 009_add_student_ids_to_users.sql
+│   └── 010_add_performance_marks.sql
 │
 ├── assets/                     # Static files (images, icons etc.)
 │
@@ -176,7 +194,8 @@ idl_updated/
 | ---------------------- | --------------------- | ---------------------------------------------------- |
 | id                     | INT AUTO_INCREMENT PK |                                                      |
 | username               | VARCHAR               | Unique                                               |
-| password               | VARCHAR               | Hashed                                               |
+| password               | VARCHAR               | bcrypt-hashed                                        |
+| plain_password         | VARCHAR(255)          | AES-256-CBC encrypted password blob (admin readable) |
 | role                   | ENUM                  | admin, user, superadmin, supervisor, student, parent |
 | teacher_ids_perm       | TEXT                  | CSV — teacher IDs this user can view (user role)    |
 | class_ids_perm         | TEXT                  | CSV — class IDs this user can view (user role)      |
@@ -397,6 +416,21 @@ idl_updated/
 | status     | ENUM                  | pending, approved, rejected |
 | created_at | TIMESTAMP             |                             |
 
+### performance_marks
+
+| Column         | Type                  | Notes                                              |
+| -------------- | --------------------- | -------------------------------------------------- |
+| id             | INT AUTO_INCREMENT PK |                                                    |
+| test_id        | INT                   | FK → performance_tests                           |
+| student_id     | INT                   | FK → students                                    |
+| marks_obtained | DECIMAL(8,2)          | NULL when student is absent                        |
+| is_absent      | TINYINT(1)            | 1 = absent (marks_obtained stored as NULL)         |
+| is_skip        | TINYINT(1)            | 1 = skipped / not applicable                       |
+| comment        | TEXT                  | Optional per-student comment                       |
+| saved_at       | TIMESTAMP             | Auto-updated on every upsert                       |
+
+Unique constraint: `(test_id, student_id)` — one row per student per test. Upsert via `ON DUPLICATE KEY UPDATE`.
+
 ---
 
 ## 5. User Roles & Permissions
@@ -448,7 +482,7 @@ All endpoints require an active PHP session unless stated otherwise. Request and
 | POST   | `?action=logout` | requireAuth | Terminate session                                                                                   |
 | GET    | `?action=check`  | None        | Returns `{authenticated, user}` or `{authenticated: false}`. Also resets idle timer.            |
 
-Session timeout: 8 hours server-side, 60 minutes client-side idle timer.
+Session timeout: **60 minutes** server-side (PHP `session` `last_activity` check), **60 minutes** client-side idle timer.
 
 ---
 
@@ -530,6 +564,8 @@ Changes are logged to `notifications` table for undo support.
 | PUT    | `?action=sa_approve`  | requireSuperAdmin        | Approve request                         |
 | PUT    | `?action=sa_reject`   | requireSuperAdmin        | Reject request                          |
 | DELETE | `?id=X`               | requireAdminOrSupervisor | Delete user (cannot delete self)        |
+
+**`password_hint` field:** The GET response includes a `password_hint` field (the decrypted stored password) for sessions where `role` is `admin` or `superadmin`. Supervisors and all other roles never receive this field. Passwords are stored encrypted in the `plain_password` column using AES-256-CBC — see [Security: Credential Encryption](#security-credential-encryption).
 
 ---
 
@@ -647,6 +683,38 @@ Phone normalization: uses `whatsapp` field first, falls back to `phone`. Auto-co
 
 ---
 
+### `api/performance_marks.php`
+
+| Method | Query              | Auth         | Description                                                                   |
+| ------ | ------------------ | ------------ | ----------------------------------------------------------------------------- |
+| GET    | `?test_id=X`     | requireAuth  | All students in the test's class with their mark row (if any) — for mark entry |
+| GET    | `?student_id=X`  | requireAuth  | Full marks history for a single student across all tests                      |
+| POST   | —                 | requireAdmin | Bulk upsert marks for a test (`{test_id, marks[]}`)                          |
+
+Bulk upsert uses `ON DUPLICATE KEY UPDATE` on the `(test_id, student_id)` unique key. The `marks` array items accept: `student_id`, `marks_obtained`, `is_absent`, `is_skip`, `comment`. When `is_absent=1`, `marks_obtained` is stored as `NULL`.
+
+---
+
+### `api/whatsapp_proxy.php`
+
+PHP reverse proxy that forwards all `/api/whatsapp_proxy.php/<path>` requests to the remote Node.js WhatsApp server. Solves CORS and mixed-content browser restrictions when the client-side JavaScript must talk to the Node server.
+
+| Item                | Detail                                                      |
+| ------------------- | ----------------------------------------------------------- |
+| Auth required       | Yes (`requireAuth`)                                         |
+| Target server       | Configured via `WA_NODE_URL` constant inside the file       |
+| Supported methods   | GET, POST, PUT, DELETE (passthrough)                        |
+| Path forwarding     | Uses `$_SERVER['PATH_INFO']` or `?path=` query param        |
+| Body forwarding     | Raw `php://input` forwarded as-is via cURL                  |
+
+---
+
+### `api/migrate.php`
+
+One-time migration runner. Reads and executes the `migrations/006_add_plain_password.sql` file. Accessible to admin and superadmin only. **Delete this file from the server after running.**
+
+---
+
 ## 7. Frontend Architecture
 
 ### Single-Page Application
@@ -684,7 +752,7 @@ The active page is always reflected in the URL:
 ### Session Idle Timeout
 
 - **Client:** 60 minutes tracking mousemove, mousedown, keydown, touchstart, scroll, click
-- **Server:** 8-hour timeout
+- **Server:** 60 minutes (`last_activity` check in `config.php`)
 - **Tab hidden:** separate countdown starts when tab loses focus
 - On expiry: session cleared, login shown with expiry message
 
@@ -720,6 +788,7 @@ filterTable(searchId, tbodyId, emptyLabel, colspan, perPageId, countLabelId)
 | `teachers[]`            | Cached teacher list (loaded at app start)                            |
 | `classes[]`             | Cached class list (loaded at app start)                              |
 | `timetableSlots[]`      | Cached timetable (used for auto-select teacher in Performance Tests) |
+| `_studentsCache[]`      | Cached student list (populated on first student data load)           |
 | `_notificationsCache[]` | Notification list (superadmin only, polled every 60s)                |
 
 ---
@@ -753,6 +822,8 @@ Search teacher schedules by name. Free slot tooltip shows available time windows
 ### Users
 
 Create/edit viewer, supervisor, student, parent accounts. Assign teacher/class permissions via checkbox lists. Superadmin can manage admin accounts. Cannot delete own account.
+
+**Stored Password (admin/superadmin only):** When editing a user, a read-only "Stored Password" field is shown if the account has an encrypted password on record. The decrypted value is returned from the API as `password_hint` and is visible only to admin and superadmin sessions. Passwords are stored using AES-256-CBC encryption — never as plain text.
 
 ### User Classes
 
@@ -856,6 +927,8 @@ search.js → users.js → notifications.js → students.js → subjects.js →
 enrollments.js → parents.js → import-export.js → performance.js
 ```
 
+> **Note:** `profile-popup.js` is present in the `js/` folder but is not included in `build.js`'s `JS_FILES` array. If you use bio profile popups, add it to the bundle order or load it separately.
+
 > **Adding a new page:** (1) Add a `<div class="page" id="page-NAME"></div>` stub in `index.html`. (2) Create `pages/NAME.html` with the page content. (3) Add a `if (name === 'NAME') loadNAME();` line in `showPage()` in `navigation.js`. No changes needed to `auth.js` — it checks DOM existence automatically.
 
 > **Adding a new JS file:** Add it to `JS_FILES` in `build.js` at the correct position.
@@ -917,6 +990,51 @@ In Settings → WhatsApp:
 ### Bulk Messaging
 
 Set `wa_delay_ms` in Settings (default 1000 ms) to control the delay between messages when bulk-sending to multiple teachers.
+
+---
+
+## 10.5. Security: Credential Encryption
+
+User account passwords are stored **encrypted** in the `users.plain_password` column — never as plain text.
+
+### Key Derivation
+
+```php
+define('CRED_ENC_KEY', hash('sha256', DB_PASS . DB_USER . 'idl_cred_v1', true)); // 32 bytes
+```
+
+The encryption key is derived at runtime from the database credentials and a fixed salt. It is never written to the database or any log files.
+
+### Algorithm: AES-256-CBC
+
+```php
+function encryptCred(string $plain): string {
+    $iv  = random_bytes(16);                              // fresh random IV per encryption
+    $enc = openssl_encrypt($plain, 'AES-256-CBC', CRED_ENC_KEY, OPENSSL_RAW_DATA, $iv);
+    return base64_encode($iv . $enc);                      // IV prepended to ciphertext
+}
+
+function decryptCred(string $stored): string {
+    $raw = base64_decode($stored, true);
+    if ($raw === false || strlen($raw) < 17) return '';
+    $iv  = substr($raw, 0, 16);
+    $enc = substr($raw, 16);
+    $dec = openssl_decrypt($enc, 'AES-256-CBC', CRED_ENC_KEY, OPENSSL_RAW_DATA, $iv);
+    return $dec !== false ? $dec : '';
+}
+```
+
+### Access Control
+
+- `encryptCred()` is called in `api/users.php` POST and PUT when a password is provided.
+- `decryptCred()` is called in the GET handler and returns the result as `password_hint` **only for `admin` and `superadmin` sessions** (`isAdmin()` check).
+- Supervisors, users, students, and parents **never** receive the `password_hint` field.
+
+### Important Caveat
+
+If `DB_PASS` or `DB_USER` in `includes/config.php` change, all previously encrypted passwords become unreadable (wrong key). Always update credentials consistently.
+
+Accounts created before this feature was added will have `plain_password = NULL`; their `password_hint` will be empty.
 
 ---
 
@@ -1004,4 +1122,4 @@ To create additional users, log in as admin/superadmin and navigate to the **Use
 
 ---
 
-*Documentation reflects the current state of IDL Timetable System — March 2026.*
+*Documentation reflects the current state of IDL Timetable System — April 2026.*

@@ -15,36 +15,34 @@ async function _ensureLogo() {
 
 // ===== DOWNLOAD MENU =====
 function openDownloadMenu(menuId, btn) {
-  document.querySelectorAll('.download-menu').forEach(m => { if (m.id !== menuId) m.style.display = 'none'; });
+  document.querySelectorAll('.download-menu').forEach(m => { if (m.id !== menuId) m.classList.remove('open'); });
   const menu = document.getElementById(menuId);
   if (!menu) return;
-  const isOpen = menu.style.display === 'block';
-  menu.style.display = isOpen ? 'none' : 'block';
-  if (!isOpen) {
+  const isOpen = menu.classList.contains('open');
+  if (isOpen) {
+    menu.classList.remove('open');
+  } else {
     const parent = btn.parentElement;
     parent.style.position = 'relative';
-    // Reset to default right-aligned position
     menu.style.left = '';
     menu.style.right = '0';
-    // After the browser renders the menu, check if it overflows the viewport
     requestAnimationFrame(() => {
       const rect = menu.getBoundingClientRect();
       const vw = window.innerWidth;
       const margin = 8;
       if (rect.left < margin) {
-        // Overflows the left edge — switch to left-aligned
         menu.style.right = 'auto';
         menu.style.left = '0';
       } else if (rect.right > vw - margin) {
-        // Overflows the right edge — shift left so it stays inside
         const parentLeft = parent.getBoundingClientRect().left;
         const newLeft = Math.max(margin - parentLeft, vw - margin - rect.width - parentLeft);
         menu.style.right = 'auto';
         menu.style.left = `${newLeft}px`;
       }
     });
+    menu.classList.add('open');
     setTimeout(() => document.addEventListener('click', function hideMenu(e) {
-      if (!parent.contains(e.target)) { menu.style.display = 'none'; document.removeEventListener('click', hideMenu); }
+      if (!parent.contains(e.target)) { menu.classList.remove('open'); document.removeEventListener('click', hideMenu); }
     }), 0);
   }
 }
@@ -759,6 +757,13 @@ async function runImport(force_rows = []) {
   const resEl  = document.getElementById('import-result');
   const btn    = document.getElementById('import-run-btn');
 
+  // Block new import if there are unresolved conflict notifications
+  if (_pendingConflicts.length > 0) {
+    resEl.innerHTML = '<div class="import-result-box import-result-err">⚠ Please resolve all scheduling conflicts above before importing again.</div>';
+    resEl.style.display = '';
+    return;
+  }
+
   if (!raw) {
     resEl.innerHTML = '<div class="import-result-box import-result-err">⚠ Please paste CSV data or upload a file first.</div>';
     resEl.style.display = '';
@@ -822,8 +827,8 @@ async function runImport(force_rows = []) {
 
 // ── Conflict UI builder ───────────────────────────────────────────────────────
 function _buildConflictUI(conflicts) {
-  let html = `<div class="import-result-box import-result-warn" style="margin-top:10px">
-    <strong>⚠ ${conflicts.length} scheduling conflict${conflicts.length > 1 ? 's' : ''} found — review each:</strong>`;
+  let html = '<div class="import-result-box import-result-warn" style="margin-top:10px" id="iconf-container">' +
+    '<strong>⚠ Scheduling conflict' + (conflicts.length > 1 ? 's' : '') + ' found — review each:</strong>';
 
   conflicts.forEach((c, idx) => {
     html +=
@@ -842,44 +847,48 @@ function _buildConflictUI(conflicts) {
     '</div>';
   });
 
-  html += `
-    <div id="iconf-submit" style="margin-top:12px;display:none">
-      <button class="btn btn-primary btn-sm" onclick="submitConflictDecisions()">Submit Decisions</button>
-      <span id="iconf-submit-hint" style="font-size:0.8rem;color:var(--text-muted);margin-left:10px"></span>
-    </div>
-  </div>`;
+  html += '</div>';
   return html;
 }
 
-// Tracks decisions: { rowIndex: true/false }
-let _conflictDecisions = {};
-
-function decideConflict(idx, accept, btn) {
-  _conflictDecisions[idx] = accept;
+async function decideConflict(idx, accept, btn) {
   const item = document.getElementById('iconf-' + idx);
-  const btns = item.querySelectorAll('.import-conflict-btns button');
-  btns.forEach(b => b.classList.remove('chosen'));
-  btn.classList.add('chosen');
+  // Disable buttons immediately to prevent double-click
+  item.querySelectorAll('button').forEach(b => { b.disabled = true; });
 
-  // Show submit button once all conflicts have a decision
-  const decided = Object.keys(_conflictDecisions).length;
-  const total   = _pendingConflicts.length;
-  const submitEl = document.getElementById('iconf-submit');
-  if (submitEl) {
-    submitEl.style.display = decided > 0 ? '' : 'none';
-    const hint = document.getElementById('iconf-submit-hint');
-    if (hint) hint.textContent = decided < total ? `(${total - decided} conflict${total - decided > 1 ? 's' : ''} still undecided — they will be skipped)` : '';
+  if (accept) {
+    const conflict = _pendingConflicts[idx];
+    const row = _pendingConflictRows[conflict.row_index];
+    try {
+      await api(`${API_IMPORT}?type=${_importActiveTab}`, 'POST', { rows: [row], force_rows: [0] });
+      _importDidSucceed = true;
+      toast('Slot added successfully.', 'success');
+    } catch(e) {
+      toast('Failed to add slot: ' + e.message, 'error');
+      item.querySelectorAll('button').forEach(b => { b.disabled = false; });
+      return;
+    }
   }
-}
 
-async function submitConflictDecisions() {
-  // Collect row indices accepted by user
-  const forceIndices = _pendingConflicts
-    .filter((c, idx) => _conflictDecisions[idx] === true)
-    .map(c => c.row_index);
-
-  _conflictDecisions = {};
-  document.getElementById('iconf-submit').style.display = 'none';
-  await runImport(forceIndices);
+  // Animate removal
+  item.style.transition = 'opacity 0.22s ease, transform 0.22s ease';
+  item.style.opacity = '0';
+  item.style.transform = 'translateX(12px)';
+  setTimeout(() => {
+    item.remove();
+    // When all conflicts resolved, clear textarea and reset state
+    const container = document.getElementById('iconf-container');
+    if (container && !container.querySelector('.import-conflict-item')) {
+      container.style.transition = 'opacity 0.2s';
+      container.style.opacity = '0';
+      setTimeout(() => {
+        container.remove();
+        const textarea = document.getElementById('import-csv-' + _importActiveTab);
+        if (textarea) textarea.value = '';
+        _pendingConflicts    = [];
+        _pendingConflictRows = [];
+      }, 200);
+    }
+  }, 230);
 }
 

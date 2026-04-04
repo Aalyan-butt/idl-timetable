@@ -22,6 +22,7 @@ const API = {
   parents:            'api/parents.php',
   subjectEnrollments: 'api/subject_enrollments.php',
   performanceTests:   'api/performance_tests.php',
+  performanceMarks:   'api/performance_marks.php',
 };
 
 async function api(url, method = 'GET', body = null) {
@@ -32,7 +33,11 @@ async function api(url, method = 'GET', body = null) {
   }
   const res = await fetch(url, opts);
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  if (!res.ok) {
+    const err = new Error(data.error || `HTTP ${res.status}`);
+    err._raw = data;
+    throw err;
+  }
   return data;
 }
 

@@ -41,7 +41,7 @@ $s   = [];
 while ($row = $res->fetch_assoc()) $s[$row['key']] = $row['value'];
 
 $provider  = $s['wa_provider']        ?? 'local';          // 'local' | 'ultramsg'
-$localUrl  = rtrim($s['wa_local_url'] ?? 'http://localhost:3001', '/');
+$localUrl  = rtrim($s['wa_local_url'] ?? 'https://kirk-njs.web02.empoweric.com', '/');
 $apiUrl    = rtrim($s['wa_api_url']   ?? 'https://api.ultramsg.com', '/');
 $instanceId= $s['wa_instance']   ?? '';
 $apiKey    = $s['wa_api_key']    ?? '';

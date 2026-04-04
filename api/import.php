@@ -157,6 +157,11 @@ if ($type === 'teachers') {
          VALUES (?,?,?,?,?,?,?,?,?)'
     );
 
+    // Exact-duplicate check: same class, days, start, end, subject already exists?
+    $stmt_dup = $db->prepare(
+        'SELECT id FROM timetable WHERE class_id=? AND days=? AND start_time=? AND end_time=? AND subject=? LIMIT 1'
+    );
+
     $conflicts = []; // rows needing user approval
 
     foreach ($rows as $i => $row) {
@@ -248,6 +253,12 @@ if ($type === 'teachers') {
                 }
             }
         }
+
+        // Skip exact duplicates (prevents re-importing the same slot twice)
+        $stmt_dup->bind_param('issss', $class_id, $days, $start_time, $end_time, $subject);
+        $stmt_dup->execute();
+        $stmt_dup->store_result();
+        if ($stmt_dup->num_rows > 0) { $skipped++; continue; }
 
         $stmt_ins->bind_param('iissssssi',
             $class_id, $teacher_id, $ids_str,

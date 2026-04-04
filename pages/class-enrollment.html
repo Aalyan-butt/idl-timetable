@@ -7,7 +7,7 @@
         <div style="display:flex;gap:8px;align-items:center">
           <div style="position:relative;display:inline-block">
             <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('ce-dm', this)">📄 Download PDF</button>
-            <div id="ce-dm" class="download-menu" style="display:none">
+            <div id="ce-dm" class="download-menu">
               <div class="dm-scale-row">
                 <span class="dm-scale-label">Page Scale</span>
                 <div class="dm-scale-btns">
@@ -37,8 +37,8 @@
         <button id="ce-tab-unassigned" onclick="setCETab('unassigned')" class="btn btn-secondary" style="font-size:0.82rem;padding:5px 16px">Not Assigned</button>
         <span id="ce-count-label" style="font-size:0.82rem;color:var(--text-muted);margin-left:6px"></span>
         <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
-          <label style="font-size:0.82rem;color:var(--text-muted);white-space:nowrap">Show:</label>
-          <select id="ce-per-page" onchange="filterClassEnrollment()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem">
+          <label class="show-label">Show:</label>
+          <select id="ce-per-page" onchange="filterClassEnrollment()" class="filter-select" style="width:auto;padding:5px 10px">
             <option value="25">25</option>
             <option value="50">50</option>
             <option value="100">100</option>

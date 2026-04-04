@@ -404,14 +404,14 @@ function makeSearchable(selectEl) {
     const opts = [...selectEl.options].filter(o => !o.disabled);
     if (!opts.filter(o => o.value !== '').length) { list.innerHTML = '<div class="ss-empty">No options available</div>'; return; }
     opts.forEach(opt => {
-      if (!opt.value && opt.text.toLowerCase().includes('select')) return;
+      if (!opt.value && opt.text.toLowerCase().includes('select') && !selectEl.dataset.keepPlaceholder) return;
       const item = document.createElement('div');
       item.className = 'ss-opt' + (opt.selected ? ' selected' : '');
       item.textContent = opt.text;
       item.dataset.value = opt.value;
       item.addEventListener('mousedown', e => {
         e.preventDefault();
-        if (isMultiple) { opt.selected = !opt.selected; item.classList.toggle('selected', opt.selected); }
+        if (isMultiple) { opt.selected = !opt.selected; item.classList.toggle('selected', opt.selected); searchInput.value = ''; filterList(''); }
         else { [...selectEl.options].forEach(o => o.selected = false); list.querySelectorAll('.ss-opt').forEach(i => i.classList.remove('selected')); opt.selected = true; item.classList.add('selected'); closeDropdown(); }
         updateDisplay();
         selectEl.dispatchEvent(new Event('change', { bubbles: true }));
@@ -481,6 +481,8 @@ function initAllSelects() {
     'st-test_for_class',
     // ── Enrollment / assignment ──
     'assign-class-select',
+    // ── Performance marks ──
+    'pm-test-select',
   ];
   ids.forEach(id => {
     const el = document.getElementById(id);
@@ -492,3 +494,13 @@ function escapeHtml(str) {
   if (!str) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// ===== RESTRICT DATE INPUT YEAR TO 4 DIGITS =====
+document.addEventListener('input', function(e) {
+  if (e.target.type !== 'date' || !e.target.value) return;
+  const parts = e.target.value.split('-');
+  if (parts[0] && parts[0].length > 4) {
+    parts[0] = parts[0].slice(0, 4);
+    e.target.value = parts.join('-');
+  }
+}, true);

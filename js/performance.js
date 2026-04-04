@@ -6,7 +6,6 @@ const PT_COLS = [
   { key: 'col-pt-sr',       label: 'Sr.#',          def: true  },
   { key: 'col-pt-name',     label: 'Test Name',      def: true  },
   { key: 'col-pt-status',   label: 'Status',         def: true  },
-  { key: 'col-pt-mstatus',  label: 'Marks Status',   def: true  },
   { key: 'col-pt-date',     label: 'Test Date',      def: true  },
   { key: 'col-pt-deadline', label: 'Entry Deadline', def: false },
   { key: 'col-pt-class',    label: 'Class',          def: true  },
@@ -144,7 +143,7 @@ function _renderPTTable(rows) {
   const tbody = document.getElementById('pt-body');
   if (!tbody) return;
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:28px;color:var(--text-muted)">No performance tests found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:28px;color:var(--text-muted)">No Data Found</td></tr>`;
     _applyPTColVisibility();
     return;
   }
@@ -153,7 +152,6 @@ function _renderPTTable(rows) {
       <td data-col="col-pt-sr" style="min-width:48px">${i + 1}</td>
       <td data-col="col-pt-name" style="font-weight:600;min-width:160px">${escapeHtml(t.test_name)}</td>
       <td data-col="col-pt-status">${_ptStatusBadge(t.status)}</td>
-      <td data-col="col-pt-mstatus"><span style="font-size:0.8rem;color:var(--text-muted)">—</span></td>
       <td data-col="col-pt-date">${t.test_date ? t.test_date.substring(0,10) : '—'}</td>
       <td data-col="col-pt-deadline">${t.marks_entry_deadline ? t.marks_entry_deadline.substring(0,10) : '—'}</td>
       <td data-col="col-pt-class">${escapeHtml(t.class_name   || '—')}</td>
@@ -358,4 +356,261 @@ async function deletePerformanceTest(id, name) {
     toast('Test deleted');
     loadPerformanceTests();
   } catch(e) { toast(e.message, 'error'); }
+}
+
+// ===== PERFORMANCE MARKS =====
+
+var _pmTestId   = null;
+var _pmTestData = null;
+var _pmStudents = [];
+
+async function loadPerformanceMarks() {
+  try {
+    const tests = await api(API.performanceTests);
+    _ptData = Array.isArray(tests) ? tests : _ptData;
+    _pmBuildClassFilter(_ptData);
+    _pmBuildTestList(_ptData);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function _pmFmtDate(dateStr) {
+  if (!dateStr) return '—';
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const p = (dateStr + '').substring(0, 10).split('-');
+  return p.length === 3 ? `${p[2]}-${months[parseInt(p[1], 10) - 1]}-${p[0]}` : dateStr;
+}
+
+function _pmBuildClassFilter(tests) {
+  const sel = document.getElementById('pm-class-filter');
+  if (!sel) return;
+  const seen = new Map();
+  tests.forEach(t => { if (t.class_id && !seen.has(t.class_id)) seen.set(t.class_id, t.class_name); });
+  sel.innerHTML = '<option value="">All Classes</option>' +
+    [...seen.entries()].map(([id, name]) => `<option value="${id}">${escapeHtml(name || '')}</option>`).join('');
+}
+
+function _pmBuildTestList(tests) {
+  const classFilter = document.getElementById('pm-class-filter')?.value || '';
+  const filtered = classFilter ? tests.filter(t => String(t.class_id) === classFilter) : tests;
+  const sel = document.getElementById('pm-test-select');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Select Test Name —</option>' +
+    filtered.map(t => {
+      const date  = _pmFmtDate(t.test_date);
+      const label = `${t.test_name}  [${t.class_name || ''}]  [${t.subject_name || ''}]  [${t.status || 'Empty'}]  [${date}]`;
+      return `<option value="${t.id}">${escapeHtml(label)}</option>`;
+    }).join('');
+  // If the current test is no longer in the filtered set, clear selection
+  if (classFilter && _pmTestId && !filtered.find(t => t.id == _pmTestId)) pmSelectTest('');
+}
+
+function pmFilterTestList() {
+  _pmBuildTestList(_ptData);
+}
+
+async function pmSelectTest(testId) {
+  const infoEl   = document.getElementById('pm-test-info');
+  const statsEl  = document.getElementById('pm-stats-card');
+  const saveEl   = document.getElementById('pm-save-row');
+  const totalEl  = document.getElementById('pm-total-marks-val');
+  const tbody    = document.getElementById('pm-students-body');
+
+  if (!testId) {
+    _pmTestId = null; _pmTestData = null; _pmStudents = [];
+    if (infoEl)  infoEl.style.display  = 'none';
+    if (statsEl) statsEl.style.display = 'none';
+    if (saveEl)  saveEl.style.display  = 'none';
+    if (totalEl) totalEl.textContent   = '—';
+    if (tbody)   tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:44px;color:var(--text-muted)">No Data Found</td></tr>`;
+    pmApplyCols();
+    return;
+  }
+
+  _pmTestId   = parseInt(testId);
+  _pmTestData = (_ptData || []).find(t => t.id == testId) || null;
+
+  if (_pmTestData) {
+    document.getElementById('pm-info-date').textContent     = _pmFmtDate(_pmTestData.test_date);
+    document.getElementById('pm-info-subject').textContent  = _pmTestData.subject_name  || '—';
+    document.getElementById('pm-info-teacher').textContent  = _pmTestData.teacher_name  ? _pmTestData.teacher_name + ' (Teacher)' : '—';
+    document.getElementById('pm-info-total').textContent    = _pmTestData.total_marks   != null ? _pmTestData.total_marks : '—';
+    document.getElementById('pm-info-details').textContent  = _pmTestData.coverage_details || 'No test details provided.';
+    document.getElementById('pm-stats-subject').textContent = _pmTestData.subject_name  || '';
+    document.getElementById('pm-total-badge').textContent   = _pmTestData.total_marks   != null ? _pmTestData.total_marks : '—';
+    if (totalEl) totalEl.textContent = _pmTestData.total_marks != null ? _pmTestData.total_marks : '—';
+    if (infoEl)  infoEl.style.display = '';
+  }
+
+  if (statsEl) statsEl.style.display = '';
+  if (saveEl)  saveEl.style.display  = '';
+  if (tbody) tbody.innerHTML =
+    '<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--text-muted)">Loading…</td></tr>';
+
+  const fillEl = document.getElementById('pm-fill-all');
+  if (fillEl) fillEl.value = '';
+
+  try {
+    _pmStudents = await api(`${API.performanceMarks}?test_id=${testId}`);
+    _pmRenderStudents();
+  } catch(e) {
+    document.getElementById('pm-students-body').innerHTML =
+      `<tr><td colspan="8" style="text-align:center;padding:36px;color:#ff5555">${escapeHtml(e.message)}</td></tr>`;
+    toast(e.message, 'error');
+  }
+}
+
+function _pmRenderStudents() {
+  const tbody = document.getElementById('pm-students-body');
+  if (!tbody) return;
+  if (!_pmStudents.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:44px;color:#555566">No students found in this class.</td></tr>';
+    return;
+  }
+  const total = _pmTestData?.total_marks != null ? parseFloat(_pmTestData.total_marks) : null;
+
+  tbody.innerHTML = _pmStudents.map((s, i) => {
+    const obtained = s.marks_obtained != null ? s.marks_obtained : '';
+    const isAbsent = !!parseInt(s.is_absent || 0);
+    const isSkip   = !!parseInt(s.is_skip   || 0);
+    const disabled = isAbsent || isSkip;
+    const exceeds  = total !== null && obtained !== '' && parseFloat(obtained) > total;
+
+    const photo = s.photo
+      ? `<img src="${escapeHtml(s.photo)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid rgba(201,162,39,0.4)">`
+      : `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#c9a227,#8a6e10);display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:#0e0e14;font-size:0.88rem">${escapeHtml((s.student_name || '?')[0].toUpperCase())}</div>`;
+
+    const marksClass = `pm-marks-inp${exceeds ? ' pm-exceeds' : ''}`;
+
+    return `<tr id="pm-row-${i}">
+      <td style="min-width:44px;color:#555566;font-size:0.8rem">${i + 1}</td>
+      <td class="pm-col-gr" style="min-width:72px"><span class="pm-gr-text">${escapeHtml(s.gr_number || '—')}</span></td>
+      <td class="pm-col-photo" style="min-width:58px">${photo}</td>
+      <td style="min-width:170px">
+        <span class="pm-name-link" onclick="openStudentBio(${s.student_id})">${escapeHtml(s.student_name || '—')}</span>
+      </td>
+      <td style="min-width:130px">
+        <input type="number" id="pm-marks-${i}" value="${escapeHtml(String(obtained))}"
+          ${disabled ? 'disabled' : ''} min="0" ${total !== null ? `max="${total}"` : ''}
+          class="${marksClass}" oninput="pmCheckExceeds(${i})">
+      </td>
+      <td class="pm-col-skip" style="min-width:64px;text-align:center">
+        <input type="checkbox" id="pm-skip-${i}" ${isSkip ? 'checked' : ''}
+          onchange="pmToggleSkip(${i},this.checked)" class="pm-cb">
+      </td>
+      <td class="pm-col-absent" style="min-width:74px;text-align:center">
+        <input type="checkbox" id="pm-absent-${i}" ${isAbsent ? 'checked' : ''}
+          onchange="pmToggleAbsent(${i},this.checked)" class="pm-cb pm-cb-absent">
+      </td>
+      <td class="pm-col-comment" style="min-width:200px">
+        <textarea id="pm-comment-${i}" rows="2"
+          placeholder="Write notes or comments here…"
+          class="pm-comment-ta">${escapeHtml(s.comment || '')}</textarea>
+      </td>
+    </tr>`;
+  }).join('');
+
+  pmApplyCols();
+}
+
+function pmToggleAbsent(idx, checked) {
+  const inp  = document.getElementById(`pm-marks-${idx}`);
+  const skip = document.getElementById(`pm-skip-${idx}`);
+  if (inp) {
+    if (checked) { inp.value = ''; inp.classList.remove('pm-exceeds'); if (skip) skip.checked = false; }
+    inp.disabled = checked;
+  }
+  pmCheckExceeds(idx);
+}
+
+function pmToggleSkip(idx, checked) {
+  const inp = document.getElementById(`pm-marks-${idx}`);
+  const abs = document.getElementById(`pm-absent-${idx}`);
+  if (inp) {
+    if (checked) { inp.value = ''; inp.classList.remove('pm-exceeds'); if (abs) abs.checked = false; }
+    inp.disabled = checked;
+  }
+  pmCheckExceeds(idx);
+}
+
+function pmToggleAllAbsent(checked) {
+  _pmStudents.forEach((_, i) => { const cb = document.getElementById(`pm-absent-${i}`); if (cb) { cb.checked = checked; pmToggleAbsent(i, checked); } });
+}
+
+function pmToggleAllSkip(checked) {
+  _pmStudents.forEach((_, i) => { const cb = document.getElementById(`pm-skip-${i}`); if (cb) { cb.checked = checked; pmToggleSkip(i, checked); } });
+}
+
+function pmFillAll(value) {
+  _pmStudents.forEach((_, i) => {
+    const inp = document.getElementById(`pm-marks-${i}`);
+    if (inp && !inp.disabled) { inp.value = value; pmCheckExceeds(i); }
+  });
+}
+
+function pmCheckExceeds(idx) {
+  const inp = document.getElementById(`pm-marks-${idx}`);
+  const total = _pmTestData?.total_marks != null ? parseFloat(_pmTestData.total_marks) : null;
+  if (!inp || total === null) return;
+  const ex = inp.value !== '' && parseFloat(inp.value) > total;
+  inp.classList.toggle('pm-exceeds', ex);
+}
+
+function pmShowRowWarn(idx) {
+  const s   = _pmStudents[idx];
+  const val = document.getElementById(`pm-marks-${idx}`)?.value;
+  toast(`⚠ ${escapeHtml(s.student_name)}: ${val} exceeds total marks (${_pmTestData?.total_marks}).`, 'error');
+}
+
+function pmShowWarnings() {
+  const total = _pmTestData?.total_marks != null ? parseFloat(_pmTestData.total_marks) : null;
+  if (total === null) { toast('No test selected.', 'error'); return; }
+  const issues = _pmStudents.reduce((acc, s, i) => {
+    const inp = document.getElementById(`pm-marks-${i}`);
+    if (inp && inp.value !== '' && parseFloat(inp.value) > total) acc.push(`${escapeHtml(s.student_name)}: ${inp.value}`);
+    return acc;
+  }, []);
+  if (!issues.length) { toast('No marks exceed the total — all good!', 'success'); return; }
+  toast(`⚠ ${issues.length} student(s) exceed total (${total}):\n${issues.slice(0, 5).join(', ')}${issues.length > 5 ? '…' : ''}`, 'error');
+}
+
+function _pmGetRow(idx) {
+  return {
+    student_id:     _pmStudents[idx].student_id,
+    marks_obtained: document.getElementById(`pm-marks-${idx}`)?.value ?? '',
+    is_absent:      document.getElementById(`pm-absent-${idx}`)?.checked ? 1 : 0,
+    is_skip:        document.getElementById(`pm-skip-${idx}`)?.checked  ? 1 : 0,
+    comment:        document.getElementById(`pm-comment-${idx}`)?.value ?? '',
+  };
+}
+
+async function pmSaveAll() {
+  if (!_pmTestId) return;
+  const marks = _pmStudents.map((_, i) => _pmGetRow(i));
+  try {
+    const resp = await api(API.performanceMarks, 'POST', { test_id: _pmTestId, marks });
+    toast(`All marks saved. Test status: ${resp.test_status}`, 'success');
+    _pmStudents = await api(`${API.performanceMarks}?test_id=${_pmTestId}`);
+    _pmRenderStudents();
+    const t = (_ptData || []).find(x => x.id == _pmTestId);
+    if (t) t.status = resp.test_status;
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function pmSaveRow(idx) {
+  if (!_pmTestId) return;
+  try {
+    const resp = await api(API.performanceMarks, 'POST', { test_id: _pmTestId, marks: [_pmGetRow(idx)] });
+    toast(`Saved: ${escapeHtml(_pmStudents[idx].student_name)}`, 'success');
+    const t = (_ptData || []).find(x => x.id == _pmTestId);
+    if (t) t.status = resp.test_status;
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function pmApplyCols() {
+  const cols = ['gr', 'photo', 'skip', 'absent', 'comment'];
+  cols.forEach(c => {
+    const cb   = document.getElementById(`pm-col-cb-${c}`);
+    const show = !cb || cb.checked;
+    document.querySelectorAll(`.pm-col-${c}`).forEach(el => { el.style.display = show ? '' : 'none'; });
+  });
 }

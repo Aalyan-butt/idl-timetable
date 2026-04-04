@@ -237,6 +237,33 @@ function removeClassEntry(id) {
   _settingsClassRender('');
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function _timeToMinutes(t) {
+  if (!t) return 0;
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + (m || 0);
+}
+function _fmtTime(t) {
+  if (!t) return t;
+  const [h, m] = t.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2,'0')} ${h >= 12 ? 'PM' : 'AM'}`;
+}
+
+// ── Styled timing-change confirmation modal ───────────────────────────────────
+var _timingConfirmResolve = null;
+
+function _showTimingConfirm(summaryHtml) {
+  return new Promise(resolve => {
+    document.getElementById('timing-confirm-summary').innerHTML = summaryHtml;
+    _timingConfirmResolve = (confirmed) => {
+      document.getElementById('timing-confirm-overlay').classList.remove('open');
+      _timingConfirmResolve = null;
+      resolve(confirmed);
+    };
+    document.getElementById('timing-confirm-overlay').classList.add('open');
+  });
+}
+
 // ── Save ──────────────────────────────────────────────────────────────────────
 async function saveSettings() {
   const school_start = document.getElementById('settings-start').value;
@@ -265,18 +292,90 @@ async function saveSettings() {
     });
   });
 
+  // ── Detect timing changes and ask for timetable update ────────────────────
+  const oldStart = (schoolSettings.school_start || '08:00').substring(0, 5);
+  const newStart = school_start.substring(0, 5);
+  const defaultShiftMins = _timeToMinutes(newStart) - _timeToMinutes(oldStart);
+
+  let classShiftExists = false;
+  _addedClassIds.forEach(id => {
+    const nv = (document.getElementById(`classid-start-${id}`)?.value || '').substring(0, 5);
+    const ov = (schoolSettings[`classid_${id}_start`] || '').substring(0, 5);
+    if (nv !== ov) classShiftExists = true;
+  });
+
+  // Detect per-day default changes (extra shift beyond the default)
+  let dayShiftExists = false;
+  days.forEach(day => {
+    const dk     = day.toLowerCase();
+    const nv     = (document.getElementById(`day-start-${dk}`)?.value || '').substring(0, 5);
+    const ov     = (schoolSettings[`${dk}_start`] || '').substring(0, 5);
+    const effOld = _timeToMinutes(ov || oldStart);
+    const effNew = _timeToMinutes(nv || newStart);
+    if ((effNew - effOld) - defaultShiftMins !== 0) dayShiftExists = true;
+  });
+
+  // Detect per-day class-specific changes
+  let classDayShiftExists = false;
+  _addedClassIds.forEach(id => {
+    const classOld = (schoolSettings[`classid_${id}_start`] || '').substring(0, 5);
+    const classNew = (document.getElementById(`classid-start-${id}`)?.value || '').substring(0, 5);
+    const classShiftMins = _timeToMinutes(classNew || newStart) - _timeToMinutes(classOld || oldStart);
+    days.forEach(day => {
+      const dk     = day.toLowerCase();
+      const nv     = (document.getElementById(`classid-${id}-day-start-${dk}`)?.value || '').substring(0, 5);
+      const ov     = (schoolSettings[`classid_${id}_${dk}_start`] || '').substring(0, 5);
+      const effOld = _timeToMinutes(ov || classOld || (schoolSettings[`${dk}_start`] || '') || oldStart);
+      const effNew = _timeToMinutes(nv || classNew || (document.getElementById(`day-start-${dk}`)?.value || '') || newStart);
+      if ((effNew - effOld) - classShiftMins !== 0) classDayShiftExists = true;
+    });
+  });
+
+  if (defaultShiftMins !== 0 || classShiftExists || dayShiftExists || classDayShiftExists) {
+    let lines = [];
+    if (defaultShiftMins !== 0) {
+      const absM = Math.abs(defaultShiftMins);
+      const absH = absM / 60;
+      const dir  = defaultShiftMins > 0 ? '▶ forward' : '◀ back';
+      const hLabel = Number.isInteger(absH) ? `${absH} hr` : `${absM} min`;
+      const oldFmt = _fmtTime(oldStart);
+      const newFmt = _fmtTime(newStart);
+      lines.push(`<strong>Default school start:</strong> ${oldFmt} → ${newFmt} <span style="color:var(--accent)">(${dir} ${hLabel})</span>`);
+    }
+    if (dayShiftExists) {
+      lines.push(`<strong>School hours by day</strong> have been updated.`);
+    }
+    if (classShiftExists) {
+      lines.push(`<strong>Class-specific hours</strong> have also been updated.`);
+    }
+    if (classDayShiftExists) {
+      lines.push(`<strong>Class-specific hours by day</strong> have been updated.`);
+    }
+    const summaryHtml = lines.join('<br>');
+    const confirmed = await _showTimingConfirm(summaryHtml);
+    if (!confirmed) return;
+    payload.update_timetable = true;
+  }
+
   try {
-    await api(API.settings, 'POST', payload);
+    const result = await api(API.settings, 'POST', payload);
     schoolSettings = { ...schoolSettings, ...payload };
     const trackFrom = document.getElementById('track-time-from');
     const trackTo   = document.getElementById('track-time-to');
     if (trackFrom) trackFrom.value = school_start;
     if (trackTo)   trackTo.value   = school_end;
+
+    let successMsg = '✓ Settings saved successfully';
+    if (result.timetable_updated > 0) {
+      successMsg += ` — ${result.timetable_updated} timetable slot(s) updated`;
+    }
     msgEl.className   = 'alert alert-success';
-    msgEl.textContent = '✓ Settings saved successfully';
+    msgEl.textContent = successMsg;
     msgEl.style.display = 'flex';
-    setTimeout(() => { msgEl.style.display = 'none'; }, 3000);
-    toast('Settings saved', 'success');
+    setTimeout(() => { msgEl.style.display = 'none'; }, 4000);
+    toast(result.timetable_updated > 0
+      ? `Settings saved · ${result.timetable_updated} timetable slots updated`
+      : 'Settings saved', 'success');
   } catch(e) {
     msgEl.className   = 'alert alert-error';
     msgEl.textContent = e.message;

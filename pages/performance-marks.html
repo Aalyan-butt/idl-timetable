@@ -1,13 +1,370 @@
 
+<style>
+/* ── Performance Marks — uses site CSS vars ──────────────────────── */
+.pm-card {
+  background: linear-gradient(150deg, #0d0d1f 0%, #09091a 100%);
+  border: 1px solid rgba(201,168,76,0.28);
+  border-radius: var(--radius, 10px);
+  padding: 20px 22px;
+  margin-bottom: 14px;
+  position: relative;
+}
+.pm-card::before {
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(201,168,76,0.5),transparent);
+  border-radius: var(--radius, 10px) var(--radius, 10px) 0 0;
+  pointer-events:none;
+}
+.pm-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.pm-select-wrap select,
+.pm-select-wrap .ss-wrapper {
+  background: #1c1c2c !important;
+  border: 1px solid rgba(201,162,39,0.3) !important;
+  border-radius: 8px !important;
+  color: #f0ead0 !important;
+  font-size: 0.88rem !important;
+}
+.pm-select-wrap .ss-display {
+  background: #1c1c2c !important;
+  color: #f0ead0 !important;
+  border: none !important;
+}
+.pm-select-wrap .ss-option:hover,
+.pm-select-wrap .ss-option.highlighted {
+  background: rgba(201,162,39,0.15) !important;
+  color: #c9a227 !important;
+}
+.pm-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border: 1px solid rgba(201,168,76,0.22);
+  border-radius: 9px;
+}
+.pm-chip-icon { font-size: 1rem; }
+.pm-chip-label { font-family:'Cinzel',serif; font-size: 0.68rem; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px; }
+.pm-chip-val { font-size: 0.88rem; color: var(--text); font-weight: 600; }
+.pm-details-box {
+  background: var(--surface2);
+  border: 1px solid rgba(201,168,76,0.18);
+  border-radius: 9px;
+  padding: 12px 14px;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  font-style: italic;
+  line-height: 1.55;
+  min-height: 44px;
+}
+.pm-col-panel-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+.pm-col-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text-soft);
+  cursor: pointer;
+  user-select: none;
+}
+.pm-col-label input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; }
+.pm-stats-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.pm-total-badge {
+  background: rgba(201,168,76,0.14);
+  color: var(--accent);
+  border: 1px solid rgba(201,168,76,0.35);
+  padding: 3px 16px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+.pm-fill-input {
+  width: 110px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(201,168,76,0.3);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 0.9rem;
+  text-align: center;
+  outline: none;
+}
+.pm-fill-input:focus { border-color: var(--accent); }
+#pm-table { width: 100%; border-collapse: collapse; }
+#pm-table thead tr { background: rgba(201,168,76,0.05); }
+#pm-table thead th {
+  font-family: 'Cinzel', serif;
+  padding: 13px 12px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  border-bottom: 2px solid rgba(201,168,76,0.3);
+  white-space: nowrap;
+  background: rgba(201,168,76,0.05);
+}
+#pm-table tbody tr {
+  border-bottom: 1px solid rgba(201,168,76,0.08);
+  transition: background .15s;
+}
+#pm-table tbody tr:hover { background: rgba(201,168,76,0.05); }
+#pm-table td {
+  padding: 11px 12px;
+  font-size: 0.92rem;
+  color: var(--text);
+  vertical-align: middle;
+}
+.pm-marks-inp {
+  width: 90px;
+  padding: 7px 9px;
+  border-radius: 7px;
+  border: 1.5px solid rgba(201,168,76,0.3);
+  background: var(--surface2);
+  color: var(--text);
+  text-align: center;
+  font-size: 0.92rem;
+  outline: none;
+  font-weight: 600;
+  transition: border-color .2s;
+}
+.pm-marks-inp:focus { border-color: var(--accent); }
+.pm-marks-inp:disabled { background: var(--surface); color: var(--text-muted); border-color: rgba(255,255,255,0.06); }
+.pm-marks-inp.pm-exceeds { border-color: var(--danger) !important; }
+.pm-comment-ta {
+  width: 100%;
+  min-width: 160px;
+  min-height: 58px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text-soft);
+  font-size: 0.85rem;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.45;
+  outline: none;
+  transition: border-color .2s;
+}
+.pm-comment-ta:focus { border-color: rgba(201,168,76,0.5); }
+.pm-cb { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
+.pm-cb-absent { accent-color: var(--danger); }
+.pm-save-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 48px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 50%, var(--accent) 100%);
+  color: #05050e;
+  font-family: 'Cinzel', serif;
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: .05em;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 22px rgba(201,168,76,0.35);
+  transition: transform .15s, box-shadow .15s, opacity .15s;
+}
+.pm-save-all-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(201,168,76,0.5); }
+.pm-save-all-btn:active { transform: translateY(0); opacity: .9; }
+.pm-col-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  background: rgba(201,168,76,0.1);
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 7px;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.pm-col-toggle-btn:hover { background: rgba(201,168,76,0.18); }
+.pm-gr-text { font-weight: 700; color: var(--text-muted); font-size: 0.82rem; }
+.pm-name-link { color: var(--accent); font-weight: 600; cursor: pointer; text-decoration: none; }
+.pm-name-link:hover { color: var(--accent2); text-decoration: underline; }
+</style>
+
+      <!-- ── Page Header ────────────────────────────────────────────────── -->
       <div class="page-header">
         <div>
-          <div class="page-title">Performance Marks</div>
-          <div class="page-subtitle">Enter and manage marks for performance tests</div>
+          <div class="page-title">Performance Marks Management</div>
+          <div class="page-subtitle">Select a test and enter student marks</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('pm-dm', this)">&#128196; Download PDF</button>
+          <div class="download-menu" id="pm-dm">
+            <div class="download-menu-inner">
+              <div class="download-opt" onclick="downloadTableDoc('pm-students-body','performance_marks',['#','GR#','Student Name','Marks','Skip','Absent','Notes'],'pdf','A4','portrait',getMenuScale(this.closest('.download-menu')))">&#128196; PDF &mdash; A4 Portrait</div>
+              <div class="download-opt" onclick="downloadTableDoc('pm-students-body','performance_marks',['#','GR#','Student Name','Marks','Skip','Absent','Notes'],'pdf','A4','landscape',getMenuScale(this.closest('.download-menu')))">&#128196; PDF &mdash; A4 Landscape</div>
+            </div>
+          </div>
+          <button class="btn btn-excel btn-sm" onclick="downloadGenericExcel('pm-students-body',['#','GR#','Student Name','Marks','Skip','Absent','Notes'],'Performance Marks','IDL_Performance_Marks')">&#128202; Download Excel</button>
         </div>
       </div>
-      <div class="card" style="padding:48px;text-align:center;color:var(--text-muted)">
-        <div style="font-size:2.5rem;margin-bottom:12px">📝</div>
-        <div style="font-size:1rem;font-weight:600">Coming Soon</div>
-        <div style="font-size:0.85rem;margin-top:6px">Performance Marks entry will be available here.</div>
+
+      <!-- ── Test Selector Card ─────────────────────────────────────────── -->
+      <div class="pm-card">
+        <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap">
+
+          <div style="flex:2;min-width:240px" class="pm-select-wrap">
+            <div class="pm-label">&#127891; Test Name</div>
+            <select id="pm-test-select" onchange="pmSelectTest(this.value)" data-keep-placeholder="1">
+              <option value="">— Select Test Name —</option>
+            </select>
+          </div>
+
+          <div style="flex:1;min-width:160px" class="pm-select-wrap">
+            <div class="pm-label">&#127979; Filter by Class</div>
+            <select id="pm-class-filter" onchange="pmFilterTestList()"
+              style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(201,162,39,0.3);background:#1c1c2c;color:#f0ead0;font-size:0.88rem;outline:none">
+              <option value="">All Classes</option>
+            </select>
+          </div>
+
+          <div style="flex:0 0 auto">
+            <div class="pm-label">&#8645; Total Marks</div>
+            <div style="padding:9px 18px;border-radius:8px;border:1px solid rgba(201,162,39,0.3);background:#1c1c2c;color:#c9a227;font-weight:700;font-size:0.95rem;min-width:80px;text-align:center">
+              <span id="pm-total-marks-val">—</span>
+            </div>
+          </div>
+
+        </div>
       </div>
-    
+
+      <!-- ── Column Visibility (always visible) ──────────────────────────── -->
+      <div class="pm-card" style="padding:14px 18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div class="pm-label" style="margin-bottom:0">&#9868; Column Visibility</div>
+          <div class="pm-col-panel-inner">
+            <label class="pm-col-label"><input type="checkbox" id="pm-col-cb-gr"      checked onchange="pmApplyCols()"> G.R #</label>
+            <label class="pm-col-label"><input type="checkbox" id="pm-col-cb-photo"   checked onchange="pmApplyCols()"> Photo</label>
+            <label class="pm-col-label"><input type="checkbox" id="pm-col-cb-skip"    checked onchange="pmApplyCols()"> Skip</label>
+            <label class="pm-col-label"><input type="checkbox" id="pm-col-cb-absent"  checked onchange="pmApplyCols()"> Absent</label>
+            <label class="pm-col-label"><input type="checkbox" id="pm-col-cb-comment" checked onchange="pmApplyCols()"> Notes</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Test Info (hidden until test selected) ─────────────────────── -->
+      <div id="pm-test-info" style="display:none">
+        <div class="pm-card">
+
+          <!-- Chips row -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:14px">
+            <div class="pm-chip">
+              <span class="pm-chip-icon">&#128197;</span>
+              <div>
+                <div class="pm-chip-label">Test Date</div>
+                <div class="pm-chip-val" id="pm-info-date">—</div>
+              </div>
+            </div>
+            <div class="pm-chip">
+              <span class="pm-chip-icon">&#128203;</span>
+              <div>
+                <div class="pm-chip-label">Subject</div>
+                <div class="pm-chip-val" id="pm-info-subject">—</div>
+              </div>
+            </div>
+            <div class="pm-chip">
+              <span class="pm-chip-icon">&#128100;</span>
+              <div>
+                <div class="pm-chip-label">Teacher</div>
+                <div class="pm-chip-val" id="pm-info-teacher">—</div>
+              </div>
+            </div>
+            <div class="pm-chip">
+              <span class="pm-chip-icon">&#127941;</span>
+              <div>
+                <div class="pm-chip-label">Total Marks</div>
+                <div class="pm-chip-val" id="pm-info-total">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Test details field -->
+          <div>
+            <div class="pm-label" style="margin-bottom:6px">&#127991; Test Details / Coverage</div>
+            <div class="pm-details-box" id="pm-info-details">No test details provided.</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Marks Section (always visible) ───────────────────────────────── -->
+      <div id="pm-marks-section">
+
+        <!-- Stats + fill-all (hidden until test selected) -->
+        <div class="pm-card" id="pm-stats-card" style="padding:14px 18px;display:none">
+          <div class="pm-stats-bar">
+            <div style="font-size:0.88rem;color:var(--text-muted)">
+              Total Marks for
+              <strong id="pm-stats-subject" style="color:var(--text);margin:0 4px"></strong>:
+              <span id="pm-total-badge" class="pm-total-badge">—</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+              <label class="pm-label" style="margin-bottom:0;white-space:nowrap">Fill all marks:</label>
+              <input type="number" id="pm-fill-all" min="0" placeholder="e.g. 10"
+                class="pm-fill-input" oninput="pmFillAll(this.value)">
+            </div>
+          </div>
+        </div>
+
+        <!-- Students table (always visible) -->
+        <div class="pm-card" style="padding:0;overflow:hidden">
+          <div class="table-wrap">
+            <table id="pm-table">
+              <thead>
+                <tr>
+                  <th style="min-width:44px">#</th>
+                  <th class="pm-col-gr"     style="min-width:72px">G.R #</th>
+                  <th class="pm-col-photo"  style="min-width:58px">Photo</th>
+                  <th style="min-width:170px">Student Name</th>
+                  <th style="min-width:130px">Marks Obtained</th>
+                  <th class="pm-col-skip"   style="min-width:64px;text-align:center">
+                    Skip
+                    <br><input type="checkbox" class="pm-cb" style="margin-top:5px" onchange="pmToggleAllSkip(this.checked)" title="Skip all">
+                  </th>
+                  <th class="pm-col-absent" style="min-width:74px;text-align:center">
+                    Absent
+                    <br><input type="checkbox" class="pm-cb pm-cb-absent" style="margin-top:5px" onchange="pmToggleAllAbsent(this.checked)" title="Mark all absent">
+                  </th>
+                  <th class="pm-col-comment" style="min-width:200px">Notes / Comment</th>
+                </tr>
+              </thead>
+              <tbody id="pm-students-body">
+                <tr><td colspan="8" style="text-align:center;padding:44px;color:var(--text-muted)">No Data Found</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Save All Marks button (hidden until test selected) -->
+          <div id="pm-save-row" style="display:none;padding:24px;text-align:center;border-top:1px solid rgba(201,162,39,0.12)">
+            <button class="pm-save-all-btn admin-only" onclick="pmSaveAll()">
+              &#10003;&nbsp; Save All Marks
+            </button>
+          </div>
+        </div>
+
+      </div><!-- /pm-marks-section -->

@@ -7,7 +7,7 @@
         <div style="display:flex;gap:8px;align-items:center" id="search-pdf-btn">
           <div style="position:relative;display:inline-block">
             <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('search-top-dm', this)">📄 Download PDF</button>
-            <div id="search-top-dm" class="download-menu" style="display:none">
+            <div id="search-top-dm" class="download-menu">
               <div class="dm-scale-row">
                 <span class="dm-scale-label">Page Scale</span>
                 <div class="dm-scale-btns">
@@ -29,14 +29,14 @@
       <div class="card" style="margin-bottom:20px">
         <div class="card-title">Search Teacher Schedule</div>
         <div class="search-bar" style="margin-bottom:14px">
-          <select id="search-teacher" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:8px;font-family:inherit;outline:none">
+          <select id="search-teacher" class="filter-select" style="flex:1;padding:11px 14px">
             <option value="">Select a teacher...</option>
           </select>
           <button class="btn btn-primary" onclick="searchTeacher()">Search</button>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:8px">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <label style="font-size:0.82rem;color:var(--text-muted);letter-spacing:.5px;text-transform:uppercase">Days</label>
+            <label class="filter-label" style="margin-bottom:0">Days</label>
             <label style="display:flex;align-items:center;gap:5px;font-size:0.88rem;cursor:pointer"><input type="checkbox" class="search-day-cb" value="Monday" checked style="accent-color:var(--accent)"> Mon</label>
             <label style="display:flex;align-items:center;gap:5px;font-size:0.88rem;cursor:pointer"><input type="checkbox" class="search-day-cb" value="Tuesday" checked style="accent-color:var(--accent)"> Tue</label>
             <label style="display:flex;align-items:center;gap:5px;font-size:0.88rem;cursor:pointer"><input type="checkbox" class="search-day-cb" value="Wednesday" checked style="accent-color:var(--accent)"> Wed</label>

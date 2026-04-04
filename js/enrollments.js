@@ -128,7 +128,8 @@ function renderClassEnrollment() {
   if (cePerPage > 0) list = list.slice(0, cePerPage);
 
   if (!list.length) {
-    body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--text-muted)">No students found.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--text-muted)">No Data Found</td></tr>`;
+    // keep the table visible with its headers — just empty body is fine
     return;
   }
 
@@ -437,13 +438,9 @@ async function _seLoadAll() {
   area.innerHTML = '<div class="card" style="text-align:center;padding:32px;color:var(--text-muted)">Loading\u2026</div>';
   try {
     const data = await api(`${API.subjectEnrollments}?action=all_enrollments`);
-    if (!data.length) {
-      area.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--text-muted)">No enrollments found.</div>';
-      return;
-    }
     const isAdm = currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin');
     const actHdr = isAdm ? '<th>Actions</th>' : '';
-    const rows = data.map((e, i) => {
+    const rows = data.length ? data.map((e, i) => {
       const dateStr = e.enrolled_at ? new Date(e.enrolled_at).toLocaleDateString('en-PK') : '\u2014';
       const actCell = isAdm
         ? `<td><div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="openSEEditModal(${e.id})">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteSEEnroll(${e.id})">Delete</button></div></td>`
@@ -458,7 +455,7 @@ async function _seLoadAll() {
         <td style="font-size:0.82rem;color:var(--text-muted)">${dateStr}</td>
         ${actCell}
       </tr>`;
-    }).join('');
+    }).join('') : `<tr><td colspan="${isAdm ? 8 : 7}" style="text-align:center;padding:32px;color:var(--text-muted)">No Data Found</td></tr>`;
     area.innerHTML = `<div class="card">
       <div style="margin-bottom:10px;font-size:0.85rem;color:var(--text-muted)">${data.length} enrollment${data.length !== 1 ? 's' : ''} total</div>
       <div class="table-wrap"><table style="white-space:nowrap">
@@ -474,13 +471,9 @@ async function _seLoadAll() {
 function _seRenderBySubject() {
   const data = _seEnrollments;
   const area = document.getElementById('se-enrollments-area');
-  if (!data.length) {
-    area.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--text-muted)">No students enrolled in this subject.</div>';
-    return;
-  }
   const isAdm = currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin');
   const actHdr = isAdm ? '<th>Actions</th>' : '';
-  const rows = data.map((e, i) => {
+  const rows = data.length ? data.map((e, i) => {
     const dateStr = e.enrolled_at ? new Date(e.enrolled_at).toLocaleDateString('en-PK') : '\u2014';
     const actCell = isAdm
       ? `<td><div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="openSEEditModal(${e.id})">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteSEEnroll(${e.id})">Delete</button></div></td>`
@@ -494,7 +487,7 @@ function _seRenderBySubject() {
       <td style="font-size:0.82rem;color:var(--text-muted)">${dateStr}</td>
       ${actCell}
     </tr>`;
-  }).join('');
+  }).join('') : `<tr><td colspan="${isAdm ? 7 : 6}" style="text-align:center;padding:32px;color:var(--text-muted)">No Data Found</td></tr>`;
   area.innerHTML = `<div class="card">
     <div style="margin-bottom:10px;font-size:0.85rem;color:var(--text-muted)">${data.length} student${data.length !== 1 ? 's' : ''} enrolled</div>
     <div class="table-wrap"><table style="white-space:nowrap">
@@ -510,13 +503,9 @@ function _seRenderByStudent() {
   const student = (_studentsCache||[]).find(s => s.id == _seFilterStudentId);
   const stName = student ? (student.student_name || 'this student') : 'this student';
   const studentClass = student ? ((classes||[]).find(c => c.id == student.class_id)?.name || '\u2014') : '\u2014';
-  if (!data.length) {
-    area.innerHTML = `<div class="card" style="text-align:center;padding:40px;color:var(--text-muted)">${escapeHtml(stName)} is not enrolled in any subjects.</div>`;
-    return;
-  }
   const isAdm = currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin');
   const actHdr = isAdm ? '<th>Actions</th>' : '';
-  const rows = data.map((e, i) => {
+  const rows = data.length ? data.map((e, i) => {
     const dateStr = e.enrolled_at ? new Date(e.enrolled_at).toLocaleDateString('en-PK') : '\u2014';
     const actCell = isAdm
       ? `<td><div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="openSEEditModal(${e.id})">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteSEEnroll(${e.id})">Delete</button></div></td>`
@@ -528,9 +517,9 @@ function _seRenderByStudent() {
       <td style="font-size:0.82rem;color:var(--text-muted)">${dateStr}</td>
       ${actCell}
     </tr>`;
-  }).join('');
+  }).join('') : `<tr><td colspan="${isAdm ? 5 : 4}" style="text-align:center;padding:32px;color:var(--text-muted)">No Data Found</td></tr>`;
   area.innerHTML = `<div class="card">
-    <div style="margin-bottom:10px;font-size:0.85rem;color:var(--text-muted)">${escapeHtml(stName)} is enrolled in ${data.length} subject${data.length !== 1 ? 's' : ''}</div>
+    <div style="margin-bottom:10px;font-size:0.85rem;color:var(--text-muted)">${escapeHtml(stName)} — ${data.length} subject${data.length !== 1 ? 's' : ''} enrolled</div>
     <div class="table-wrap"><table style="white-space:nowrap">
       <thead><tr><th>#</th><th>Subject</th><th>Class</th><th>Enrolled On</th>${actHdr}</tr></thead>
       <tbody id="se-body">${rows}</tbody>

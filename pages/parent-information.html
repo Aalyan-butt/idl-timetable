@@ -7,7 +7,7 @@
         <div style="display:flex;gap:8px;align-items:center">
           <div style="position:relative;display:inline-block">
             <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('pi-dm', this)">📄 Download PDF</button>
-            <div id="pi-dm" class="download-menu" style="display:none">
+            <div id="pi-dm" class="download-menu">
               <div class="dm-scale-row">
                 <span class="dm-scale-label">Page Scale</span>
                 <div class="dm-scale-btns">
@@ -37,10 +37,10 @@
       <!-- Column Visibility Filter -->
       <div class="card" style="margin-bottom:10px;padding:10px 16px">
         <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="toggleParentFilterPanel()">
-          <span style="font-weight:600;font-size:0.88rem;color:var(--accent);letter-spacing:.3px">&#9881; Column Visibility</span>
-          <span id="pi-filter-caret" style="font-size:0.8rem;color:var(--text-muted);transition:transform .2s">&#9660;</span>
+          <span class="col-vis-title">&#9881; Column Visibility</span>
+          <span id="pi-filter-caret" style="font-size:0.8rem;color:var(--text-muted);transition:transform .2s">&#9650;</span>
         </div>
-        <div id="pi-col-filter-body" style="display:none;margin-top:12px">
+        <div id="pi-col-filter-body" style="margin-top:12px">
           <div id="pi-col-checkboxes" style="display:flex;flex-wrap:wrap;gap:6px 14px"></div>
           <div style="margin-top:10px;display:flex;gap:8px">
             <button class="btn btn-secondary" style="font-size:0.78rem;padding:4px 12px" onclick="setAllParentCols(true)">Select All</button>

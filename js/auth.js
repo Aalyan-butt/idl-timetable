@@ -23,6 +23,7 @@ async function doLogout() {
   showLogin();
 }
 
+document.getElementById('login-username').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 document.getElementById('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
 function showLogin() {

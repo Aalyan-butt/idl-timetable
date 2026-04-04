@@ -54,7 +54,7 @@ async function loadParentStudentList(selectedIds = [], autoCnic = null, listId =
   list.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;padding:8px">Loading…</p>';
   try {
     const students = _studentsCache && _studentsCache.length ? _studentsCache : await api(API.students);
-    if (!students.length) { list.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;padding:8px">No students found.</p>'; return; }
+    if (!students.length) { list.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;padding:8px">No Data Found</p>'; return; }
     // Auto-select by CNIC if provided and no existing IDs
     const autoIds = autoCnic
       ? students.filter(s => s.father_cnic === autoCnic).map(s => String(s.id))
@@ -112,7 +112,7 @@ async function loadClassPermissionsList(selectedIds = []) {
   list.style.display = 'none';
   try {
     const cs = await api(API.classes);
-    if (cs.length === 0) { list.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;padding:8px">No classes added yet.</p>'; return; }
+    if (cs.length === 0) { list.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;padding:8px">No Data Found.</p>'; return; }
     list.innerHTML = cs.map(c => `
       <label style="display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:0.88rem;transition:background 0.15s" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background=''">
         <input type="checkbox" class="class-perm-cb" value="${c.id}" ${selectedIds.includes(String(c.id)) ? 'checked' : ''} style="accent-color:var(--accent);width:15px;height:15px;flex-shrink:0">
@@ -122,16 +122,27 @@ async function loadClassPermissionsList(selectedIds = []) {
   } catch { list.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;padding:8px">Could not load classes.</p>'; }
 }
 
-function selectAllTeachersPermission() { document.querySelectorAll('.teacher-perm-cb').forEach(cb => cb.checked = true); }
-function selectNoneTeachersPermission() { document.querySelectorAll('.teacher-perm-cb').forEach(cb => cb.checked = false); }
-function selectAllClassesPermission()   { document.querySelectorAll('.class-perm-cb').forEach(cb => cb.checked = true); }
-function selectNoneClassesPermission()  { document.querySelectorAll('.class-perm-cb').forEach(cb => cb.checked = false); }
-function selectAllSupervisorTeachers()  { document.querySelectorAll('.supv-teacher-cb').forEach(cb => cb.checked = true); }
-function selectNoneSupervisorTeachers() { document.querySelectorAll('.supv-teacher-cb').forEach(cb => cb.checked = false); }
-function selectAllSupervisorClasses()   { document.querySelectorAll('.supv-class-cb').forEach(cb => cb.checked = true); }
-function selectNoneSupervisorClasses()  { document.querySelectorAll('.supv-class-cb').forEach(cb => cb.checked = false); }
-function selectAllSupervisorUsers()     { document.querySelectorAll('.supv-user-cb').forEach(cb => cb.checked = true); }
-function selectNoneSupervisorUsers()    { document.querySelectorAll('.supv-user-cb').forEach(cb => cb.checked = false); }
+function _setSelectAllActive(allBtnId, noneBtnId, activateAll) {
+  const allBtn  = typeof allBtnId  === 'string' ? document.getElementById(allBtnId)  : allBtnId;
+  const noneBtn = typeof noneBtnId === 'string' ? document.getElementById(noneBtnId) : noneBtnId;
+  if (activateAll) {
+    if (allBtn)  { allBtn.style.background='#16a34a';  allBtn.style.color='#fff'; allBtn.style.borderColor='#16a34a'; }
+    if (noneBtn) { noneBtn.style.background=''; noneBtn.style.color=''; noneBtn.style.borderColor=''; }
+  } else {
+    if (allBtn)  { allBtn.style.background='';  allBtn.style.color=''; allBtn.style.borderColor=''; }
+    if (noneBtn) { noneBtn.style.background=''; noneBtn.style.color=''; noneBtn.style.borderColor=''; }
+  }
+}
+function selectAllTeachersPermission(btn) { document.querySelectorAll('.teacher-perm-cb').forEach(cb => cb.checked = true);  _setSelectAllActive(btn, 'btn-none-teachers', true); }
+function selectNoneTeachersPermission(btn){ document.querySelectorAll('.teacher-perm-cb').forEach(cb => cb.checked = false); _setSelectAllActive('btn-all-teachers', btn, false); }
+function selectAllClassesPermission(btn)  { document.querySelectorAll('.class-perm-cb').forEach(cb => cb.checked = true);    _setSelectAllActive(btn, 'btn-none-classes', true); }
+function selectNoneClassesPermission(btn) { document.querySelectorAll('.class-perm-cb').forEach(cb => cb.checked = false);   _setSelectAllActive('btn-all-classes', btn, false); }
+function selectAllSupervisorTeachers(btn) { document.querySelectorAll('.supv-teacher-cb').forEach(cb => cb.checked = true);  _setSelectAllActive(btn, 'btn-none-supv-teachers', true); }
+function selectNoneSupervisorTeachers(btn){ document.querySelectorAll('.supv-teacher-cb').forEach(cb => cb.checked = false); _setSelectAllActive('btn-all-supv-teachers', btn, false); }
+function selectAllSupervisorClasses(btn)  { document.querySelectorAll('.supv-class-cb').forEach(cb => cb.checked = true);    _setSelectAllActive(btn, 'btn-none-supv-classes', true); }
+function selectNoneSupervisorClasses(btn) { document.querySelectorAll('.supv-class-cb').forEach(cb => cb.checked = false);   _setSelectAllActive('btn-all-supv-classes', btn, false); }
+function selectAllSupervisorUsers(btn)    { document.querySelectorAll('.supv-user-cb').forEach(cb => cb.checked = true);     _setSelectAllActive(btn, 'btn-none-supv-users', true); }
+function selectNoneSupervisorUsers(btn)   { document.querySelectorAll('.supv-user-cb').forEach(cb => cb.checked = false);    _setSelectAllActive('btn-all-supv-users', btn, false); }
 
 // Filter visible checkbox labels by search text
 function filterCheckboxList(listId, searchId) {
@@ -203,6 +214,12 @@ async function loadSupervisorAssignmentLists(selectedTeacherIds = [], selectedCl
   }
 }
 
+function copyStoredPassword() {
+  const val = document.getElementById('user-stored-password').value;
+  if (!val) return;
+  navigator.clipboard.writeText(val).then(() => toast('Password copied', 'success')).catch(() => {});
+}
+
 function openUserModal() {
   document.getElementById('user-id').value = '';
   document.getElementById('user-username').value = '';
@@ -211,6 +228,8 @@ function openUserModal() {
   document.getElementById('user-modal-title').textContent = 'Add User';
   document.getElementById('user-modal-error').style.display = 'none';
   document.getElementById('pw-hint').style.display = 'none';
+  document.getElementById('stored-password-group').style.display = 'none';
+  document.getElementById('user-stored-password').value = '';
   document.getElementById('teacher-permissions-group').style.display = '';
   document.getElementById('class-permissions-group').style.display = '';
   document.getElementById('supervisor-assignments-group').style.display = 'none';
@@ -218,6 +237,8 @@ function openUserModal() {
   document.getElementById('user-student-id').value = '';
   // Reset search filters
   ['teacher-perm-search','class-perm-search','supv-teacher-search','supv-class-search','supv-user-search'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  // Reset select-all button states
+  ['btn-all-teachers','btn-none-teachers','btn-all-classes','btn-none-classes','btn-all-supv-teachers','btn-none-supv-teachers','btn-all-supv-classes','btn-none-supv-classes','btn-all-supv-users','btn-none-supv-users'].forEach(id => { const b = document.getElementById(id); if (b) { b.style.background=''; b.style.color=''; b.style.borderColor=''; } });
   // Show superadmin option only for superadmins
   const saOpt = document.querySelector('#user-role option[value="superadmin"]');
   if (saOpt) {
@@ -247,6 +268,9 @@ function editUser(id) {
   document.getElementById('user-modal-title').textContent = 'Edit User';
   document.getElementById('user-modal-error').style.display = 'none';
   document.getElementById('pw-hint').style.display = '';
+  const _storedPw = u.password_hint || '';
+  document.getElementById('user-stored-password').value = _storedPw;
+  document.getElementById('stored-password-group').style.display = _storedPw ? '' : 'none';
   const selectedIds = u.teacher_ids_perm ? u.teacher_ids_perm.split(',').map(x=>x.trim()).filter(Boolean) : [];
   const selectedClassIds = u.class_ids_perm ? u.class_ids_perm.split(',').map(x=>x.trim()).filter(Boolean) : [];
   document.getElementById('teacher-permissions-group').style.display = u.role === 'user' ? '' : 'none';
@@ -304,8 +328,11 @@ async function saveUser() {
   if (role === 'student' && !student_id) { errEl.textContent = 'Please link to a student record'; errEl.style.display = 'flex'; return; }
   if (role === 'parent' && !student_ids) { errEl.textContent = 'Please select at least one child'; errEl.style.display = 'flex'; return; }
   try {
-    if (id) await api(`${API.users}?id=${id}`, 'PUT', { username, password, role, teacher_ids_perm, class_ids_perm, supervisor_teacher_ids, supervisor_class_ids, supervisor_user_ids, student_id, student_ids });
-    else    await api(API.users, 'POST', { username, password, role, teacher_ids_perm, class_ids_perm, supervisor_teacher_ids, supervisor_class_ids, supervisor_user_ids, student_id, student_ids });
+    if (id) {
+      await api(`${API.users}?id=${id}`, 'PUT', { username, password, role, teacher_ids_perm, class_ids_perm, supervisor_teacher_ids, supervisor_class_ids, supervisor_user_ids, student_id, student_ids });
+    } else {
+      await api(API.users, 'POST', { username, password, role, teacher_ids_perm, class_ids_perm, supervisor_teacher_ids, supervisor_class_ids, supervisor_user_ids, student_id, student_ids });
+    }
     closeModal('user-modal-overlay');
     toast('User saved successfully', 'success');
     loadUsers();
@@ -566,8 +593,9 @@ async function openQuickAccountModal(type, id, name) {
       _qaUserId       = existing.id;
       _qaExistingUser = existing;
       document.getElementById('quick-acct-username-display').value = existing.username;
-      const _pwKey = type === 'teacher' ? `plain_pw_teacher_${id}` : type === 'parent' ? `plain_pw_parent_${id}` : `plain_pw_student_${id}`;
-      document.getElementById('quick-acct-reset-pw').value = localStorage.getItem(_pwKey) || '';
+      const _storedQaPw = existing.password_hint || '';
+      document.getElementById('quick-acct-reset-pw').value = _storedQaPw;
+      document.getElementById('quick-acct-reset-pw').type = _storedQaPw ? 'text' : 'password';
       document.getElementById('quick-acct-reset-eye').textContent = '\uD83D\uDC41';
       document.getElementById('quick-acct-exists').style.display = '';
       document.getElementById('qa-delete-btn').style.display = '';
@@ -657,7 +685,7 @@ async function loadQAClassList(selectedIds = []) {
   const list = document.getElementById('qa-class-list');
   try {
     const cs = await api(API.classes);
-    if (!cs.length) { list.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;padding:8px">No classes added yet.</p>'; return; }
+    if (!cs.length) { list.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;padding:8px">No Data Found.</p>'; return; }
     list.innerHTML = cs.map(c => `
       <label style="display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:0.88rem;transition:background 0.15s" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background=''">
         <input type="checkbox" class="qa-class-cb" value="${c.id}" ${selectedIds.includes(String(c.id)) ? 'checked' : ''} style="accent-color:var(--accent);width:15px;height:15px;flex-shrink:0">
@@ -766,12 +794,10 @@ async function quickAcctSubmit() {
   try {
     if (isExisting) {
       await api(`${API.users}?id=${_qaUserId}`, 'PUT', payload);
-      if (password) localStorage.setItem(_qaType === 'teacher' ? `plain_pw_teacher_${_qaId}` : _qaType === 'parent' ? `plain_pw_parent_${_qaId}` : `plain_pw_student_${_qaId}`, password);
       closeModal('quick-acct-modal-overlay');
       toast('Account updated successfully', 'success');
     } else {
       await api(API.users, 'POST', payload);
-      if (password) localStorage.setItem(_qaType === 'teacher' ? `plain_pw_teacher_${_qaId}` : _qaType === 'parent' ? `plain_pw_parent_${_qaId}` : `plain_pw_student_${_qaId}`, password);
       closeModal('quick-acct-modal-overlay');
       toast('Account created successfully', 'success');
     }
@@ -790,7 +816,6 @@ function quickAcctDelete() {
     onYes: async () => {
       try {
         await api(`${API.users}?id=${_qaUserId}`, 'DELETE');
-        localStorage.removeItem(_qaType === 'teacher' ? `plain_pw_teacher_${_qaId}` : `plain_pw_student_${_qaId}`);
         closeModal('quick-acct-modal-overlay');
         toast('Account deleted', 'success');
         loadUsers();

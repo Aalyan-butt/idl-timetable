@@ -8,7 +8,7 @@
           <button class="btn btn-primary admin-only" onclick="openStudentModal()">+ Add Student</button>
           <div style="position:relative;display:inline-block">
             <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('students-dm', this)">📄 Download PDF</button>
-            <div id="students-dm" class="download-menu" style="display:none">
+            <div id="students-dm" class="download-menu">
               <div class="dm-scale-row">
                 <span class="dm-scale-label">Page Scale</span>
                 <div class="dm-scale-btns">
@@ -36,10 +36,10 @@
       <!-- Column Visibility Filter -->
       <div class="card" style="margin-bottom:10px;padding:10px 16px">
         <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="toggleStudentFilterPanel()">
-          <span style="font-weight:600;font-size:0.88rem;color:var(--accent);letter-spacing:.3px">&#9881; Column Visibility</span>
-          <span id="st-filter-caret" style="font-size:0.8rem;color:var(--text-muted);transition:transform .2s">&#9660;</span>
+          <span class="col-vis-title">&#9881; Column Visibility</span>
+          <span id="st-filter-caret" style="font-size:0.8rem;color:var(--text-muted);transition:transform .2s">&#9650;</span>
         </div>
-        <div id="st-col-filter-body" style="display:none;margin-top:12px">
+        <div id="st-col-filter-body" style="margin-top:12px">
           <div id="st-col-checkboxes" style="display:flex;flex-wrap:wrap;gap:6px 14px"></div>
           <div style="margin-top:10px;display:flex;gap:8px">
             <button class="btn btn-secondary" style="font-size:0.78rem;padding:4px 12px" onclick="setAllStudentCols(true)">Select All</button>
@@ -49,8 +49,8 @@
       </div>
       <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:6px">
-          <label style="font-size:0.82rem;color:var(--text-muted);white-space:nowrap">Show:</label>
-          <select id="students-per-page" onchange="filterStudents()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem">
+          <label class="show-label">Show:</label>
+          <select id="students-per-page" onchange="filterStudents()" class="filter-select" style="width:auto;padding:5px 10px">
             <option value="0">All</option>
             <option value="25">25</option>
             <option value="50">50</option>
@@ -60,8 +60,8 @@
           <span style="font-size:0.82rem;color:var(--text-muted)">records</span>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
-          <label style="font-size:0.82rem;color:var(--text-muted);white-space:nowrap">Sort:</label>
-          <select id="students-sort" onchange="filterStudents()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.85rem">
+          <label class="show-label">Sort:</label>
+          <select id="students-sort" onchange="filterStudents()" class="filter-select" style="width:auto;padding:5px 10px">
             <option value="">Default</option>
             <option value="az">A → Z</option>
             <option value="za">Z → A</option>

@@ -10,7 +10,7 @@ async function loadStudents() {
     refreshStudentNotifBadge();
   } catch(e) {
     _studentsCache = [];
-    body.innerHTML = `<tr><td colspan="19" style="text-align:center;padding:24px;color:var(--danger)">${escapeHtml(e.message)}</td></tr>`;
+    if (body) body.innerHTML = `<tr><td colspan="19" style="text-align:center;padding:24px;color:var(--danger)">${escapeHtml(e.message)}</td></tr>`;
   }
 }
 
@@ -19,6 +19,7 @@ let _currentStudentsList = [];
 function renderStudents(list) {
   _currentStudentsList = list; // full filtered list (used for exports)
   const body = document.getElementById('students-body');
+  if (!body) return; // students page not in DOM — just cache the data
   const isAdmin = currentUser.role === 'admin' || currentUser.role === 'superadmin';
 
   // Apply sort
@@ -51,7 +52,7 @@ function renderStudents(list) {
   }
 
   if (!limited.length) {
-    body.innerHTML = '<tr><td colspan="19" style="text-align:center;padding:24px;color:var(--text-muted)">No students found.</td></tr>';
+    body.innerHTML = '<tr><td colspan="19" style="text-align:center;padding:24px;color:var(--text-muted)">No Data Found</td></tr>';
     applyStudentColFilter();
     return;
   }
@@ -840,11 +841,11 @@ function toggleStudentDownloadMenu(event, id) {
   const rect = btn.getBoundingClientRect();
   menu.style.top  = (rect.bottom + 6) + 'px';
   menu.style.left = Math.max(4, rect.right - 170) + 'px';
-  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  menu.classList.toggle('open');
 }
 document.addEventListener('click', () => {
   const m = document.getElementById('student-dl-menu');
-  if (m) m.style.display = 'none';
+  if (m) m.classList.remove('open');
 });
 
 function _getStudentForDownload(id) {
@@ -854,17 +855,16 @@ function _getStudentForDownload(id) {
 }
 
 function studentDownloadPDF() {
-  document.getElementById('student-dl-menu').style.display = 'none';
+  document.getElementById('student-dl-menu').classList.remove('open');
   downloadStudentForm(_dlStudentId, 'pdf');
 }
 
 function studentDownloadExcel() {
-  document.getElementById('student-dl-menu').style.display = 'none';
+  document.getElementById('student-dl-menu').classList.remove('open');
   downloadStudentForm(_dlStudentId, 'excel');
 }
 
 // ===== BULK DOWNLOAD MENU (top of students page) =====
-let _bulkDlMenuOpen = false;
 function toggleBulkDownloadMenu(event) {
   event.stopPropagation();
   const menu = document.getElementById('st-bulk-dl-menu');
@@ -872,18 +872,18 @@ function toggleBulkDownloadMenu(event) {
   const rect = btn.getBoundingClientRect();
   menu.style.top  = (rect.bottom + 6) + 'px';
   menu.style.left = Math.max(4, rect.right - 200) + 'px';
-  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  menu.classList.toggle('open');
 }
 document.addEventListener('click', () => {
   const m = document.getElementById('st-bulk-dl-menu');
-  if (m) m.style.display = 'none';
+  if (m) m.classList.remove('open');
 });
 function bulkDownloadPDF(orientation) {
-  document.getElementById('st-bulk-dl-menu').style.display = 'none';
+  document.getElementById('st-bulk-dl-menu').classList.remove('open');
   exportStudentsPDF(_currentStudentsList, orientation);
 }
 function bulkDownloadExcel() {
-  document.getElementById('st-bulk-dl-menu').style.display = 'none';
+  document.getElementById('st-bulk-dl-menu').classList.remove('open');
   exportStudentsExcel(_currentStudentsList);
 }
 

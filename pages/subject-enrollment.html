@@ -7,7 +7,7 @@
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <div style="position:relative;display:inline-block">
             <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('se-dm', this)">&#128196; Download PDF</button>
-            <div id="se-dm" class="download-menu" style="display:none">
+            <div id="se-dm" class="download-menu">
               <div class="download-opt download-scale-row">
                 <span class="dscale-btn" onclick="setMenuScale('se-dm',100,this)">100%</span>
                 <span class="dscale-btn active" onclick="setMenuScale('se-dm',90,this)">90%</span>
@@ -26,7 +26,7 @@
       <!-- Two independent filters -->
       <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
         <div class="card" style="flex:1;min-width:240px;padding:14px 18px">
-          <label style="font-size:0.85rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:8px">&#128209; By Subject</label>
+          <label class="filter-label">&#128209; By Subject</label>
           <div class="se-dd" id="se-dd-subject">
             <div style="position:relative;display:flex;align-items:center">
               <input class="se-dd-search" id="se-dd-subject-search" type="text" placeholder="Search subjects&#8230;"
@@ -42,7 +42,7 @@
           </div>
         </div>
         <div class="card" style="flex:1;min-width:240px;padding:14px 18px">
-          <label style="font-size:0.85rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:8px">&#128100; By Student</label>
+          <label class="filter-label">&#128100; By Student</label>
           <div class="se-dd" id="se-dd-student">
             <div style="position:relative;display:flex;align-items:center">
               <input class="se-dd-search" id="se-dd-student-search" type="text" placeholder="Search students&#8230;"

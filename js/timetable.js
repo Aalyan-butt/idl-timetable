@@ -244,11 +244,30 @@ async function saveTimetable() {
     const dayKeyMap = { Monday:'monday', Tuesday:'tuesday', Wednesday:'wednesday', Thursday:'thursday', Friday:'friday', Saturday:'saturday', Sunday:'sunday' };
     const startMins = toMins(start_time);
     const endMins   = toMins(end_time);
+
+    // Resolve the effective school time for a given class + day.
+    // Priority: class-day override > class default > school-day override > school default
+    const s = schoolSettings || {};
+    const resolveSchoolTime = (cid, day) => {
+      const dk = dayKeyMap[day] || day.toLowerCase();
+      const classDay  = { start: s[`classid_${cid}_${dk}_start`] || '', end: s[`classid_${cid}_${dk}_end`]   || '' };
+      const classDef  = { start: s[`classid_${cid}_start`]        || '', end: s[`classid_${cid}_end`]          || '' };
+      const schoolDay = { start: s[`${dk}_start`]                 || '', end: s[`${dk}_end`]                   || '' };
+      const schoolDef = { start: s.school_start                   || '08:00', end: s.school_end               || '14:00' };
+      return {
+        start: classDay.start || classDef.start || schoolDay.start || schoolDef.start,
+        end:   classDay.end   || classDef.end   || schoolDay.end   || schoolDef.end
+      };
+    };
+
+    // Get the class_id for the current form (break uses tt-break-class, regular uses tt-class)
+    const validClassId = isBreak
+      ? document.getElementById('tt-break-class').value
+      : document.getElementById('tt-class').value;
+
     let offendingDay = null;
     for (const day of selectedDays) {
-      const dk = dayKeyMap[day] || day.toLowerCase();
-      const ds = (schoolSettings[dk + '_start'] && schoolSettings[dk + '_start'] !== '') ? schoolSettings[dk + '_start'] : (schoolSettings.school_start || '08:00');
-      const de = (schoolSettings[dk + '_end']   && schoolSettings[dk + '_end']   !== '') ? schoolSettings[dk + '_end']   : (schoolSettings.school_end   || '14:00');
+      const { start: ds, end: de } = resolveSchoolTime(validClassId, day);
       if (startMins < toMins(ds) || endMins > toMins(de)) {
         offendingDay = { day, start: ds, end: de };
         break;
@@ -390,6 +409,13 @@ async function updateTimetableField(el, field, id) {
     let payload = { ...current };
     payload[field] = newValue;
 
+    // Normalize teacher_ids: DB returns a comma-string; API expects an array of ints
+    if (typeof payload.teacher_ids === 'string') {
+      payload.teacher_ids = payload.teacher_ids
+        ? payload.teacher_ids.split(',').map(Number).filter(Boolean)
+        : [];
+    }
+
     // Send update
     await api(`${API.timetable}?id=${id}`, 'PUT', payload);
     toast('Updated successfully', 'success');
@@ -444,7 +470,11 @@ async function updateTimetableTime(el, id) {
   if (!current) return;
   if (current.start_time === startTime && current.end_time === endTime) return; // No change
   try {
-    const payload = { ...current, start_time: startTime, end_time: endTime };
+    const rawTeacherIds = current.teacher_ids;
+    const teacherIdsArr = typeof rawTeacherIds === 'string'
+      ? (rawTeacherIds ? rawTeacherIds.split(',').map(Number).filter(Boolean) : [])
+      : (Array.isArray(rawTeacherIds) ? rawTeacherIds : []);
+    const payload = { ...current, start_time: startTime, end_time: endTime, teacher_ids: teacherIdsArr };
     await api(`${API.timetable}?id=${id}`, 'PUT', payload);
     toast('Time updated successfully', 'success');
     current.start_time = startTime;
@@ -539,4 +569,3 @@ function computeDayGroup(days) {
   if (d.length === 5) return 'mon-fri';
   return s;
 }
-

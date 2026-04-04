@@ -56,6 +56,7 @@ async function showPage(name) {
   if (name === 'teachers')  loadTeachers();
   if (name === 'classes')   loadClasses();
   if (name === 'timetable') loadTimetable();
+  if (name === 'break')     loadBreak();
   if (name === 'track')     loadTrack();
   if (name === 'search')    loadSearch();
   if (name === 'users')     loadUsers();
@@ -73,6 +74,7 @@ async function showPage(name) {
   if (name === 'parent-schedule')      loadParentSchedule();
   if (name === 'parent-information')   loadParentInformation();
   if (name === 'performance-tests')    loadPerformanceTests();
+  if (name === 'performance-marks')    loadPerformanceMarks();
 }
 
 // ===== DATA LOADING =====
@@ -151,7 +153,7 @@ async function loadDashboard() {
     const recent = [...timetableSlots].sort((a,b) => (a.start_time||'').localeCompare(b.start_time||'')).slice(0,10);
     const tbody = document.getElementById('recent-tt-body');
     if (recent.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px">No timetable entries yet</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px">No Data Found</td></tr>';
     } else {
       tbody.innerHTML = recent.map(s => {
         if (s.is_break) return `<tr class="break-row"><td><span class="badge badge-blue">${s.class_name||'—'}</span></td><td colspan="2"><span class="break-label">☕ BREAK</span></td><td><span class="badge badge-blue">${formatDays(s.days)}</span></td><td>${formatTime(s.start_time)} – ${formatTime(s.end_time)}</td></tr>`;
@@ -423,7 +425,7 @@ async function loadTeachers() {
   const tbody = document.getElementById('teachers-body');
   const colCount = canManage ? 9 : 8;
   if (teachers.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;padding:36px;color:var(--text-muted)">No staff members added yet</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;padding:36px;color:var(--text-muted)">No Data Found</td></tr>`;
     initTeacherColFilter();
     return;
   }
@@ -464,7 +466,7 @@ async function loadClasses() {
   const isViewer  = currentUser?.role === 'user';
   const tbody = document.getElementById('classes-body');
   if (classes.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="${canManage?3:2}" style="text-align:center;padding:36px;color:var(--text-muted)">No classes added yet</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${canManage?3:2}" style="text-align:center;padding:36px;color:var(--text-muted)">No Data Found</td></tr>`;
     return;
   }
 
@@ -569,7 +571,7 @@ async function loadTimetable() {
   if (ttPerPage > 0) filtered = filtered.slice(0, ttPerPage);
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="${canManage?6:5}" style="text-align:center;padding:36px;color:var(--text-muted)">No timetable slots found</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${canManage?6:5}" style="text-align:center;padding:36px;color:var(--text-muted)">No Data Found</td></tr>`;
     return;
   }
   // When days are filtered, show only the matching days in the Days column
@@ -594,6 +596,159 @@ async function loadTimetable() {
     }).join('');
     return `<tr><td><span class="badge badge-blue">${s.class_name}</span></td><td style="white-space:nowrap"><strong>${String(s.subject).replace(/'/g, '&#39;')}</strong></td><td>${teacherBadges}</td><td style="white-space:nowrap;font-size:0.82rem">${getDisplayDays(s.days)}</td><td style="white-space:nowrap;font-size:0.82rem">${formatTime(s.start_time)} – ${formatTime(s.end_time)}</td>${canManage ? `<td style="white-space:nowrap"><button class="btn btn-secondary btn-sm" onclick="editTimetable(${s.id})">Edit</button><button class="btn btn-danger btn-sm" onclick="confirmDelete('timetable',${s.id},'${String(s.subject).replace(/'/g, '&#39;')} in ${String(s.class_name).replace(/'/g, '&#39;')}')">Delete</button></td>` : ''}</tr>`;
   }).join('');
+}
+
+// ===== BREAK SCHEDULE =====
+async function loadBreak() {
+  await loadAllData();
+
+  const filterEl = document.getElementById('brk-class-filter');
+  if (!filterEl) return;
+  const sel = filterEl.value;
+  filterEl.innerHTML = '<option value="">All Classes</option>' + classes.map(c => `<option value="${c.id}" ${sel==c.id?'selected':''}>${c.name}</option>`).join('');
+  filterEl.value = sel;
+  if (!filterEl.dataset.ssInit) makeSearchable(filterEl);
+  else { const w = filterEl.closest('.ss-wrapper'); if (w?._ssRefresh) w._ssRefresh(); }
+
+  const classFilter = filterEl.value;
+  const selectedDays = [...document.querySelectorAll('.brk-day-cb:checked')].map(cb => cb.value);
+  const searchQ = (document.getElementById('brk-search')?.value || '').toLowerCase().trim();
+
+  // Only break slots
+  let breakSlots = timetableSlots.filter(s => s.is_break);
+
+  // Class filter
+  if (classFilter) breakSlots = breakSlots.filter(s => s.class_id == classFilter);
+
+  // Text search by class name
+  if (searchQ) breakSlots = breakSlots.filter(s => (s.class_name || '').toLowerCase().includes(searchQ));
+
+  // Day filter
+  if (selectedDays.length > 0 && selectedDays.length < 5) {
+    breakSlots = breakSlots.filter(s => {
+      if (!s.days) return false;
+      return s.days.split(',').some(d => selectedDays.includes(d.trim()));
+    });
+  }
+
+  // Sort: specific class → by day order then time; all classes → closest to current time first
+  const dayRankMap = { Monday:0, Tuesday:1, Wednesday:2, Thursday:3, Friday:4 };
+  const toMins = t => { if (!t) return 0; const [h, m] = t.split(':'); return +h * 60 + +m; };
+
+  if (classFilter) {
+    breakSlots.sort((a, b) => {
+      const aD = dayRankMap[a.days?.split(',')[0]?.trim()] ?? 99;
+      const bD = dayRankMap[b.days?.split(',')[0]?.trim()] ?? 99;
+      if (aD !== bD) return aD - bD;
+      return (a.start_time || '').localeCompare(b.start_time || '');
+    });
+  } else {
+    const now = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    const upcoming = breakSlots.filter(s => toMins(s.start_time) >= nowMins)
+      .sort((a, b) => toMins(a.start_time) - toMins(b.start_time));
+    const past = breakSlots.filter(s => toMins(s.start_time) < nowMins)
+      .sort((a, b) => toMins(b.start_time) - toMins(a.start_time));
+    breakSlots = [...upcoming, ...past];
+  }
+
+  const canManage = currentUser?.role === 'admin' || currentUser?.role === 'superadmin' || currentUser?.role === 'supervisor';
+  const tbody = document.getElementById('break-body');
+  if (!tbody) return;
+
+  const perPage = parseInt(document.getElementById('brk-per-page')?.value ?? '0');
+  const total = breakSlots.length;
+  const countEl = document.getElementById('brk-count-label');
+  if (countEl) countEl.textContent = total > 0 ? (perPage > 0 && total > perPage ? `Showing ${perPage} of ${total}` : `${total} record${total !== 1 ? 's' : ''}`) : '';
+
+  const paged = perPage > 0 ? breakSlots.slice(0, perPage) : breakSlots;
+
+  if (paged.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${canManage ? 5 : 4}" style="text-align:center;padding:36px;color:var(--text-muted)">No breaks found</td></tr>`;
+    return;
+  }
+
+  const allDays = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  const daysFiltered = selectedDays.length > 0 && selectedDays.length < allDays.length;
+  function getDisplayDays(slotDays) {
+    if (!slotDays) return '—';
+    if (!daysFiltered) return formatDays(slotDays);
+    const arr = slotDays.split(',').map(d => d.trim());
+    const inter = arr.filter(d => selectedDays.includes(d));
+    return inter.length > 0 ? inter.map(d => d.slice(0, 3)).join(', ') : formatDays(slotDays);
+  }
+
+  function getDuration(start, end) {
+    const diff = toMins(end) - toMins(start);
+    if (diff <= 0) return '—';
+    if (diff < 60) return `${diff} min`;
+    const h = Math.floor(diff / 60), m = diff % 60;
+    return m ? `${h}h ${m}m` : `${h}h`;
+  }
+
+  tbody.innerHTML = paged.map(s => {
+    const dur = getDuration(s.start_time, s.end_time);
+    const actions = canManage
+      ? `<td style="white-space:nowrap"><button class="btn btn-secondary btn-sm" onclick="editTimetable(${s.id})">Edit</button><button class="btn btn-danger btn-sm" onclick="confirmDelete('timetable',${s.id},'Break in ${String(s.class_name).replace(/'/g, '&#39;')}')">Delete</button></td>`
+      : '';
+    return `<tr class="break-row">
+      <td><span class="badge badge-blue">${escapeHtml(s.class_name || '—')}</span></td>
+      <td style="white-space:nowrap;font-size:0.82rem">${getDisplayDays(s.days)}</td>
+      <td style="white-space:nowrap;font-size:0.82rem">${formatTime(s.start_time)} – ${formatTime(s.end_time)}</td>
+      <td style="white-space:nowrap;font-size:0.82rem"><span class="badge" style="background:rgba(201,168,76,0.15);color:var(--accent);border:1px solid rgba(201,168,76,0.3)">${dur}</span></td>
+      ${actions}
+    </tr>`;
+  }).join('');
+}
+
+async function openBreakModal() {
+  await openTimetableModal();
+  const cb = document.getElementById('tt-is-break');
+  if (cb && !cb.checked) {
+    cb.checked = true;
+    toggleBreakMode();
+  }
+}
+
+async function downloadBreakDoc(format, pageSize, orientation, scale = 90) {
+  await _ensureLogo();
+  const tbody = document.getElementById('break-body');
+  if (!tbody) return;
+
+  const filterEl = document.getElementById('brk-class-filter');
+  const filterSel = filterEl?.closest('.ss-wrapper')?.querySelector('select') || filterEl;
+  const selectedDaysCbs = [...document.querySelectorAll('.brk-day-cb:checked')].map(cb => cb.value);
+  const dayRangeStr = buildDayRange(selectedDaysCbs);
+
+  let subtitle = '';
+  if (filterSel && filterSel.value) {
+    const opt = filterSel.options[filterSel.selectedIndex];
+    if (opt) subtitle = dayRangeStr ? `${opt.text} — ${dayRangeStr}` : opt.text;
+  } else if (dayRangeStr) {
+    subtitle = dayRangeStr;
+  }
+
+  const rows = Array.from(tbody.querySelectorAll('tr')).filter(r =>
+    r.style.display !== 'none' && !r.querySelector('td[colspan]')
+  );
+  if (rows.length === 0) { toast('No break data to download', 'error'); return; }
+
+  const headers = ['Class', 'Days', 'Time', 'Duration'];
+  const headerHtml = `<thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>`;
+  const bodyRows = rows.map(tr => {
+    const tds = Array.from(tr.querySelectorAll('td'));
+    return `<tr>${tds.slice(0, 4).map(td => `<td>${td.textContent.trim()}</td>`).join('')}</tr>`;
+  }).join('');
+
+  const tableHtml = `<table>${headerHtml}<tbody>${bodyRows}</tbody></table>`;
+  const docBody = `${_buildDocHeader('Class Breaks', subtitle, pageSize)}<div class="section-title">Class Break Schedule</div>${tableHtml}${_buildDocBodyClose()}`;
+
+  if (format === 'pdf') {
+    const brkClass = (filterSel?.value && filterSel.options[filterSel.selectedIndex]?.text
+      ? filterSel.options[filterSel.selectedIndex].text : 'all').replace(/\s+/g, '_').toLowerCase();
+    const pdfTitle = dayRangeStr ? `${brkClass}_breaks_${buildDayRangeFilename(selectedDaysCbs)}` : `${brkClass}_breaks`;
+    _openPrintWindow(_buildFullPrintDoc(docBody, pageSize, true, orientation, pdfTitle, scale));
+  }
 }
 
 async function loadTrack() {
@@ -804,7 +959,7 @@ async function searchTeacher() {
           <span style="font-size:0.8rem;color:var(--text-muted);font-weight:400">${slots.length} record${slots.length!==1?'s':''}</span>
           <div style="position:relative;display:inline-block">
             <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('search-res-dm', this)">⬇ Download</button>
-            <div id="search-res-dm" class="download-menu" style="display:none">
+            <div id="search-res-dm" class="download-menu">
               <div class="dm-scale-row"><span class="dm-scale-label">Page Scale</span><div class="dm-scale-btns"><button type="button" class="dm-scale-btn" data-scale="70" onclick="setMenuScale(event,this)">70%</button><button type="button" class="dm-scale-btn" data-scale="80" onclick="setMenuScale(event,this)">80%</button><button type="button" class="dm-scale-btn dm-scale-active" data-scale="90" onclick="setMenuScale(event,this)">90%</button><button type="button" class="dm-scale-btn" data-scale="100" onclick="setMenuScale(event,this)">100%</button></div></div>
               <div class="download-divider"></div>
               <div class="download-opt" onclick="downloadSearchDoc('pdf','A4','portrait',getMenuScale(this.closest('.download-menu')))">📄 PDF — A4 Portrait</div>
@@ -844,7 +999,7 @@ async function searchTeacher() {
         <span>📅 Weekly Availability — When is ${teacherName} free?</span>
         <div style="position:relative;display:inline-block">
           <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('avail-dm', this)">⬇ Download</button>
-          <div id="avail-dm" class="download-menu" style="display:none">
+          <div id="avail-dm" class="download-menu">
             <div class="dm-scale-row"><span class="dm-scale-label">Page Scale</span><div class="dm-scale-btns"><button type="button" class="dm-scale-btn" data-scale="70" onclick="setMenuScale(event,this)">70%</button><button type="button" class="dm-scale-btn" data-scale="80" onclick="setMenuScale(event,this)">80%</button><button type="button" class="dm-scale-btn dm-scale-active" data-scale="90" onclick="setMenuScale(event,this)">90%</button><button type="button" class="dm-scale-btn" data-scale="100" onclick="setMenuScale(event,this)">100%</button></div></div>
             <div class="download-divider"></div>
             <div class="download-opt" onclick="downloadAvailabilityDoc('${teacherName}','pdf','A4','portrait',getMenuScale(this.closest('.download-menu')))">📄 PDF — A4 Portrait</div>
@@ -929,27 +1084,29 @@ async function searchTeacher() {
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
-  const mobileHeader = document.getElementById('mobile-header');
+  const hamburger = document.getElementById('hamburger-btn');
   const isOpen = sidebar.classList.contains('open');
   if (isOpen) {
-    sidebar.classList.remove('open'); overlay.classList.remove('open');
-    mobileHeader.style.display = 'flex';
-    setTimeout(() => { overlay.classList.remove('visible'); }, 300);
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+    hamburger.classList.remove('open');
+    setTimeout(() => { overlay.classList.remove('visible'); }, 320);
   } else {
     overlay.classList.add('visible');
     setTimeout(() => overlay.classList.add('open'), 10);
     sidebar.classList.add('open');
-    mobileHeader.style.display = 'none';
+    hamburger.classList.add('open');
   }
 }
 
 function closeSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
-  const mobileHeader = document.getElementById('mobile-header');
-  sidebar.classList.remove('open'); overlay.classList.remove('open');
-  if (window.innerWidth <= 768) mobileHeader.style.display = 'flex';
-  setTimeout(() => overlay.classList.remove('visible'), 300);
+  const hamburger = document.getElementById('hamburger-btn');
+  sidebar.classList.remove('open');
+  overlay.classList.remove('open');
+  hamburger.classList.remove('open');
+  setTimeout(() => overlay.classList.remove('visible'), 320);
 }
 
 function checkMobileHeader() {
@@ -1017,7 +1174,7 @@ function renderUserClassTimetable() {
 
   const tbody = document.getElementById('user-classes-body');
   if (slots.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:36px;color:var(--text-muted)">No timetable slots found.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:36px;color:var(--text-muted)">No Data Found</td></tr>';
     return;
   }
   tbody.innerHTML = slots.map(s => {
@@ -1078,7 +1235,7 @@ function renderUserTimetable() {
 
   const tbody = document.getElementById('user-timetable-body');
   if (slots.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:36px;color:var(--text-muted)">No timetable slots found.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:36px;color:var(--text-muted)">No Data Found</td></tr>';
     return;
   }
   tbody.innerHTML = slots.map(s => {
@@ -1105,7 +1262,7 @@ async function loadUsers() {
   usersCache = users;
   const tbody = document.getElementById('users-body');
   if (users.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:36px;color:var(--text-muted)">No users found</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:36px;color:var(--text-muted)">No Data Found</td></tr>';
     return;
   }
   const isSA = currentUser?.role === 'superadmin';
@@ -1140,3 +1297,4 @@ window.addEventListener('hashchange', () => {
   const name = window.location.hash.replace('#', '').trim();
   if (name && document.getElementById('page-' + name)) showPage(name);
 });
+       

@@ -58,7 +58,7 @@ if ($method === 'GET') {
         }
         $placeholders = implode(',', array_fill(0, count($assignedUserIds), '?'));
         $stmt = $db->prepare(
-            "SELECT id, username, role, teacher_ids_perm, class_ids_perm, supervisor_teacher_ids, supervisor_class_ids, supervisor_user_ids, student_id, teacher_id, created_at
+            "SELECT id, username, role, teacher_ids_perm, class_ids_perm, supervisor_teacher_ids, supervisor_class_ids, supervisor_user_ids, student_id, teacher_id, plain_password, created_at
              FROM users WHERE role = 'user' AND id IN ({$placeholders}) ORDER BY username"
         );
         $types = str_repeat('i', count($assignedUserIds));
@@ -66,12 +66,22 @@ if ($method === 'GET') {
         $stmt->execute();
         $result = $stmt->get_result();
         $users = [];
-        while ($row = $result->fetch_assoc()) $users[] = $row;
+        while ($row = $result->fetch_assoc()) {
+            unset($row['plain_password']); // supervisors never see passwords
+            $users[] = $row;
+        }
         jsonResponse($users);
     }
-    $result = $db->query('SELECT id, username, role, teacher_ids_perm, class_ids_perm, supervisor_teacher_ids, supervisor_class_ids, supervisor_user_ids, student_id, teacher_id, created_at FROM users ORDER BY username');
+    $result = $db->query('SELECT id, username, role, teacher_ids_perm, class_ids_perm, supervisor_teacher_ids, supervisor_class_ids, supervisor_user_ids, student_id, teacher_id, plain_password, created_at FROM users ORDER BY username');
     $users = [];
-    while ($row = $result->fetch_assoc()) $users[] = $row;
+    $canViewPw = isAdmin(); // true for admin + superadmin
+    while ($row = $result->fetch_assoc()) {
+        if ($canViewPw && !empty($row['plain_password'])) {
+            $row['password_hint'] = decryptCred($row['plain_password']);
+        }
+        unset($row['plain_password']);
+        $users[] = $row;
+    }
     jsonResponse($users);
 }
 
@@ -105,9 +115,11 @@ if ($method === 'POST') {
     if ($role !== 'user')       { $teacher_id = null; }
     if ($role !== 'parent')     { $parent_id = null; $student_ids = null; }
 
-    $hashed = password_hash($password, PASSWORD_DEFAULT);
-    $stmt = $db->prepare('INSERT INTO users (username, password, role, teacher_ids_perm, class_ids_perm, supervisor_teacher_ids, supervisor_class_ids, supervisor_user_ids, student_id, teacher_id, parent_id, student_ids) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
-    $stmt->bind_param('ssssssssiiss', $username, $hashed, $role, $teacher_ids_perm, $class_ids_perm, $supervisor_teacher_ids, $supervisor_class_ids, $supervisor_user_ids, $student_id, $teacher_id, $parent_id, $student_ids);
+    $hashed    = password_hash($password, PASSWORD_DEFAULT);
+    $encrypted = encryptCred($password);
+    $stmt = $db->prepare('INSERT INTO users (username, password, plain_password, role, teacher_ids_perm, class_ids_perm, supervisor_teacher_ids, supervisor_class_ids, supervisor_user_ids, student_id, teacher_id, parent_id, student_ids) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)');
+    if (!$stmt) jsonResponse(['error' => 'DB error: ' . $db->error], 500);
+    $stmt->bind_param('sssssssssiiis', $username, $hashed, $encrypted, $role, $teacher_ids_perm, $class_ids_perm, $supervisor_teacher_ids, $supervisor_class_ids, $supervisor_user_ids, $student_id, $teacher_id, $parent_id, $student_ids);
     if ($stmt->execute()) {
         $new_id = $db->insert_id;
         $roleLabel = ['admin'=>'Admin','user'=>'User','supervisor'=>'Supervisor','superadmin'=>'Super Admin','student'=>'Student','parent'=>'Parent'][$role] ?? $role;
@@ -124,6 +136,7 @@ if ($method === 'PUT') {
     if (!$id) jsonResponse(['error' => 'ID required'], 400);
 
     $chk = $db->prepare('SELECT role, teacher_ids_perm FROM users WHERE id=?');
+    if (!$chk) jsonResponse(['error' => 'DB error: ' . $db->error], 500);
     $chk->bind_param('i', $id);
     $chk->execute();
     $target = $chk->get_result()->fetch_assoc();
@@ -172,12 +185,15 @@ if ($method === 'PUT') {
 
     if (!empty($password)) {
         if (strlen($password) < 6) jsonResponse(['error' => 'Password must be at least 6 characters'], 400);
-        $hashed = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $db->prepare('UPDATE users SET username=?, role=?, password=?, teacher_ids_perm=?, class_ids_perm=?, supervisor_teacher_ids=?, supervisor_class_ids=?, supervisor_user_ids=?, student_id=?, teacher_id=?, parent_id=?, student_ids=? WHERE id=?');
-        $stmt->bind_param('sssssssssiiisi', $username, $role, $hashed, $teacher_ids_perm, $class_ids_perm, $supervisor_teacher_ids, $supervisor_class_ids, $supervisor_user_ids, $student_id, $teacher_id, $parent_id, $student_ids, $id);
+        $hashed    = password_hash($password, PASSWORD_DEFAULT);
+        $encrypted = encryptCred($password);
+        $stmt = $db->prepare('UPDATE users SET username=?, role=?, password=?, plain_password=?, teacher_ids_perm=?, class_ids_perm=?, supervisor_teacher_ids=?, supervisor_class_ids=?, supervisor_user_ids=?, student_id=?, teacher_id=?, parent_id=?, student_ids=? WHERE id=?');
+        if (!$stmt) jsonResponse(['error' => 'DB error: ' . $db->error], 500);
+        $stmt->bind_param('sssssssssiiisi', $username, $role, $hashed, $encrypted, $teacher_ids_perm, $class_ids_perm, $supervisor_teacher_ids, $supervisor_class_ids, $supervisor_user_ids, $student_id, $teacher_id, $parent_id, $student_ids, $id);
     } else {
         $stmt = $db->prepare('UPDATE users SET username=?, role=?, teacher_ids_perm=?, class_ids_perm=?, supervisor_teacher_ids=?, supervisor_class_ids=?, supervisor_user_ids=?, student_id=?, teacher_id=?, parent_id=?, student_ids=? WHERE id=?');
-        $stmt->bind_param('ssssssssiisi', $username, $role, $teacher_ids_perm, $class_ids_perm, $supervisor_teacher_ids, $supervisor_class_ids, $supervisor_user_ids, $student_id, $teacher_id, $parent_id, $student_ids, $id);
+        if (!$stmt) jsonResponse(['error' => 'DB error: ' . $db->error], 500);
+        $stmt->bind_param('sssssssiiisi', $username, $role, $teacher_ids_perm, $class_ids_perm, $supervisor_teacher_ids, $supervisor_class_ids, $supervisor_user_ids, $student_id, $teacher_id, $parent_id, $student_ids, $id);
     }
 
     // Fetch old row for undo snapshot (after validation, before execute)
@@ -229,6 +245,7 @@ if ($method === 'DELETE') {
     $del_roleLabel = ['admin'=>'Admin','user'=>'User','supervisor'=>'Supervisor','superadmin'=>'Super Admin'][$del_role] ?? $del_role;
 
     $stmt = $db->prepare('DELETE FROM users WHERE id=?');
+    if (!$stmt) jsonResponse(['error' => 'DB error: ' . $db->error], 500);
     $stmt->bind_param('i', $id);
     if ($stmt->execute()) {
         logNotification('delete', 'user', intval($id), "{$del_username} ({$del_roleLabel})", $old_usr_row);

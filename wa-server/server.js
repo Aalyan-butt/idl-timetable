@@ -61,7 +61,7 @@ app.use((req, res, next) => {
 });
 
 // --- Per-account session state ---
-// Each account gets its own Map entry with connection + health tracking
+// Each account gets its own Map entry with connection tracking
 const sessions = new Map();
 
 function getSession(accountId) {
@@ -75,8 +75,6 @@ function getSession(accountId) {
             reconnectDelay:    2000,
             reconnectTimer:    null,
             consecutiveFails:  0,       // track repeated failures before clearing session
-            healthTimer:       null,    // periodic health check
-            lastActivity:      0,       // timestamp of last successful WA event
         });
     }
     return sessions.get(accountId);
@@ -221,6 +219,25 @@ function clearSession(accountId) {
     );
 }
 
+/**
+ * Clear only the Signal Protocol session/pre-key/sender-key entries,
+ * keeping the main `creds` intact so the phone stays linked.
+ * Call this when Bad MAC errors are causing restartRequired loops.
+ */
+async function clearSignalKeys(accountId) {
+    try {
+        const db = await getPool();
+        const prefix = accountId + ':';
+        await db.query(
+            'DELETE FROM wa_session WHERE id LIKE ? AND id NOT IN (?, ?)',
+            [prefix + '%', prefix + 'creds', prefix + 'app-state-sync-key']
+        );
+        console.log(`[${accountId}] Signal keys cleared — creds preserved. Fresh handshake on next connect.`);
+    } catch (e) {
+        console.error(`[${accountId}] clearSignalKeys error:`, e.message);
+    }
+}
+
 // --- WhatsApp client initialisation ---
 
 function scheduleReconnect(accountId, ms) {
@@ -232,8 +249,6 @@ function scheduleReconnect(accountId, ms) {
 
 function destroySock(accountId) {
     const sess = getSession(accountId);
-    clearInterval(sess.healthTimer);
-    sess.healthTimer = null;
     if (sess.sock) {
         try { sess.sock.ev.removeAllListeners(); } catch (_) {}
         try { sess.sock.end(); } catch (_) {}
@@ -247,14 +262,10 @@ async function initClient(accountId) {
     try {
         const { state, saveCreds } = await useDBAuthState(accountId);
 
-        // Use the version bundled with Baileys — fetchLatestBaileysVersion() is
-        // unreliable and can return wrong values that cause protocol mismatches.
-        let version;
-        try {
-            const latest = await fetchLatestBaileysVersion();
-            if (latest?.version) version = latest.version;
-        } catch (_) {}
-        if (!version) version = [2, 3000, 1017531287];  // safe fallback
+        // Use a fixed known-good version — fetchLatestBaileysVersion() makes an
+        // external HTTP call on every reconnect and can return mismatched values
+        // that cause protocol errors and boot loops.
+        const { version } = await fetchLatestBaileysVersion().catch(() => ({ version: [2, 3000, 1017531287] }));
         console.log(`[${accountId}] WA Web v${version.join('.')} | hasCreds=${sess.hasCreds}`);
 
         // Set appropriate status before connecting
@@ -299,26 +310,14 @@ async function initClient(accountId) {
                 sess.statusMsg         = 'Connected';
                 sess.reconnectDelay    = 2000;
                 sess.consecutiveFails  = 0;
-                sess.lastActivity      = Date.now();
                 console.log(`[${accountId}] WhatsApp connected ✓`);
-
-                // Health check — reconnect only if no activity for 3+ minutes
-                clearInterval(sess.healthTimer);
-                sess.healthTimer = setInterval(() => {
-                    const silentMs = Date.now() - sess.lastActivity;
-                    if (silentMs > 180000) {  // 3 minutes with no events = likely dead
-                        console.log(`[${accountId}] Health check: no activity for ${Math.round(silentMs/1000)}s, reconnecting…`);
-                        destroySock(accountId);
-                        scheduleReconnect(accountId, 2000);
-                    }
-                }, 60000); // check every 60s
+                // Baileys handles keepalive internally via keepAliveIntervalMs.
+                // No custom health timer needed — it caused false reconnects on idle sessions.
             }
 
             if (connection === 'close') {
                 sess.isReady   = false;
                 sess.qrDataUrl = null;
-                clearInterval(sess.healthTimer);
-                sess.healthTimer = null;
 
                 const errCode = (lastDisconnect?.error instanceof Boom)
                     ? lastDisconnect.error.output.statusCode
@@ -362,24 +361,34 @@ async function initClient(accountId) {
                         scheduleReconnect(accountId, sess.reconnectDelay);
                     }
 
-                // All other reasons (restartRequired, timeout, connectionLost, network blip)
+                // restartRequired (515) — WhatsApp is asking us to restart.
+                // This often happens after Bad MAC decryption errors pile up.
+                // After 3 consecutive restarts, wipe Signal keys (keep creds) to
+                // force a fresh Signal handshake without re-scanning QR.
+                } else if (errCode === DisconnectReason.restartRequired || errCode === 515) {
+                    sess.consecutiveFails++;
+                    if (sess.consecutiveFails >= 3) {
+                        console.log(`[${accountId}] 3 consecutive restartRequired — clearing Signal keys for fresh handshake.`);
+                        sess.consecutiveFails = 0;
+                        await clearSignalKeys(accountId);
+                    }
+                    sess.statusMsg = 'Reconnecting…';
+                    scheduleReconnect(accountId, sess.reconnectDelay);
+
+                // All other reasons (timeout, connectionLost, network blip)
                 // — always keep creds, reset consecutiveFails since it's a different issue
                 } else {
-                    sess.consecutiveFails = 0;  // different error type — reset counter
+                    sess.consecutiveFails = 0;
                     sess.statusMsg = sess.hasCreds ? 'Resuming session…' : 'Reconnecting…';
                     scheduleReconnect(accountId, sess.reconnectDelay);
                 }
             }
         });
 
-        sess.sock.ev.on('creds.update', async (...args) => {
-            sess.lastActivity = Date.now();
-            await saveCreds(...args);
-        });
+        sess.sock.ev.on('creds.update', saveCreds);
 
         // Process message history events to avoid protocol errors
-        sess.sock.ev.on('messaging-history.set', ({ chats, contacts, messages, isLatest }) => {
-            sess.lastActivity = Date.now();
+        sess.sock.ev.on('messaging-history.set', () => {
             // Just acknowledge — we don't need to store chat history
         });
 
@@ -399,6 +408,12 @@ async function initAllStoredSessions() {
         for (const row of rows) {
             const accountId = row.id.replace(/:creds$/, '');
             if (accountId) {
+                // Proactively clear stale Signal keys on every startup.
+                // Stale keys from a previous run cause "Bad MAC" spam and
+                // restartRequired disconnect loops. Creds are preserved so
+                // the phone stays linked — no QR re-scan needed.
+                console.log(`Clearing stale Signal keys for account: ${accountId}`);
+                await clearSignalKeys(accountId);
                 console.log(`Reconnecting stored session for account: ${accountId}`);
                 initClient(accountId);
             }

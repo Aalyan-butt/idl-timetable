@@ -183,6 +183,26 @@ function supervisorCanAccessUser($user_id) {
     return in_array(intval($user_id), getSupervisorUserIds());
 }
 
+// ─── Credential encryption (AES-256-CBC) ─────────────────────────────────────
+// Passwords are stored encrypted — never as plain text.
+// Only admin/superadmin can retrieve the decrypted value via the API.
+define('CRED_ENC_KEY', hash('sha256', DB_PASS . DB_USER . 'idl_cred_v1', true)); // 32-byte key
+
+function encryptCred(string $plain): string {
+    $iv  = random_bytes(16);
+    $enc = openssl_encrypt($plain, 'AES-256-CBC', CRED_ENC_KEY, OPENSSL_RAW_DATA, $iv);
+    return base64_encode($iv . $enc);
+}
+
+function decryptCred(string $stored): string {
+    $raw = base64_decode($stored, true);
+    if ($raw === false || strlen($raw) < 17) return '';
+    $iv  = substr($raw, 0, 16);
+    $enc = substr($raw, 16);
+    $dec = openssl_decrypt($enc, 'AES-256-CBC', CRED_ENC_KEY, OPENSSL_RAW_DATA, $iv);
+    return $dec !== false ? $dec : '';
+}
+
 function jsonResponse($data, $code = 200) {
     ob_end_clean(); // discard any stray output (warnings, notices) before JSON
     http_response_code($code);
