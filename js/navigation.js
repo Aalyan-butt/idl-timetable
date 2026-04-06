@@ -10,8 +10,17 @@ function toggleNavGroup(groupId) {
 }
 
 const _pageLoaded = new Set(['dashboard']);
+var _currentPage  = 'dashboard';
 
 async function showPage(name) {
+  // Guard: if leaving performance-marks with unsaved marks, intercept and show dialog
+  if (_currentPage === 'performance-marks' && name !== 'performance-marks') {
+    if (typeof pmHasDirtyChanges === 'function' && pmHasDirtyChanges()) {
+      if (typeof pmShowUnsavedGuard === 'function') pmShowUnsavedGuard(name);
+      return;
+    }
+  }
+
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelectorAll('.nav-sub-item').forEach(n => n.classList.remove('active'));
@@ -51,6 +60,7 @@ async function showPage(name) {
   const searchMap = { teachers: 'teachers-search', classes: 'classes-search', users: 'users-search', students: 'students-search' };
   if (searchMap[name]) { const el = document.getElementById(searchMap[name]); if (el) el.value = ''; }
   try { localStorage.setItem('idl_last_page', name); } catch(e) {}
+  _currentPage = name;
   history.replaceState(null, '', '#' + name);
   if (name === 'dashboard') loadDashboard();
   if (name === 'teachers')  loadTeachers();
@@ -68,6 +78,7 @@ async function showPage(name) {
   if (name === 'student-notifications') loadStudentNotifications();
   if (name === 'class-enrollment')      loadClassEnrollment();
   if (name === 'class-subjects')        initClassSubjectsPage();
+  if (name === 'class-list')            loadClassList();
   if (name === 'subject-enrollment')    loadSubjectEnrollment();
   if (name === 'student-profile') {}
   if (name === 'student-schedule') loadStudentSchedule();
@@ -75,6 +86,7 @@ async function showPage(name) {
   if (name === 'parent-information')   loadParentInformation();
   if (name === 'performance-tests')    loadPerformanceTests();
   if (name === 'performance-marks')    loadPerformanceMarks();
+  if (name === 'performance-analysis') loadPerformanceAnalysis();
 }
 
 // ===== DATA LOADING =====

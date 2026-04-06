@@ -23,6 +23,7 @@ const API = {
   subjectEnrollments: 'api/subject_enrollments.php',
   performanceTests:   'api/performance_tests.php',
   performanceMarks:   'api/performance_marks.php',
+  testStudents:       'api/test_students.php',
 };
 
 async function api(url, method = 'GET', body = null) {

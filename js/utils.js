@@ -19,7 +19,7 @@ function compressImage(dataUrl, maxW, maxH, quality) {
 }
 
 // ===== GENERIC EXCEL DOWNLOAD =====
-function _generateExcel(headers, dataRows, sheetName, filename) {
+function _generateExcel(headers, dataRows, sheetName, filename, logoBase64, studentInfo) {
   function x(v) {
     return String(v == null ? '' : v)
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -38,6 +38,12 @@ function _generateExcel(headers, dataRows, sheetName, filename) {
     ).join('');
     return `<tr>${cells}</tr>`;
   }).join('');
+  const logoRow = logoBase64
+    ? `<tr><td colspan="${colCount}" style="background:#0a0a30;text-align:center;padding:8px;border:2px solid #3a3a8e"><img src="${logoBase64}" width="52" height="52" style="border-radius:50%;border:2px solid #c9a84c;vertical-align:middle"></td></tr>`
+    : '';
+  const studentRow = studentInfo
+    ? `<tr><td colspan="${colCount}" style="background:#eeeef8;text-align:center;padding:8px 14px;border:1px solid #c0c0de;font-family:Calibri,Arial,sans-serif">${studentInfo.photo ? `<img src="${x(studentInfo.photo)}" width="38" height="38" style="border-radius:50%;vertical-align:middle;margin-right:8px;border:2px solid #c9a84c">` : ''}<span style="font-size:13pt;font-weight:700;color:#0d0d40;vertical-align:middle">${x(studentInfo.name||'')}</span>${studentInfo.gr ? `<span style="font-size:10pt;color:#555;margin-left:8px;vertical-align:middle">GR: ${x(studentInfo.gr)}</span>` : ''}</td></tr>`
+    : '';
   const xlsHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8">
 <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
 <x:Name>${x(sheetName.slice(0,31))}</x:Name><x:WorksheetOptions><x:Selected/><x:FreezePanes/><x:FrozenNoSplit/>
@@ -46,7 +52,9 @@ function _generateExcel(headers, dataRows, sheetName, filename) {
 <style>body{font-family:Calibri,Arial,sans-serif;}table{border-collapse:collapse;}</style></head><body>
 <table>
   <thead>
+    ${logoRow}
     <tr><th colspan="${colCount}" style="background:#0a0a30;color:#c9a84c;font-size:16pt;font-weight:700;font-family:Calibri,Arial,sans-serif;padding:14px 20px;border:2px solid #3a3a8e;text-align:center;letter-spacing:1.5px">${x(schoolName)}</th></tr>
+    ${studentRow}
     <tr><th colspan="${colCount}" style="background:#1a1a5e;color:#9090cc;font-size:10pt;font-family:Calibri,Arial,sans-serif;padding:5px 20px;border:1px solid #3a3a8e;text-align:center">${x(sheetName)}</th></tr>
     <tr>${headerCells}</tr>
   </thead>
@@ -60,7 +68,8 @@ function _generateExcel(headers, dataRows, sheetName, filename) {
   document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
-function downloadGenericExcel(tbodyId, headers, sheetName, filename) {
+async function downloadGenericExcel(tbodyId, headers, sheetName, filename, studentInfo) {
+  if (typeof _ensureLogo === 'function') await _ensureLogo();
   const tbody = document.getElementById(tbodyId);
   if (!tbody) { toast('No data table found', 'error'); return; }
   const table = tbody.closest('table');
@@ -83,7 +92,8 @@ function downloadGenericExcel(tbodyId, headers, sheetName, filename) {
         .map(td => td.querySelector('img,svg') && !td.textContent.trim() ? '' : td.textContent.trim()))
     : rows.map(r => Array.from(r.querySelectorAll('td')).slice(0, effectiveHeaders.length).map(td => td.textContent.trim()));
 
-  _generateExcel(effectiveHeaders, dataRows, sheetName, filename);
+  const logo = (typeof _logoBase64 !== 'undefined' && _logoBase64) ? _logoBase64 : null;
+  _generateExcel(effectiveHeaders, dataRows, sheetName, filename, logo, studentInfo || null);
 }
 
 function downloadTrackExcel() {

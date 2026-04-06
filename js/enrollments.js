@@ -1,43 +1,93 @@
 // ===== CLASS ENROLLMENT =====
 let _ceTab = 'all';
+let _ceDirtySet = new Set(); // student IDs with unsaved changes
 
 function setCETab(tab) {
   _ceTab = tab;
   ['all','assigned','unassigned'].forEach(t => {
     const btn = document.getElementById('ce-tab-' + t);
     if (!btn) return;
-    const active = t === tab;
-    btn.style.background     = active ? 'var(--accent)' : '';
-    btn.style.color          = active ? '#05050e' : '';
-    btn.style.borderColor    = active ? 'var(--accent)' : '';
+    btn.classList.toggle('active', t === tab);
   });
   renderClassEnrollment();
 }
 
 function loadClassEnrollment() {
+  _ceDirtySet = new Set();
+  _ceUpdatePendingUI();
   if (!_studentsCache.length) {
-    // students not loaded yet — load them first
-    loadStudents().then(() => renderClassEnrollment());
+    loadStudents().then(() => { _cePopulateClassFilter(); renderClassEnrollment(); });
   } else {
+    _cePopulateClassFilter();
     renderClassEnrollment();
   }
 }
 
+function _cePopulateClassFilter() {
+  const sel = document.getElementById('ce-class-filter');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">All Classes</option>' +
+    (classes || []).map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+}
+
 function filterClassEnrollment() { renderClassEnrollment(); }
+
+function ceResetFilters() {
+  const s = document.getElementById('ce-search');
+  if (s) { s.value = ''; ceClearBtnToggle(s); }
+  const cf = document.getElementById('ce-class-filter');
+  if (cf) cf.value = '';
+  const pp = document.getElementById('ce-per-page');
+  if (pp) pp.value = '25';
+  setCETab('all');
+}
+
+function ceClearSearch() {
+  const s = document.getElementById('ce-search');
+  if (s) { s.value = ''; ceClearBtnToggle(s); }
+  filterClassEnrollment();
+}
+
+function ceClearBtnToggle(input) {
+  const btn = document.getElementById('ce-search-clear');
+  if (btn) btn.style.display = input.value ? 'block' : 'none';
+}
+
+function _ceUpdatePendingUI() {
+  const n = _ceDirtySet.size;
+  const wrap = document.getElementById('ce-pending-wrap');
+  const saveAllBtn = document.getElementById('ce-save-all-btn');
+  const countEl = document.getElementById('ce-pending-count');
+  if (wrap) wrap.style.display = n ? '' : 'none';
+  if (saveAllBtn) saveAllBtn.style.display = n ? '' : 'none';
+  if (countEl) countEl.textContent = n;
+}
+
+function _ceUpdateStats() {
+  const all = (_studentsCache || []).length;
+  const assigned = (_studentsCache || []).filter(s => s.class_id && classes.find(c => c.id == s.class_id)).length;
+  const unassigned = all - assigned;
+  const t = document.getElementById('ce-stat-total');     if (t) t.textContent = all;
+  const a = document.getElementById('ce-stat-assigned');   if (a) a.textContent = assigned;
+  const u = document.getElementById('ce-stat-unassigned'); if (u) u.textContent = unassigned;
+  const pa = document.getElementById('ce-pill-count-all');         if (pa) pa.textContent = all;
+  const pb = document.getElementById('ce-pill-count-assigned');    if (pb) pb.textContent = assigned;
+  const pc = document.getElementById('ce-pill-count-unassigned');  if (pc) pc.textContent = unassigned;
+}
 
 // ── Single floating class-picker (shared across all rows) ──────────────────
 (function() {
-  if (document.getElementById('ce-float-picker')) return; // already exists
+  if (document.getElementById('ce-float-picker')) return;
   const el = document.createElement('div');
   el.id = 'ce-float-picker';
-  el.style.cssText = 'display:none;position:fixed;z-index:9999;background:var(--surface2);border:1px solid var(--border);border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.5);min-width:200px;overflow:hidden';
+  el.style.cssText = 'display:none;position:fixed;z-index:9999;min-width:200px;overflow:hidden';
   el.innerHTML = `
-    <div style="padding:8px 10px;border-bottom:1px solid var(--border)">
+    <div style="padding:9px 11px;border-bottom:1px solid rgba(201,168,76,0.18)">
       <input id="ce-float-search" type="text" placeholder="Search class…" autocomplete="off"
         oninput="renderCEFloatList(this.value)"
-        style="width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:0.85rem;box-sizing:border-box">
+        style="width:100%;padding:7px 11px;border-radius:7px;border:1px solid rgba(201,168,76,0.25);background:rgba(255,255,255,0.05);color:var(--text);font-size:0.85rem;box-sizing:border-box;outline:none">
     </div>
-    <div id="ce-float-list" style="max-height:200px;overflow-y:auto"></div>`;
+    <div id="ce-float-list" style="max-height:220px;overflow-y:auto"></div>`;
   document.body.appendChild(el);
 
   document.addEventListener('mousedown', e => {
@@ -56,11 +106,23 @@ function openCEPicker(sid) {
   const picker  = document.getElementById('ce-float-picker');
   if (!trigger || !picker) return;
 
-  const rect = trigger.getBoundingClientRect();
-  const pickerW = Math.max(rect.width, 220);
+  const rect     = trigger.getBoundingClientRect();
+  const pickerW  = Math.max(rect.width, 240);
+  const pickerH  = 280; // estimated max height
   let left = rect.left;
+  let top;
+
+  // flip upward if not enough space below
+  if (rect.bottom + pickerH > window.innerHeight - 8) {
+    top = rect.top - pickerH - 4;
+    if (top < 8) top = 8;
+  } else {
+    top = rect.bottom + 4;
+  }
   if (left + pickerW > window.innerWidth - 8) left = window.innerWidth - pickerW - 8;
-  picker.style.top   = (rect.bottom + 4) + 'px';
+  if (left < 8) left = 8;
+
+  picker.style.top   = top + 'px';
   picker.style.left  = left + 'px';
   picker.style.width = pickerW + 'px';
   picker.style.display = 'block';
@@ -82,19 +144,25 @@ function renderCEFloatList(q) {
     return;
   }
   const sid = _ceActiveSid;
-  listEl.innerHTML = filtered.map(c =>
-    `<div onmousedown="selectCEClass(${sid},${c.id},'${escapeHtml(c.name).replace(/'/g,"&#39;")}')"
-      style="padding:9px 14px;cursor:pointer;font-size:0.88rem;color:var(--text)"
+  const currentPick = window._ceClassPicks?.[sid];
+  listEl.innerHTML = filtered.map(c => {
+    const isActive = currentPick && currentPick.id == c.id;
+    return `<div onmousedown="selectCEClass(${sid},${c.id},'${escapeHtml(c.name).replace(/'/g,"&#39;")}')"
+      style="padding:9px 14px;cursor:pointer;font-size:0.88rem;color:var(--text);display:flex;align-items:center;justify-content:space-between;${isActive ? 'background:rgba(201,168,76,0.12);' : ''}"
       onmouseenter="this.style.background='rgba(201,168,76,0.12)'"
-      onmouseleave="this.style.background=''">
-      ${escapeHtml(c.name)}
-    </div>`
-  ).join('');
+      onmouseleave="this.style.background='${isActive ? 'rgba(201,168,76,0.12)' : ''}'">
+      <span>${escapeHtml(c.name)}</span>
+      ${isActive ? '<span style="color:var(--accent);font-size:0.8rem">&#10003;</span>' : ''}
+    </div>`;
+  }).join('');
 }
 
 function selectCEClass(sid, classId, className) {
   if (!window._ceClassPicks) window._ceClassPicks = {};
+  const student = _studentsCache.find(s => s.id == sid);
+  const originalClassId = student ? student.class_id : null;
   window._ceClassPicks[sid] = { id: classId, name: className };
+
   const trigger = document.getElementById('ce-trigger-' + sid);
   if (trigger) {
     trigger.querySelector('.ce-trigger-label').textContent = className;
@@ -102,17 +170,37 @@ function selectCEClass(sid, classId, className) {
   }
   const picker = document.getElementById('ce-float-picker');
   if (picker) picker.style.display = 'none';
+
+  // Mark as dirty if different from saved value
+  const isDirty = String(classId) !== String(originalClassId || '');
+  const row = document.getElementById('ce-row-' + sid);
+  const btn = document.getElementById('ce-btn-' + sid);
+  if (isDirty) {
+    _ceDirtySet.add(sid);
+    if (row) { row.className = 'ce-row-dirty'; }
+    if (btn) { btn.className = 'ce-save-btn state-dirty'; btn.innerHTML = '&#10003; Save'; }
+  } else {
+    _ceDirtySet.delete(sid);
+    if (row) { row.className = ''; }
+    if (btn) { btn.className = 'ce-save-btn state-default'; btn.innerHTML = '&#10003; Save'; }
+  }
+  _ceUpdatePendingUI();
 }
 
 function renderClassEnrollment() {
   const body = document.getElementById('ce-body');
   if (!body) return;
 
-  const q = (document.getElementById('ce-search')?.value || '').trim().toLowerCase();
+  _ceUpdateStats();
+
+  const q          = (document.getElementById('ce-search')?.value || '').trim().toLowerCase();
+  const classFilter = document.getElementById('ce-class-filter')?.value || '';
   let list = (_studentsCache || []).slice();
 
   if (_ceTab === 'assigned')   list = list.filter(s => s.class_id && classes.find(c => c.id == s.class_id));
   if (_ceTab === 'unassigned') list = list.filter(s => !s.class_id || !classes.find(c => c.id == s.class_id));
+
+  if (classFilter) list = list.filter(s => String(s.class_id) === classFilter);
 
   if (q) {
     list = list.filter(s => {
@@ -121,15 +209,16 @@ function renderClassEnrollment() {
     });
   }
 
-  const cePerPage = parseInt(document.getElementById('ce-per-page')?.value ?? '0');
-  const ceTotal = list.length;
-  const countEl = document.getElementById('ce-count-label');
-  if (countEl) countEl.textContent = ceTotal > 0 ? (cePerPage > 0 && ceTotal > cePerPage ? `Showing ${cePerPage} of ${ceTotal} students` : `${ceTotal} student${ceTotal !== 1 ? 's' : ''}`) : '';
+  const cePerPage = parseInt(document.getElementById('ce-per-page')?.value ?? '25');
+  const ceTotal   = list.length;
+  const countEl   = document.getElementById('ce-count-label');
+  if (countEl) countEl.textContent = ceTotal > 0
+    ? (cePerPage > 0 && ceTotal > cePerPage ? `Showing ${cePerPage} of ${ceTotal} students` : `${ceTotal} student${ceTotal !== 1 ? 's' : ''}`)
+    : '';
   if (cePerPage > 0) list = list.slice(0, cePerPage);
 
   if (!list.length) {
-    body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--text-muted)">No Data Found</td></tr>`;
-    // keep the table visible with its headers — just empty body is fine
+    body.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:44px;color:var(--text-muted)">No Data Found</td></tr>`;
     return;
   }
 
@@ -138,27 +227,47 @@ function renderClassEnrollment() {
   body.innerHTML = list.map((s, idx) => {
     const fullName = escapeHtml(((s.first_name||'') + ' ' + (s.last_name||'')).trim() || s.student_name || '—');
     const cls = classes.find(c => c.id == s.class_id);
-    window._ceClassPicks[s.id] = cls ? { id: cls.id, name: cls.name } : null;
-    const currentCls = cls
-      ? `<span style="background:rgba(42,74,142,0.15);color:var(--accent);padding:2px 10px;border-radius:6px;font-size:0.83rem;font-weight:600">${escapeHtml(cls.name)}</span>`
-      : `<span style="color:#7a8bbf;font-style:italic;font-size:0.83rem">Pre Admission Assessment</span>`;
-    const pick = window._ceClassPicks[s.id];
-    const label = pick ? escapeHtml(pick.name) : 'Pre Admission Assessment';
-    const labelColor = pick ? 'var(--text)' : 'var(--text-muted)';
+    // Initialise pick from saved data (unless already overridden by user interaction)
+    if (!_ceDirtySet.has(s.id)) {
+      window._ceClassPicks[s.id] = cls ? { id: cls.id, name: cls.name } : null;
+    }
 
-    return `<tr style="vertical-align:middle;font-size:0.9rem;text-align:center">
-      <td style="padding:8px 6px;color:var(--text-muted);font-weight:600">${idx + 1}</td>
-      <td style="padding:8px 6px;text-align:left;font-weight:600;color:var(--text)">${fullName}</td>
-      <td style="padding:8px 6px;color:var(--accent);font-weight:700">${escapeHtml(s.gr_number || '—')}</td>
-      <td style="padding:8px 6px;text-align:left;color:var(--text-muted)">${escapeHtml(s.father_name || '—')}</td>
-      <td style="padding:8px 10px">
-        <div style="display:flex;gap:6px;align-items:center;justify-content:center">
-          <div class="ce-trigger" id="ce-trigger-${s.id}" onclick="openCEPicker(${s.id})"
-            style="flex:1;max-width:190px;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:6px;user-select:none">
-            <span class="ce-trigger-label" style="font-size:0.85rem;color:${labelColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</span>
-            <span style="font-size:0.7rem;color:var(--text-muted);flex-shrink:0">&#9660;</span>
+    const currentClsHtml = cls
+      ? `<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(68,204,136,0.12);color:#44cc88;border:1px solid rgba(68,204,136,0.25);padding:3px 10px;border-radius:14px;font-size:0.8rem;font-weight:600">&#10003; ${escapeHtml(cls.name)}</span>`
+      : `<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,160,50,0.1);color:#ffaa33;border:1px solid rgba(255,160,50,0.25);padding:3px 10px;border-radius:14px;font-size:0.8rem;font-style:italic">&#9711; Not Assigned</span>`;
+
+    const pick = window._ceClassPicks[s.id];
+    const label = pick ? escapeHtml(pick.name) : 'Select a class…';
+    const labelColor = pick ? 'var(--text)' : 'var(--text-muted)';
+    const isDirty = _ceDirtySet.has(s.id);
+    const rowClass = isDirty ? 'ce-row-dirty' : '';
+    const btnClass = isDirty ? 'ce-save-btn state-dirty' : 'ce-save-btn state-default';
+
+    const photoEl = s.photo
+      ? `<img src="${escapeHtml(s.photo)}" style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(201,162,39,0.35);flex-shrink:0">`
+      : `<div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#c9a227,#8a6e10);display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:#0e0e14;font-size:0.8rem;flex-shrink:0">${escapeHtml((s.first_name||s.student_name||'?')[0].toUpperCase())}</div>`;
+
+    return `<tr id="ce-row-${s.id}" class="${rowClass}">
+      <td style="text-align:center;color:var(--text-muted);font-size:0.82rem;font-weight:600">${idx + 1}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:9px">
+          ${photoEl}
+          <div>
+            <div style="font-weight:600;color:var(--text);font-size:0.9rem">${fullName}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted)">${escapeHtml(s.father_name || '—')}</div>
           </div>
-          <button onclick="saveEnrollment(${s.id})" style="background:#2a4a8e;color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:0.82rem;font-weight:700;white-space:nowrap;transition:opacity .15s" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">
+        </div>
+      </td>
+      <td style="color:var(--accent);font-weight:700;font-size:0.88rem">${escapeHtml(s.gr_number || '—')}</td>
+      <td style="color:var(--text-muted);font-size:0.85rem">${escapeHtml(s.father_name || '—')}</td>
+      <td>${currentClsHtml}</td>
+      <td>
+        <div style="display:flex;gap:7px;align-items:center">
+          <div class="ce-trigger" id="ce-trigger-${s.id}" onclick="openCEPicker(${s.id})">
+            <span class="ce-trigger-label" style="color:${labelColor}">${label}</span>
+            <span class="ce-trigger-arrow">&#9660;</span>
+          </div>
+          <button id="ce-btn-${s.id}" class="${btnClass}" onclick="saveEnrollment(${s.id})">
             &#10003; Save
           </button>
         </div>
@@ -167,21 +276,61 @@ function renderClassEnrollment() {
   }).join('');
 }
 
+function _ceBtnState(sid, state, msg) {
+  const btn = document.getElementById('ce-btn-' + sid);
+  const row = document.getElementById('ce-row-' + sid);
+  if (!btn) return;
+  btn.className = 'ce-save-btn state-' + state;
+  btn.innerHTML = msg;
+  if (state === 'saved')  { row && (row.className = 'ce-row-saved');  }
+  if (state === 'error')  { row && (row.className = 'ce-row-error');  }
+  if (state === 'saving') { btn.disabled = true; }
+  if (state !== 'saving') { btn.disabled = false; }
+}
+
 async function saveEnrollment(studentId) {
   const pick    = window._ceClassPicks?.[studentId];
   const classId = pick ? pick.id : '';
   const student = _studentsCache.find(s => s.id == studentId);
   if (!student) return;
 
+  _ceBtnState(studentId, 'saving', '&#8987; Saving…');
   try {
     await api(API.students, 'PUT', { ...student, id: studentId, class_id: classId });
-    toast(classId ? 'Class assigned successfully' : 'Class removed');
-    delete window._ceClassPicks[studentId]; // reset so it re-reads updated class
+    _ceDirtySet.delete(studentId);
+    _ceUpdatePendingUI();
+    _ceBtnState(studentId, 'saved', '&#10003; Saved!');
+    toast(classId ? `Class assigned: ${pick.name}` : 'Class removed', 'success');
     await loadStudents();
-    renderClassEnrollment();
-    refreshStudentNotifBadge();
+    // Don't full re-render — just update that row's "current class" cell and reset button after delay
+    setTimeout(() => {
+      const btn = document.getElementById('ce-btn-' + studentId);
+      const row = document.getElementById('ce-row-' + studentId);
+      if (btn) { btn.className = 'ce-save-btn state-default'; btn.innerHTML = '&#10003; Save'; }
+      if (row) row.className = '';
+      // Update the current class cell (5th td, index 4)
+      const cls = classes.find(c => c.id == classId);
+      const tds = row ? row.querySelectorAll('td') : [];
+      if (tds[4]) {
+        tds[4].innerHTML = cls
+          ? `<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(68,204,136,0.12);color:#44cc88;border:1px solid rgba(68,204,136,0.25);padding:3px 10px;border-radius:14px;font-size:0.8rem;font-weight:600">&#10003; ${escapeHtml(cls.name)}</span>`
+          : `<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,160,50,0.1);color:#ffaa33;border:1px solid rgba(255,160,50,0.25);padding:3px 10px;border-radius:14px;font-size:0.8rem;font-style:italic">&#9711; Not Assigned</span>`;
+      }
+      _ceUpdateStats();
+      refreshStudentNotifBadge();
+    }, 1800);
   } catch(e) {
-    toast('Error: ' + e.message, true);
+    _ceBtnState(studentId, 'error', '&#10007; Error');
+    setTimeout(() => _ceBtnState(studentId, 'dirty', '&#10003; Save'), 2500);
+    toast('Error: ' + e.message, 'error');
+  }
+}
+
+async function cesSaveAll() {
+  const dirtyIds = [..._ceDirtySet];
+  if (!dirtyIds.length) return;
+  for (const sid of dirtyIds) {
+    await saveEnrollment(sid);
   }
 }
 

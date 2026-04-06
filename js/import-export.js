@@ -265,7 +265,7 @@ function _buildFullPrintDoc(bodyHtml, pageSize, printAuto, orientation, docTitle
 }
 
 // ===== TABLE DOWNLOAD (Teachers, Classes) =====
-async function downloadTableDoc(tbodyId, filename, headers, format, pageSize, orientation, scale = 90, title = null) {
+async function downloadTableDoc(tbodyId, filename, headers, format, pageSize, orientation, scale = 90, title = null, studentInfo = null) {
   await _ensureLogo();
   const tbody = document.getElementById(tbodyId);
   if (!tbody) return;
@@ -290,7 +290,23 @@ async function downloadTableDoc(tbodyId, filename, headers, format, pageSize, or
   const bodyHtml = `<tbody>${dataRows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>`;
   const tableHtml = `<table>${headerHtml}${bodyHtml}</table>`;
   const displayTitle = title || filename.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
-  const docBody = `${_buildDocHeader(displayTitle, '', pageSize)}<div class="section-title">${displayTitle}</div>${tableHtml}${_buildDocBodyClose()}`;
+
+  let studentHtml = '';
+  if (studentInfo) {
+    const photoHtml = studentInfo.photo
+      ? `<img src="${studentInfo.photo}" style="width:22mm;height:22mm;border-radius:50%;object-fit:cover;border:2.5px solid #c9a84c;display:inline-block;vertical-align:middle;margin-right:10mm">`
+      : '';
+    const esc = v => String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    studentHtml = `<div style="display:flex;align-items:center;gap:12px;padding:10px 0 16px;border-bottom:2px solid #c9a84c;margin-bottom:14px">
+      ${photoHtml}
+      <div style="display:inline-block;vertical-align:middle">
+        <div style="font-size:17pt;font-weight:800;color:#0d0d40;font-family:Times New Roman,serif">${esc(studentInfo.name)}</div>
+        ${studentInfo.gr ? `<div style="font-size:12pt;color:#555;margin-top:4px;font-family:Times New Roman,serif">GR: ${esc(studentInfo.gr)}${studentInfo.cls ? ' &nbsp;&bull;&nbsp; ' + esc(studentInfo.cls) : ''}</div>` : ''}
+      </div>
+    </div>`;
+  }
+
+  const docBody = `${_buildDocHeader(displayTitle, '', pageSize)}${studentHtml}<div class="section-title">${displayTitle}</div>${tableHtml}${_buildDocBodyClose()}`;
 
   if (format === 'pdf') {
     _openPrintWindow(_buildFullPrintDoc(docBody, pageSize, true, orientation, filename, scale));

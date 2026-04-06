@@ -13,25 +13,58 @@ if ($method === 'GET') {
     $student_id = intval($_GET['student_id'] ?? 0);
 
     if ($test_id) {
-        // Return every student in the test's class with their marks (if any).
-        // Marks are keyed by student_id, so they survive class re-assignments.
-        $stmt = $db->prepare("
-            SELECT s.id AS student_id,
-                   s.gr_number,
-                   s.student_name,
-                   s.photo,
-                   pm.id            AS mark_id,
-                   pm.marks_obtained,
-                   pm.is_absent,
-                   pm.is_skip,
-                   pm.comment
-            FROM   students s
-            JOIN   performance_tests pt ON pt.id = ? AND s.class_id = pt.class_id
-            LEFT   JOIN performance_marks pm
-                   ON pm.student_id = s.id AND pm.test_id = ?
-            ORDER  BY s.student_name
-        ");
-        $stmt->bind_param('ii', $test_id, $test_id);
+        // Check if a custom roster exists for this test
+        $roster_exists = false;
+        $rc = $db->query("
+            SELECT COUNT(*) AS c FROM information_schema.tables
+            WHERE table_schema = DATABASE() AND table_name = 'test_students'
+        ")->fetch_assoc();
+        if ($rc && $rc['c'] > 0) {
+            $rcount = (int)$db->query("SELECT COUNT(*) AS c FROM test_students WHERE test_id = $test_id")->fetch_assoc()['c'];
+            $roster_exists = $rcount > 0;
+        }
+
+        if ($roster_exists) {
+            // Use the custom roster
+            $stmt = $db->prepare("
+                SELECT s.id AS student_id,
+                       s.gr_number,
+                       s.student_name,
+                       s.photo,
+                       pm.id            AS mark_id,
+                       pm.marks_obtained,
+                       pm.is_absent,
+                       pm.is_skip,
+                       pm.comment
+                FROM   test_students ts
+                JOIN   students s  ON s.id = ts.student_id
+                LEFT   JOIN performance_marks pm
+                       ON pm.student_id = s.id AND pm.test_id = ?
+                WHERE  ts.test_id = ?
+                ORDER  BY s.student_name
+            ");
+            $stmt->bind_param('ii', $test_id, $test_id);
+        } else {
+            // Default: all current students in the test's class
+            $stmt = $db->prepare("
+                SELECT s.id AS student_id,
+                       s.gr_number,
+                       s.student_name,
+                       s.photo,
+                       pm.id            AS mark_id,
+                       pm.marks_obtained,
+                       pm.is_absent,
+                       pm.is_skip,
+                       pm.comment
+                FROM   students s
+                JOIN   performance_tests pt ON pt.id = ? AND s.class_id = pt.class_id
+                LEFT   JOIN performance_marks pm
+                       ON pm.student_id = s.id AND pm.test_id = ?
+                ORDER  BY s.student_name
+            ");
+            $stmt->bind_param('ii', $test_id, $test_id);
+        }
+
         $stmt->execute();
         $res  = $stmt->get_result();
         $rows = [];
@@ -46,12 +79,14 @@ if ($method === 'GET') {
                    pt.test_name,
                    pt.test_date,
                    pt.total_marks,
-                   c.name          AS class_name,
-                   cs.subject_name
+                   c.name              AS class_name,
+                   cs.subject_name,
+                   CONCAT(t.title,' ',t.name) AS teacher_name
             FROM   performance_marks pm
             JOIN   performance_tests pt ON pt.id = pm.test_id
-            LEFT   JOIN classes c       ON c.id  = pt.class_id
+            LEFT   JOIN classes c         ON c.id  = pt.class_id
             LEFT   JOIN class_subjects cs ON cs.id = pt.subject_id
+            LEFT   JOIN teachers t        ON t.id  = pt.teacher_id
             WHERE  pm.student_id = ?
             ORDER  BY pt.test_date DESC, pm.saved_at DESC
         ");
@@ -105,11 +140,24 @@ if ($method === 'POST') {
     $filled = (int)$db->query(
         "SELECT COUNT(*) AS c FROM performance_marks WHERE test_id = $test_id"
     )->fetch_assoc()['c'];
-    $total = (int)$db->query(
-        "SELECT COUNT(*) AS c
-         FROM   students s
-         JOIN   performance_tests pt ON pt.id = $test_id AND s.class_id = pt.class_id"
-    )->fetch_assoc()['c'];
+
+    // Total = custom roster if set, otherwise all class students
+    $roster_check = $db->query("
+        SELECT COUNT(*) AS c FROM information_schema.tables
+        WHERE table_schema = DATABASE() AND table_name = 'test_students'
+    ")->fetch_assoc();
+    $use_roster = $roster_check && $roster_check['c'] > 0 &&
+        (int)$db->query("SELECT COUNT(*) AS c FROM test_students WHERE test_id = $test_id")->fetch_assoc()['c'] > 0;
+
+    if ($use_roster) {
+        $total = (int)$db->query("SELECT COUNT(*) AS c FROM test_students WHERE test_id = $test_id")->fetch_assoc()['c'];
+    } else {
+        $total = (int)$db->query(
+            "SELECT COUNT(*) AS c
+             FROM   students s
+             JOIN   performance_tests pt ON pt.id = $test_id AND s.class_id = pt.class_id"
+        )->fetch_assoc()['c'];
+    }
 
     $status = 'Empty';
     if ($filled > 0 && $filled >= $total) $status = 'Done';

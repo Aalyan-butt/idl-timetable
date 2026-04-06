@@ -1,13 +1,831 @@
 
-      <div class="page-header">
-        <div>
-          <div class="page-title">Performance Analysis</div>
-          <div class="page-subtitle">Analyse student performance across tests</div>
+<style>
+/* ══════════════════════════════════════════════════════
+   PERFORMANCE ANALYSIS — Premium UI
+══════════════════════════════════════════════════════ */
+
+/* ── Filter Card ── */
+.pa-filter-card {
+  background: linear-gradient(160deg,#0e0e20 0%,#080815 100%);
+  border: 1px solid rgba(201,168,76,0.22);
+  border-radius: 14px;
+  padding: 24px 26px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: visible;
+}
+.pa-filter-card::before {
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent 0%,rgba(201,168,76,0.55) 50%,transparent 100%);
+  border-radius:14px 14px 0 0;
+}
+.pa-filter-card::after {
+  content:'';
+  position:absolute;bottom:0;right:0;
+  width:220px;height:220px;
+  background:radial-gradient(circle,rgba(201,168,76,0.04) 0%,transparent 70%);
+  pointer-events:none;
+}
+
+/* ── Field Labels ── */
+.pa-field-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: rgba(201,168,76,0.75);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pa-field-label-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--accent);
+  opacity: .7;
+}
+
+/* ── Custom Select Wrapper ── */
+.pa-select-wrap {
+  position: relative;
+}
+.pa-select-wrap select {
+  width: 100%;
+  padding: 10px 36px 10px 14px;
+  border-radius: 9px;
+  border: 1px solid rgba(201,168,76,0.2);
+  background: rgba(5,5,18,0.85);
+  color: #e8e0c8;
+  font-size: 0.88rem;
+  font-family: inherit;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color .2s, box-shadow .2s;
+  letter-spacing: .01em;
+}
+.pa-select-wrap select:focus {
+  border-color: rgba(201,168,76,0.55);
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.08);
+}
+.pa-select-wrap select option {
+  background: #0c0c1e;
+  color: #e8e0c8;
+  padding: 8px 14px;
+}
+.pa-select-arrow {
+  position: absolute;
+  right: 13px; top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  width: 14px; height: 14px;
+  opacity: .5;
+}
+
+/* ── Text Input ── */
+.pa-text-input-wrap { position: relative; }
+.pa-text-input {
+  width: 100%;
+  padding: 10px 36px 10px 14px;
+  border-radius: 9px;
+  border: 1px solid rgba(201,168,76,0.2);
+  background: rgba(5,5,18,0.85);
+  color: #e8e0c8;
+  font-size: 0.88rem;
+  font-family: inherit;
+  font-weight: 500;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .2s, box-shadow .2s;
+  letter-spacing: .01em;
+}
+.pa-text-input:focus {
+  border-color: rgba(201,168,76,0.55);
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.08);
+}
+.pa-text-input::placeholder { color: rgba(255,255,255,0.22); }
+.pa-input-icon {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  color: rgba(201,168,76,0.35); font-size: 0.85rem; pointer-events: none;
+}
+
+/* ── Autocomplete Dropdown ── */
+#pa-name-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px); left: 0; right: 0;
+  z-index: 500;
+  background: linear-gradient(160deg,#0f0f22,#09091a);
+  border: 1px solid rgba(201,168,76,0.28);
+  border-radius: 10px;
+  max-height: 230px;
+  overflow-y: auto;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+}
+#pa-name-dropdown::-webkit-scrollbar { width: 4px; }
+#pa-name-dropdown::-webkit-scrollbar-track { background: transparent; }
+#pa-name-dropdown::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.25); border-radius: 2px; }
+.pa-dd-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid rgba(201,168,76,0.06);
+  transition: background .1s;
+}
+.pa-dd-item:last-child { border-bottom: none; }
+.pa-dd-item:hover { background: rgba(201,168,76,0.08); }
+.pa-dd-name { font-size: 0.87rem; color: #e8e0c8; font-weight: 600; flex: 1; }
+.pa-dd-gr   { font-size: 0.76rem; color: rgba(201,168,76,0.7); }
+.pa-dd-cls  { font-size: 0.73rem; color: #c9a84c; background: rgba(201,168,76,0.1); padding: 2px 8px; border-radius: 6px; }
+
+/* ── Reset Button ── */
+.pa-reset-btn {
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 9px;
+  border: 1px solid rgba(201,168,76,0.2);
+  background: rgba(201,168,76,0.06);
+  color: rgba(201,168,76,0.8);
+  font-size: 0.83rem;
+  font-weight: 600;
+  font-family: 'Cinzel', serif;
+  letter-spacing: .06em;
+  cursor: pointer;
+  transition: all .18s;
+  text-transform: uppercase;
+}
+.pa-reset-btn:hover {
+  background: rgba(201,168,76,0.14);
+  border-color: rgba(201,168,76,0.4);
+  color: var(--accent);
+}
+
+/* ── Student Strip ── */
+.pa-student-strip {
+  display: none;
+  background: linear-gradient(160deg,rgba(201,168,76,0.07) 0%,rgba(5,5,18,0.6) 100%);
+  border: 1px solid rgba(201,168,76,0.28);
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin-bottom: 16px;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  position: relative;
+  overflow: hidden;
+}
+.pa-student-strip::before {
+  content:'';position:absolute;top:0;left:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));
+  border-radius:14px 0 0 14px;
+}
+.pa-student-strip.visible { display: flex; }
+.pa-avatar {
+  width: 56px; height: 56px; border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(201,168,76,0.4);
+  flex-shrink: 0;
+}
+.pa-avatar-placeholder {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: linear-gradient(135deg,rgba(201,168,76,0.18),rgba(201,168,76,0.04));
+  border: 2px solid rgba(201,168,76,0.3);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.5rem; color: rgba(201,168,76,0.5);
+}
+.pa-student-info { flex: 1; min-width: 0; }
+.pa-student-name {
+  font-size: 1.15rem; font-weight: 700; color: #f0e8d0;
+  font-family: 'Cinzel', serif; letter-spacing: .02em;
+}
+.pa-student-meta {
+  font-size: 0.8rem; color: rgba(255,255,255,0.42);
+  margin-top: 4px; letter-spacing: .02em;
+}
+.pa-stat-chips { display: flex; gap: 10px; flex-wrap: wrap; margin-left: auto; }
+.pa-stat-chip {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 10px 18px;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(201,168,76,0.15);
+  border-radius: 10px; min-width: 72px; text-align: center;
+}
+.pa-stat-chip-val { font-size: 1.15rem; font-weight: 800; color: var(--accent); font-family:'Cinzel',serif; }
+.pa-stat-chip-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,0.35); margin-top: 3px; }
+.pa-stat-chip.green { border-color: rgba(68,204,136,0.2); }
+.pa-stat-chip.green .pa-stat-chip-val { color: #44cc88; }
+.pa-stat-chip.amber { border-color: rgba(201,168,76,0.2); }
+.pa-stat-chip.amber .pa-stat-chip-val { color: #d4a93a; }
+.pa-stat-chip.red   { border-color: rgba(255,80,80,0.2); }
+.pa-stat-chip.red   .pa-stat-chip-val { color: #ff5555; }
+
+/* ── Subject Pills ── */
+.pa-subject-row { margin-bottom: 14px; }
+.pa-subject-pills { display: flex; gap: 7px; flex-wrap: wrap; }
+.pa-subject-pill {
+  display: inline-flex; align-items: center;
+  padding: 5px 16px; border-radius: 20px;
+  border: 1px solid rgba(201,168,76,0.22);
+  background: transparent;
+  color: rgba(255,255,255,0.45);
+  font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; transition: all .15s; font-family: inherit;
+  letter-spacing: .02em;
+}
+.pa-subject-pill:hover { border-color: rgba(201,168,76,0.5); color: var(--accent); background: rgba(201,168,76,0.06); }
+.pa-subject-pill.active { background: linear-gradient(135deg,var(--accent),var(--accent2)); color: #05050e; border-color: transparent; font-weight: 700; }
+
+/* ── Table Card ── */
+.pa-table-card {
+  background: linear-gradient(160deg,#0e0e20 0%,#080815 100%);
+  border: 1px solid rgba(201,168,76,0.18);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* ── Toolbar ── */
+.pa-toolbar {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(201,168,76,0.09);
+  border-radius: 14px 14px 0 0;
+  background: rgba(201,168,76,0.015);
+}
+.pa-toolbar-search-wrap { position: relative; flex: 1; min-width: 160px; }
+.pa-toolbar-search-wrap input {
+  width: 100%;
+  padding: 8px 30px 8px 34px;
+  border-radius: 8px;
+  border: 1px solid rgba(201,168,76,0.18);
+  background: rgba(5,5,18,0.7);
+  color: #e8e0c8; font-size: 0.84rem; font-family: inherit;
+  outline: none; box-sizing: border-box;
+  transition: border-color .2s;
+}
+.pa-toolbar-search-wrap input:focus { border-color: rgba(201,168,76,0.45); }
+.pa-toolbar-search-wrap input::placeholder { color: rgba(255,255,255,0.22); }
+.pa-toolbar-search-icon {
+  position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+  color: rgba(201,168,76,0.4); font-size: 0.82rem; pointer-events: none;
+}
+.pa-toolbar-select {
+  padding: 8px 28px 8px 11px;
+  border-radius: 8px;
+  border: 1px solid rgba(201,168,76,0.18);
+  background: rgba(5,5,18,0.7);
+  color: #e8e0c8; font-size: 0.82rem; font-family: inherit;
+  outline: none; cursor: pointer; appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(201,168,76,0.4)'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  transition: border-color .2s;
+  white-space: nowrap;
+}
+.pa-toolbar-select:focus { border-color: rgba(201,168,76,0.45); }
+.pa-toolbar-select option { background: #0c0c1e; color: #e8e0c8; }
+#pa-count-label {
+  font-size: 0.78rem; color: rgba(255,255,255,0.35);
+  white-space: nowrap; letter-spacing: .03em;
+}
+.pa-col-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 13px;
+  background: rgba(201,168,76,0.07); border: 1px solid rgba(201,168,76,0.22);
+  border-radius: 8px; color: rgba(201,168,76,0.8); font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; white-space: nowrap; font-family: 'Cinzel',serif; letter-spacing:.04em;
+  transition: all .15s; text-transform: uppercase;
+}
+.pa-col-btn:hover { background: rgba(201,168,76,0.14); color: var(--accent); }
+
+/* ── Column Picker Panel — Full-Width Horizontal ── */
+.pa-col-panel {
+  display: none;
+  width: 100%;
+  box-sizing: border-box;
+  background: linear-gradient(160deg,#0f0f22,#09091a);
+  border-top: 1px solid rgba(201,168,76,0.18);
+  border-bottom: 1px solid rgba(201,168,76,0.13);
+  z-index: 10;
+  overflow: hidden;
+}
+.pa-col-panel.open { display: block; }
+.pa-col-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px 8px;
+  border-bottom: 1px solid rgba(201,168,76,0.09);
+}
+.pa-col-panel-title {
+  font-family:'Cinzel',serif;
+  font-size:0.62rem;
+  color:rgba(201,168,76,0.7);
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.13em;
+}
+.pa-col-panel-actions { display:flex; gap:6px; }
+.pa-col-action-btn {
+  font-size: 0.71rem;
+  color: rgba(201,168,76,0.65);
+  background: rgba(201,168,76,0.07);
+  border: 1px solid rgba(201,168,76,0.18);
+  border-radius: 6px;
+  padding: 3px 11px;
+  cursor: pointer;
+  font-family: 'Cinzel', serif;
+  letter-spacing: .04em;
+  transition: all .15s;
+  text-transform: uppercase;
+}
+.pa-col-action-btn:hover { background: rgba(201,168,76,0.14); color: var(--accent); }
+.pa-col-checkboxes {
+  display: flex;
+  flex-wrap: nowrap;
+  padding: 8px 14px 12px;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pa-col-checkboxes::-webkit-scrollbar { display: none; }
+.pa-col-panel label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.81rem;
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  padding: 6px 16px 6px 10px;
+  user-select: none;
+  border-radius: 7px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  transition: color .12s, background .12s;
+}
+.pa-col-panel label:hover { color: rgba(255,255,255,0.88); background: rgba(201,168,76,0.06); }
+.pa-col-panel input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
+
+/* ── Clickable name / class links in strip ── */
+.pa-name-link {
+  cursor: pointer;
+  border-bottom: 1px dashed rgba(201,168,76,0.4);
+  transition: color .15s, border-color .15s;
+}
+.pa-name-link:hover { color: var(--accent); border-color: var(--accent); }
+.pa-class-link {
+  cursor: pointer;
+  color: var(--accent);
+  background: rgba(201,168,76,0.1);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 5px;
+  padding: 1px 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: background .15s, border-color .15s;
+  display: inline-block;
+}
+.pa-class-link:hover { background: rgba(201,168,76,0.2); border-color: rgba(201,168,76,0.45); }
+/* ── Test name link in table ── */
+.pa-test-link {
+  cursor: pointer;
+  color: #e8e0c8;
+  font-weight: 600;
+  border-bottom: 1px dashed rgba(201,168,76,0.3);
+  transition: color .15s, border-color .15s;
+  display: inline;
+}
+.pa-test-link:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ── Table ── */
+#pa-table { width: 100%; border-collapse: collapse; }
+#pa-table thead tr { background: rgba(201,168,76,0.04); }
+#pa-table thead th {
+  font-family: 'Cinzel', serif;
+  padding: 14px 14px;
+  font-size: 0.72rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.6px;
+  color: rgba(201,168,76,0.8);
+  border-bottom: 1px solid rgba(201,168,76,0.15);
+  white-space: nowrap; cursor: pointer; user-select: none;
+  transition: color .12s, background .12s;
+}
+#pa-table thead th:hover { color: var(--accent); background: rgba(201,168,76,0.06); }
+#pa-table thead th.pa-sorted { color: var(--accent); }
+#pa-table thead th .pa-sort-icon { margin-left: 4px; font-size: 0.65rem; opacity: .4; vertical-align: middle; }
+#pa-table thead th.pa-sorted .pa-sort-icon { opacity: 1; }
+#pa-table tbody tr { border-bottom: 1px solid rgba(201,168,76,0.055); transition: background .1s; }
+#pa-table tbody tr:hover { background: rgba(201,168,76,0.04); }
+#pa-table td { padding: 12px 14px; font-size: 0.87rem; color: #d8d0bc; vertical-align: middle; }
+
+/* ── Score Bar ── */
+.pa-score-wrap { display: flex; align-items: center; gap: 9px; min-width: 130px; }
+.pa-score-bg { flex:1; height:5px; border-radius:3px; background:rgba(255,255,255,0.06); overflow:hidden; }
+.pa-score-fill { height:100%; border-radius:3px; transition: width .35s ease; }
+.pa-score-pct { font-size:0.82rem; font-weight:700; white-space:nowrap; min-width:42px; text-align:right; }
+
+/* ── Badges ── */
+.pa-badge {
+  display: inline-block; padding: 3px 11px; border-radius: 20px;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: .04em; white-space: nowrap;
+}
+.pa-badge-scored  { background:rgba(68,204,136,0.12); color:#44cc88; border:1px solid rgba(68,204,136,0.22); }
+.pa-badge-absent  { background:rgba(255,80,80,0.12);  color:#ff5555; border:1px solid rgba(255,80,80,0.22); }
+.pa-badge-skip    { background:rgba(255,170,51,0.12); color:#ffaa33; border:1px solid rgba(255,170,51,0.22); }
+.pa-badge-pending { background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.3);border:1px solid rgba(255,255,255,0.08); }
+
+/* ── Comment cell ── */
+.pa-comment-cell { max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:rgba(255,255,255,0.38); font-size:0.8rem; font-style:italic; }
+
+/* ── Empty state ── */
+.pa-empty-state { text-align:center; padding:64px 24px; }
+.pa-empty-icon-ring {
+  width:72px; height:72px; border-radius:50%; margin:0 auto 18px;
+  background:rgba(201,168,76,0.07); border:1px solid rgba(201,168,76,0.18);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.8rem;
+}
+.pa-empty-title { font-family:'Cinzel',serif; font-size:1rem; color:rgba(255,255,255,0.5); font-weight:700; letter-spacing:.04em; }
+.pa-empty-sub   { font-size:0.82rem; color:rgba(255,255,255,0.25); margin-top:8px; line-height:1.6; }
+
+/* ── Premium Custom Searchable Select ── */
+.pa-custom-select { position: relative; }
+.pa-cs-trigger {
+  width: 100%;
+  padding: 10px 36px 10px 14px;
+  border-radius: 9px;
+  border: 1px solid rgba(201,168,76,0.2);
+  background: rgba(5,5,18,0.85);
+  color: #e8e0c8;
+  font-size: 0.88rem;
+  font-family: inherit;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  transition: border-color .22s, box-shadow .22s;
+  letter-spacing: .01em;
+  box-sizing: border-box;
+}
+.pa-cs-trigger:hover,
+.pa-cs-trigger.open {
+  border-color: rgba(201,168,76,0.55);
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.08);
+}
+.pa-cs-trigger-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pa-cs-arrow {
+  flex-shrink: 0;
+  width: 13px; height: 13px;
+  color: rgba(201,168,76,0.5);
+  transition: transform .2s;
+}
+.pa-cs-trigger.open .pa-cs-arrow { transform: rotate(180deg); }
+.pa-cs-panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0; right: 0;
+  z-index: 700;
+  background: linear-gradient(160deg,#0f0f22,#09091a);
+  border: 1px solid rgba(201,168,76,0.28);
+  border-radius: 10px;
+  box-shadow: 0 14px 44px rgba(0,0,0,0.75);
+  overflow: hidden;
+  min-width: 200px;
+}
+.pa-cs-panel.open { display: block; }
+.pa-cs-search-wrap {
+  padding: 10px 10px 8px;
+  border-bottom: 1px solid rgba(201,168,76,0.1);
+}
+.pa-cs-search {
+  width: 100%;
+  padding: 7px 12px;
+  border-radius: 7px;
+  border: 1px solid rgba(201,168,76,0.2);
+  background: rgba(5,5,18,0.8);
+  color: #e8e0c8;
+  font-size: 0.82rem;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .2s;
+}
+.pa-cs-search:focus { border-color: rgba(201,168,76,0.45); }
+.pa-cs-search::placeholder { color: rgba(255,255,255,0.22); }
+.pa-cs-list {
+  max-height: 210px;
+  overflow-y: auto;
+}
+.pa-cs-list::-webkit-scrollbar { width: 4px; }
+.pa-cs-list::-webkit-scrollbar-track { background: transparent; }
+.pa-cs-list::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.25); border-radius: 2px; }
+.pa-cs-item {
+  padding: 9px 14px;
+  font-size: 0.86rem;
+  color: #d8d0bc;
+  cursor: pointer;
+  transition: background .1s, color .1s;
+  border-bottom: 1px solid rgba(201,168,76,0.045);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pa-cs-item:last-child { border-bottom: none; }
+.pa-cs-item:hover { background: rgba(201,168,76,0.09); color: #f0e8d0; }
+.pa-cs-item.selected { background: rgba(201,168,76,0.13); color: var(--accent); font-weight: 600; }
+.pa-cs-empty { padding: 14px; font-size: 0.82rem; color: rgba(255,255,255,0.28); text-align: center; }
+
+/* ── Column Picker Panel — Full-Width Horizontal ── */
+.pa-col-panel {
+  display: none;
+  background: linear-gradient(160deg,#0f0f22,#09091a);
+  border-top: 1px solid rgba(201,168,76,0.28);
+  border-bottom: 1px solid rgba(201,168,76,0.18);
+  overflow: hidden;
+}
+.pa-col-panel.open { display: block; }
+.pa-col-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 18px 9px;
+  border-bottom: 1px solid rgba(201,168,76,0.1);
+}
+.pa-col-panel-title {
+  font-family:'Cinzel',serif;
+  font-size:0.62rem;
+  color:rgba(201,168,76,0.7);
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.13em;
+}
+.pa-col-panel-actions { display:flex; gap:6px; }
+.pa-col-action-btn {
+  font-size: 0.71rem;
+  color: rgba(201,168,76,0.65);
+  background: rgba(201,168,76,0.07);
+  border: 1px solid rgba(201,168,76,0.18);
+  border-radius: 6px;
+  padding: 3px 11px;
+  cursor: pointer;
+  font-family: 'Cinzel', serif;
+  letter-spacing: .04em;
+  transition: all .15s;
+  text-transform: uppercase;
+}
+.pa-col-action-btn:hover { background: rgba(201,168,76,0.14); color: var(--accent); }
+.pa-col-checkboxes {
+  display: flex;
+  flex-wrap: nowrap;
+  padding: 10px 14px 14px;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pa-col-checkboxes::-webkit-scrollbar { display: none; }
+.pa-col-panel label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.81rem;
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  padding: 7px 16px 7px 10px;
+  user-select: none;
+  border-radius: 7px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  transition: color .12s, background .12s;
+}
+.pa-col-panel label:hover { color: rgba(255,255,255,0.88); background: rgba(201,168,76,0.06); }
+.pa-col-panel input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
+</style>
+
+<!-- ══ Page Header ═══════════════════════════════════════════════ -->
+<div class="page-header">
+  <div>
+    <div class="page-title">Performance Analysis</div>
+    <div class="page-subtitle">Track individual student performance across all tests</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <div style="position:relative;display:inline-block">
+      <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('pa-dm',this)">Download PDF</button>
+      <div id="pa-dm" class="download-menu">
+        <div class="dm-scale-row">
+          <span class="dm-scale-label">Page Scale</span>
+          <div class="dm-scale-btns">
+            <button type="button" class="dm-scale-btn" data-scale="70"  onclick="setMenuScale(event,this)">70%</button>
+            <button type="button" class="dm-scale-btn" data-scale="80"  onclick="setMenuScale(event,this)">80%</button>
+            <button type="button" class="dm-scale-btn dm-scale-active" data-scale="90" onclick="setMenuScale(event,this)">90%</button>
+            <button type="button" class="dm-scale-btn" data-scale="100" onclick="setMenuScale(event,this)">100%</button>
+          </div>
+        </div>
+        <div class="download-divider"></div>
+        <div class="download-opt" onclick="paDownloadPDF('portrait')">PDF &mdash; A4 Portrait</div>
+        <div class="download-opt" onclick="paDownloadPDF('landscape')">PDF &mdash; A4 Landscape</div>
+        <div class="download-divider"></div>
+      </div>
+    </div>
+    <button class="btn btn-excel btn-sm" onclick="paDownloadExcel()">Download Excel</button>
+  </div>
+</div>
+
+<!-- ══ Filter Card ════════════════════════════════════════════════ -->
+<div class="pa-filter-card">
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px;align-items:end">
+
+    <!-- Class -->
+    <div>
+      <div class="pa-field-label"><span class="pa-field-label-dot"></span>Class</div>
+      <div class="pa-custom-select" id="pa-cls-sel-wrap">
+        <button type="button" class="pa-cs-trigger" id="pa-cls-trigger" onclick="paToggleClassDrop(event)">
+          <span class="pa-cs-trigger-text" id="pa-cls-trigger-text">All Classes</span>
+          <svg class="pa-cs-arrow" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M3.47 5.47a.75.75 0 0 1 1.06 0L8 8.94l3.47-3.47a.75.75 0 1 1 1.06 1.06l-4 4a.75.75 0 0 1-1.06 0l-4-4a.75.75 0 0 1 0-1.06z"/></svg>
+        </button>
+        <div class="pa-cs-panel" id="pa-cls-panel">
+          <div class="pa-cs-search-wrap">
+            <input type="text" class="pa-cs-search" id="pa-cls-search" placeholder="Search class…" oninput="paFilterClassDrop()" autocomplete="off">
+          </div>
+          <div class="pa-cs-list" id="pa-cls-list"></div>
         </div>
       </div>
-      <div class="card" style="padding:48px;text-align:center;color:var(--text-muted)">
-        <div style="font-size:2.5rem;margin-bottom:12px">📊</div>
-        <div style="font-size:1rem;font-weight:600">Coming Soon</div>
-        <div style="font-size:0.85rem;margin-top:6px">Performance Analysis charts and reports will be available here.</div>
+    </div>
+
+    <!-- Student Name -->
+    <div>
+      <div class="pa-field-label"><span class="pa-field-label-dot"></span>Student Name</div>
+      <div class="pa-text-input-wrap" style="position:relative">
+        <input type="text" id="pa-name-input" class="pa-text-input"
+          placeholder="Search by student name…"
+          autocomplete="off"
+          oninput="paOnNameInput()"
+          onfocus="paShowDropdown()"
+          onblur="paHideDropdown()">
+        <span class="pa-input-icon">&#9660;</span>
+        <div id="pa-name-dropdown"></div>
       </div>
-    
+    </div>
+
+    <!-- GR Number -->
+    <div>
+      <div class="pa-field-label"><span class="pa-field-label-dot"></span>G.R. Number</div>
+      <div class="pa-text-input-wrap">
+        <input type="text" id="pa-gr-input" class="pa-text-input"
+          placeholder="Search by GR number…"
+          oninput="paOnGrInput()">
+        <span class="pa-input-icon">#</span>
+      </div>
+    </div>
+
+    <!-- Reset -->
+    <div>
+      <div class="pa-field-label" style="opacity:0;user-select:none"><span class="pa-field-label-dot"></span>.</div>
+      <button class="pa-reset-btn" onclick="paResetFilters()">Reset Filters</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ Student Info Strip ════════════════════════════════════════ -->
+<div id="pa-student-strip" class="pa-student-strip">
+  <div id="pa-avatar-wrap">
+    <div class="pa-avatar-placeholder">&#128100;</div>
+  </div>
+  <div class="pa-student-info">
+    <div class="pa-student-name" id="pa-s-name" onclick="paOpenStudentProfile()"><span class="pa-name-link">—</span></div>
+    <div class="pa-student-meta" id="pa-s-meta">—</div>
+  </div>
+  <div class="pa-stat-chips">
+    <div class="pa-stat-chip">
+      <div class="pa-stat-chip-val" id="pa-chip-tests">—</div>
+      <div class="pa-stat-chip-label">Tests</div>
+    </div>
+    <div class="pa-stat-chip green">
+      <div class="pa-stat-chip-val" id="pa-chip-avg">—</div>
+      <div class="pa-stat-chip-label">Avg %</div>
+    </div>
+    <div class="pa-stat-chip amber">
+      <div class="pa-stat-chip-val" id="pa-chip-best">—</div>
+      <div class="pa-stat-chip-label">Best %</div>
+    </div>
+    <div class="pa-stat-chip red">
+      <div class="pa-stat-chip-val" id="pa-chip-absent">—</div>
+      <div class="pa-stat-chip-label">Absent</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Subject Pill Filter ═══════════════════════════════════════ -->
+<div id="pa-subject-row" class="pa-subject-row" style="display:none">
+  <div class="pa-subject-pills" id="pa-subject-pills"></div>
+</div>
+
+<!-- ══ Table Card ════════════════════════════════════════════════ -->
+<div class="pa-table-card">
+
+  <!-- Toolbar -->
+  <div class="pa-toolbar">
+    <div class="pa-toolbar-search-wrap">
+      <span class="pa-toolbar-search-icon">&#128269;</span>
+      <input type="text" id="pa-table-search" placeholder="Search test name or subject…" oninput="paFilterTable()">
+    </div>
+    <select id="pa-date-from" class="pa-toolbar-select" onchange="paFilterTable()">
+      <option value="">From Date</option>
+    </select>
+    <select id="pa-date-to" class="pa-toolbar-select" onchange="paFilterTable()">
+      <option value="">To Date</option>
+    </select>
+    <select id="pa-subject-filter" class="pa-toolbar-select" onchange="paFilterTable()">
+      <option value="">All Subjects</option>
+    </select>
+    <select id="pa-status-filter" class="pa-toolbar-select" onchange="paFilterTable()">
+      <option value="">All Status</option>
+      <option value="scored">Scored</option>
+      <option value="absent">Absent</option>
+      <option value="skip">Skipped</option>
+      <option value="pending">Pending</option>
+    </select>
+    <span id="pa-count-label"></span>
+    <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
+      <span style="font-size:0.76rem;color:rgba(255,255,255,0.3);white-space:nowrap;letter-spacing:.03em">SHOW</span>
+      <select id="pa-per-page" class="pa-toolbar-select" onchange="paFilterTable()">
+        <option value="25">25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+        <option value="0">All</option>
+      </select>
+    </div>
+    <button class="pa-col-btn" onclick="paToggleColPanel(event)">&#9638; Columns</button>
+  </div>
+
+  <!-- Column Visibility Panel (in-flow, pushes table down) -->
+  <div id="pa-col-panel" class="pa-col-panel" onclick="event.stopPropagation()">
+    <div class="pa-col-panel-header">
+      <div class="pa-col-panel-title">Visible Columns</div>
+      <div class="pa-col-panel-actions">
+        <button type="button" class="pa-col-action-btn" onclick="paSetAllCols(true,event)">All</button>
+        <button type="button" class="pa-col-action-btn" onclick="paSetAllCols(false,event)">None</button>
+      </div>
+    </div>
+    <div class="pa-col-checkboxes">
+      <label><input type="checkbox" id="pa-col-sr"       checked onchange="paApplyCols()"> Sr.&nbsp;#</label>
+      <label><input type="checkbox" id="pa-col-date"     checked onchange="paApplyCols()"> Test Date</label>
+      <label><input type="checkbox" id="pa-col-test"     checked onchange="paApplyCols()"> Test Name</label>
+      <label><input type="checkbox" id="pa-col-class"    checked onchange="paApplyCols()"> Class</label>
+      <label><input type="checkbox" id="pa-col-subject"  checked onchange="paApplyCols()"> Subject</label>
+      <label><input type="checkbox" id="pa-col-teacher"  checked onchange="paApplyCols()"> Teacher</label>
+      <label><input type="checkbox" id="pa-col-obtained" checked onchange="paApplyCols()"> Obtained</label>
+      <label><input type="checkbox" id="pa-col-total"    checked onchange="paApplyCols()"> Total</label>
+      <label><input type="checkbox" id="pa-col-pct"      checked onchange="paApplyCols()"> Score&nbsp;%</label>
+      <label><input type="checkbox" id="pa-col-status"   checked onchange="paApplyCols()"> Status</label>
+      <label><input type="checkbox" id="pa-col-comment"  checked onchange="paApplyCols()"> Comment</label>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table id="pa-table">
+      <thead>
+        <tr>
+          <th class="pa-col-sr"       onclick="paSortBy('sr')"       style="text-align:center;min-width:48px">#<span class="pa-sort-icon">&#8597;</span></th>
+          <th class="pa-col-date"     onclick="paSortBy('date')"     style="min-width:110px">Test Date<span class="pa-sort-icon">&#8597;</span></th>
+          <th class="pa-col-test"     onclick="paSortBy('test')"     style="min-width:180px">Test Name<span class="pa-sort-icon">&#8597;</span></th>
+          <th class="pa-col-class"    onclick="paSortBy('class')"    style="min-width:120px">Class<span class="pa-sort-icon">&#8597;</span></th>
+          <th class="pa-col-subject"  onclick="paSortBy('subject')"  style="min-width:120px">Subject<span class="pa-sort-icon">&#8597;</span></th>
+          <th class="pa-col-teacher"  onclick="paSortBy('teacher')"  style="min-width:140px">Teacher<span class="pa-sort-icon">&#8597;</span></th>
+          <th class="pa-col-obtained" onclick="paSortBy('obtained')" style="min-width:90px">Obtained<span class="pa-sort-icon">&#8597;</span></th>
+          <th class="pa-col-total"    onclick="paSortBy('total')"    style="min-width:70px">Total<span class="pa-sort-icon">&#8597;</span></th>
+          <th class="pa-col-pct"      onclick="paSortBy('pct')"      style="min-width:155px">Score %<span class="pa-sort-icon">&#8597;</span></th>
+          <th class="pa-col-status"   onclick="paSortBy('status')"   style="min-width:90px">Status<span class="pa-sort-icon">&#8597;</span></th>
+          <th class="pa-col-comment"  style="min-width:180px">Comment</th>
+        </tr>
+      </thead>
+      <tbody id="pa-body">
+        <tr><td colspan="11">
+          <div class="pa-empty-state">
+            <div class="pa-empty-icon-ring">&#128202;</div>
+            <div class="pa-empty-title">No Student Selected</div>
+            <div class="pa-empty-sub">Use the filters above to locate a student.<br>Their complete test history will appear here.</div>
+          </div>
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /pa-table-card -->

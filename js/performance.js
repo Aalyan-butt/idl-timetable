@@ -143,7 +143,7 @@ function _renderPTTable(rows) {
   const tbody = document.getElementById('pt-body');
   if (!tbody) return;
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:28px;color:var(--text-muted)">No Data Found</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:28px;color:var(--text-muted)">No Record Found</td></tr>`;
     _applyPTColVisibility();
     return;
   }
@@ -363,8 +363,58 @@ async function deletePerformanceTest(id, name) {
 var _pmTestId   = null;
 var _pmTestData = null;
 var _pmStudents = [];
+var _pmDirty    = false;   // true when user has unsaved mark changes
+
+function _pmSetDirty(val) {
+  _pmDirty = val;
+  // Drive beforeunload warning
+  if (val) {
+    window._pmBeforeUnload = window._pmBeforeUnload || function(e) {
+      if (_pmDirty) { e.preventDefault(); e.returnValue = ''; }
+    };
+    window.addEventListener('beforeunload', window._pmBeforeUnload);
+  } else {
+    if (window._pmBeforeUnload) window.removeEventListener('beforeunload', window._pmBeforeUnload);
+  }
+}
 
 async function loadPerformanceMarks() {
+  // Auto-save draft of any in-progress work before resetting
+  if (_pmTestId) _pmAutoSaveDraft();
+
+  // Reset everything to default state
+  _pmTestId   = null;
+  _pmTestData = null;
+  _pmStudents = [];
+  _pmSetDirty(false);
+
+  const infoEl  = document.getElementById('pm-test-info');
+  const statsEl = document.getElementById('pm-stats-card');
+  const saveEl  = document.getElementById('pm-save-row');
+  const totalEl = document.getElementById('pm-total-marks-val');
+  const tbody   = document.getElementById('pm-students-body');
+  const msRow   = document.getElementById('pm-manage-students-row');
+
+  if (infoEl)  infoEl.style.display  = 'none';
+  if (statsEl) statsEl.style.display = 'none';
+  if (saveEl)  saveEl.style.display  = 'none';
+  if (msRow)   msRow.style.display   = 'none';
+  if (totalEl) totalEl.textContent   = '—';
+  if (tbody)   tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:44px;color:var(--text-muted)">No Record Found</td></tr>`;
+
+  // Reset the test select dropdown to default
+  const sel = document.getElementById('pm-test-select');
+  if (sel) {
+    const w = sel.closest('.ss-wrapper');
+    if (w && w._ssRefresh) {
+      // Reset via the underlying select
+      sel.value = '';
+      w._ssRefresh();
+    } else if (sel) {
+      sel.value = '';
+    }
+  }
+
   try {
     const tests = await api(API.performanceTests);
     _ptData = Array.isArray(tests) ? tests : _ptData;
@@ -414,14 +464,16 @@ async function pmSelectTest(testId) {
   const saveEl   = document.getElementById('pm-save-row');
   const totalEl  = document.getElementById('pm-total-marks-val');
   const tbody    = document.getElementById('pm-students-body');
+  const msRow    = document.getElementById('pm-manage-students-row');
 
   if (!testId) {
     _pmTestId = null; _pmTestData = null; _pmStudents = [];
     if (infoEl)  infoEl.style.display  = 'none';
     if (statsEl) statsEl.style.display = 'none';
     if (saveEl)  saveEl.style.display  = 'none';
+    if (msRow)   msRow.style.display   = 'none';
     if (totalEl) totalEl.textContent   = '—';
-    if (tbody)   tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:44px;color:var(--text-muted)">No Data Found</td></tr>`;
+    if (tbody)   tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:44px;color:var(--text-muted)">No Record Found</td></tr>`;
     pmApplyCols();
     return;
   }
@@ -443,6 +495,7 @@ async function pmSelectTest(testId) {
 
   if (statsEl) statsEl.style.display = '';
   if (saveEl)  saveEl.style.display  = '';
+  if (msRow)   msRow.style.display   = 'flex';
   if (tbody) tbody.innerHTML =
     '<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--text-muted)">Loading…</td></tr>';
 
@@ -451,12 +504,22 @@ async function pmSelectTest(testId) {
 
   try {
     _pmStudents = await api(`${API.performanceMarks}?test_id=${testId}`);
+
+    // Update roster note
+    _pmUpdateRosterNote();
+
     _pmRenderStudents();
   } catch(e) {
     document.getElementById('pm-students-body').innerHTML =
       `<tr><td colspan="8" style="text-align:center;padding:36px;color:#ff5555">${escapeHtml(e.message)}</td></tr>`;
     toast(e.message, 'error');
   }
+}
+
+function _pmUpdateRosterNote() {
+  const noteEl = document.getElementById('pm-roster-note');
+  if (!noteEl || !_pmStudents) return;
+  noteEl.textContent = `${_pmStudents.length} student${_pmStudents.length !== 1 ? 's' : ''} in this test`;
 }
 
 function _pmRenderStudents() {
@@ -510,6 +573,15 @@ function _pmRenderStudents() {
   }).join('');
 
   pmApplyCols();
+  _pmAttachDraftListeners();
+}
+
+function _pmAttachDraftListeners() {
+  const tbody = document.getElementById('pm-students-body');
+  if (!tbody || tbody._draftBound) return;
+  tbody._draftBound = true;
+  tbody.addEventListener('input',  () => { _pmAutoSaveDraft(); _pmSetDirty(true); });
+  tbody.addEventListener('change', () => { _pmAutoSaveDraft(); _pmSetDirty(true); });
 }
 
 function pmToggleAbsent(idx, checked) {
@@ -583,11 +655,51 @@ function _pmGetRow(idx) {
   };
 }
 
-async function pmSaveAll() {
+function pmHasDirtyChanges() { return _pmDirty && !!_pmTestId; }
+
+// ── Unsaved-changes guard (called from navigation interceptor) ──────────────
+var _pmPendingNav = null; // page name to navigate to after guard decision
+
+function pmShowUnsavedGuard(targetPage) {
+  _pmPendingNav = targetPage;
+  const m = document.getElementById('pm-unsaved-modal');
+  if (m) m.classList.add('open');
+}
+
+function pmUnsavedCancel() {
+  _pmPendingNav = null;
+  const m = document.getElementById('pm-unsaved-modal');
+  if (m) m.classList.remove('open');
+}
+
+function pmUnsavedDiscard() {
+  const m = document.getElementById('pm-unsaved-modal');
+  if (m) m.classList.remove('open');
+  _pmSetDirty(false);
+  _pmClearDraft(_pmTestId);
+  const target = _pmPendingNav;
+  _pmPendingNav = null;
+  if (target) showPage(target);
+}
+
+async function pmUnsavedSave() {
+  const m = document.getElementById('pm-unsaved-modal');
+  if (m) m.classList.remove('open');
+  await pmSaveAll();
+  const target = _pmPendingNav;
+  _pmPendingNav = null;
+  if (target && !_pmDirty) showPage(target); // only navigate if save succeeded
+}
+
+async function pmSaveAll(opts) {
   if (!_pmTestId) return;
+  // Auto-save draft before saving (in case save fails)
+  _pmAutoSaveDraft();
   const marks = _pmStudents.map((_, i) => _pmGetRow(i));
   try {
     const resp = await api(API.performanceMarks, 'POST', { test_id: _pmTestId, marks });
+    _pmClearDraft(_pmTestId); // Clear draft on successful save
+    _pmSetDirty(false);
     toast(`All marks saved. Test status: ${resp.test_status}`, 'success');
     _pmStudents = await api(`${API.performanceMarks}?test_id=${_pmTestId}`);
     _pmRenderStudents();
@@ -614,3 +726,729 @@ function pmApplyCols() {
     document.querySelectorAll(`.pm-col-${c}`).forEach(el => { el.style.display = show ? '' : 'none'; });
   });
 }
+
+// ===== DRAFT SYSTEM =====
+function _pmDraftKey(testId) { return `pm_draft_${testId}`; }
+
+function _pmAutoSaveDraft() {
+  if (!_pmTestId || !_pmStudents.length) return;
+  const data = _pmStudents.map((s, i) => ({
+    student_id: s.student_id,
+    marks:      document.getElementById(`pm-marks-${i}`)?.value   ?? '',
+    absent:     document.getElementById(`pm-absent-${i}`)?.checked ?? false,
+    skip:       document.getElementById(`pm-skip-${i}`)?.checked   ?? false,
+    comment:    document.getElementById(`pm-comment-${i}`)?.value  ?? '',
+  }));
+  // Only save if something was actually entered
+  const hasData = data.some(d => d.marks !== '' || d.absent || d.skip || d.comment !== '');
+  if (!hasData) return;
+  try { localStorage.setItem(_pmDraftKey(_pmTestId), JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
+}
+
+function _pmGetDraft(testId) {
+  try { const raw = localStorage.getItem(_pmDraftKey(testId)); return raw ? JSON.parse(raw) : null; }
+  catch(e) { return null; }
+}
+
+function _pmClearDraft(testId) {
+  try { localStorage.removeItem(_pmDraftKey(testId)); } catch(e) {}
+}
+
+function pmRestoreDraft() {
+  const draft = _pmGetDraft(_pmTestId);
+  if (!draft) return;
+  const dm = document.getElementById('pm-draft-modal');
+  if (dm) dm.classList.remove('open');
+  // Render with saved data
+  _pmRenderStudents();
+  // Apply draft values after render
+  setTimeout(() => {
+    draft.data.forEach((d, i) => {
+      // Find the row index by student_id
+      const idx = _pmStudents.findIndex(s => s.student_id == d.student_id);
+      if (idx === -1) return;
+      const marksEl   = document.getElementById(`pm-marks-${idx}`);
+      const absentEl  = document.getElementById(`pm-absent-${idx}`);
+      const skipEl    = document.getElementById(`pm-skip-${idx}`);
+      const commentEl = document.getElementById(`pm-comment-${idx}`);
+      if (absentEl && d.absent)  { absentEl.checked = true;  pmToggleAbsent(idx, true);  }
+      if (skipEl   && d.skip)    { skipEl.checked   = true;  pmToggleSkip(idx, true);    }
+      if (marksEl  && d.marks)   { marksEl.value = d.marks;  pmCheckExceeds(idx); }
+      if (commentEl && d.comment) commentEl.value = d.comment;
+    });
+    toast('Draft restored', 'success');
+  }, 50);
+}
+
+function pmDiscardDraft() {
+  _pmClearDraft(_pmTestId);
+  const dm = document.getElementById('pm-draft-modal');
+  if (dm) dm.classList.remove('open');
+  _pmRenderStudents();
+}
+
+// ===== MANAGE STUDENTS =====
+var _pmMsData = null; // { has_custom_roster, current, previous }
+
+async function pmManageStudents() {
+  if (!_pmTestId) return;
+  const overlay = document.getElementById('pm-ms-modal-overlay');
+  if (overlay) overlay.classList.add('open');
+  document.getElementById('pm-ms-list').innerHTML = '<div class="pm-ms-empty">Loading...</div>';
+  document.getElementById('pm-ms-search').value = '';
+
+  try {
+    _pmMsData = await api(`${API.testStudents}?test_id=${_pmTestId}`);
+    _pmMsRender('');
+  } catch(e) {
+    document.getElementById('pm-ms-list').innerHTML = `<div class="pm-ms-empty" style="color:#ff5555">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function pmCloseMsModal() {
+  const overlay = document.getElementById('pm-ms-modal-overlay');
+  if (overlay) overlay.classList.remove('open');
+}
+
+function _pmMsRender(q) {
+  if (!_pmMsData) return;
+  const list = document.getElementById('pm-ms-list');
+  const ql = q.toLowerCase();
+
+  function buildRows(students, badgeClass, badgeLabel) {
+    const filtered = ql ? students.filter(s => (s.student_name || '').toLowerCase().includes(ql) || (s.gr_number || '').toLowerCase().includes(ql)) : students;
+    if (!filtered.length) return '';
+    return filtered.map(s => `
+      <label class="pm-ms-student-row" data-type="${badgeLabel}">
+        <input type="checkbox" class="pm-ms-cb" data-id="${s.student_id}" ${s.in_roster ? 'checked' : ''}>
+        <span class="pm-ms-student-name">${escapeHtml(s.student_name || '—')}</span>
+        <span class="pm-ms-student-gr">${escapeHtml(s.gr_number || '')}</span>
+        <span class="${badgeClass}">${badgeLabel}</span>
+      </label>`).join('');
+  }
+
+  const currentHtml  = buildRows(_pmMsData.current,  'pm-ms-badge-current', 'Current');
+  const previousHtml = buildRows(_pmMsData.previous, 'pm-ms-badge-prev',    'Previous');
+
+  let html = '';
+  if (_pmMsData.current.length || currentHtml) {
+    html += `<div class="pm-ms-section-label">Current Students <span class="pm-ms-badge-current">in this class</span></div>`;
+    html += currentHtml || '<div class="pm-ms-empty">No current students match</div>';
+  }
+  if (_pmMsData.previous.length || previousHtml) {
+    html += `<div class="pm-ms-section-label" style="margin-top:18px">Previous Students <span class="pm-ms-badge-prev">no longer in class</span></div>`;
+    html += previousHtml || '<div class="pm-ms-empty">No previous students match</div>';
+  }
+  if (!html) html = '<div class="pm-ms-empty">No students found</div>';
+  list.innerHTML = html;
+}
+
+function pmMsFilter(q) { _pmMsRender(q); }
+
+function pmMsSelectAll() {
+  document.querySelectorAll('.pm-ms-cb').forEach(cb => { cb.checked = true; });
+  // Also update _pmMsData
+  if (_pmMsData) {
+    _pmMsData.current.forEach(s => s.in_roster = true);
+    _pmMsData.previous.forEach(s => s.in_roster = true);
+  }
+}
+
+function pmMsSelectNone() {
+  document.querySelectorAll('.pm-ms-cb').forEach(cb => { cb.checked = false; });
+  if (_pmMsData) {
+    _pmMsData.current.forEach(s => s.in_roster = false);
+    _pmMsData.previous.forEach(s => s.in_roster = false);
+  }
+}
+
+function pmMsSelectCurrent() {
+  document.querySelectorAll('.pm-ms-cb').forEach(cb => {
+    const row = cb.closest('.pm-ms-student-row');
+    cb.checked = row?.dataset.type === 'Current';
+  });
+  if (_pmMsData) {
+    _pmMsData.current.forEach(s => s.in_roster = true);
+    _pmMsData.previous.forEach(s => s.in_roster = false);
+  }
+}
+
+async function pmSaveRoster() {
+  if (!_pmTestId) return;
+  const checked = [...document.querySelectorAll('.pm-ms-cb:checked')].map(cb => parseInt(cb.dataset.id));
+  try {
+    await api(API.testStudents, 'POST', { test_id: _pmTestId, student_ids: checked });
+    pmCloseMsModal();
+    toast(`Roster saved — ${checked.length} student${checked.length !== 1 ? 's' : ''} in this test`, 'success');
+    // Reload students for this test
+    _pmStudents = await api(`${API.performanceMarks}?test_id=${_pmTestId}`);
+    _pmUpdateRosterNote();
+    _pmRenderStudents();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ============================================================
+// ===== PERFORMANCE ANALYSIS =================================
+// ============================================================
+
+var _paAllStudents   = [];   // full student list from server
+var _paFilteredStud  = [];   // students after class/name/gr filters
+var _paSelectedStud  = null; // currently selected student object
+var _paAllRecords    = [];   // raw marks history from API
+var _paTableRows     = [];   // processed rows shown in table
+var _paSortKey       = 'date';
+var _paSortDir       = 'desc';
+var _paActiveSubject = '';   // subject pill filter
+var _paDropTimer     = null;
+var _paClassSelected = '';   // selected class id for custom dropdown
+var _paClassOptions  = [];   // [{id, name}] for class dropdown
+
+async function loadPerformanceAnalysis() {
+  // Load students + classes in parallel
+  try {
+    const [studs, cls] = await Promise.all([
+      api(API.students).catch(() => []),
+      api(API.classes).catch(() => [])
+    ]);
+    _paAllStudents  = Array.isArray(studs) ? studs : [];
+    _paFilteredStud = _paAllStudents;
+    _paBuildClassFilter(cls);
+    _paResetStudentUI();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function _paBuildClassFilter(cls) {
+  _paClassOptions = [{id:'', name:'All Classes'}, ...cls.map(c => ({id: String(c.id), name: c.name || ''})) ];
+  _paRenderClassList(_paClassOptions);
+  _paSetClassTriggerText('All Classes');
+  _paClassSelected = '';
+}
+
+// ── Custom Class Dropdown helpers ──────────────────────────────
+function _paSetClassTriggerText(text) {
+  const el = document.getElementById('pa-cls-trigger-text');
+  if (el) el.textContent = text || 'All Classes';
+}
+
+function _paRenderClassList(options) {
+  const list = document.getElementById('pa-cls-list');
+  if (!list) return;
+  if (!options.length) {
+    list.innerHTML = '<div class="pa-cs-empty">No classes found</div>';
+    return;
+  }
+  list.innerHTML = options.map(o =>
+    `<div class="pa-cs-item${_paClassSelected === o.id ? ' selected' : ''}" data-id="${escapeHtml(o.id)}" data-name="${escapeHtml(o.name)}" onmousedown="paSelectClassEl(this)">${escapeHtml(o.name)}</div>`
+  ).join('');
+}
+
+function paSelectClassEl(el) {
+  paSelectClass(el.dataset.id || '', el.dataset.name || 'All Classes');
+}
+
+function paToggleClassDrop(e) {
+  e.stopPropagation();
+  const trigger = document.getElementById('pa-cls-trigger');
+  const panel   = document.getElementById('pa-cls-panel');
+  if (!panel) return;
+  const isOpen = panel.classList.contains('open');
+  // close all custom panels
+  document.querySelectorAll('.pa-cs-panel.open').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.pa-cs-trigger.open').forEach(t => t.classList.remove('open'));
+  if (!isOpen) {
+    panel.classList.add('open');
+    if (trigger) trigger.classList.add('open');
+    const search = document.getElementById('pa-cls-search');
+    if (search) { search.value = ''; search.focus(); }
+    _paRenderClassList(_paClassOptions);
+  }
+}
+
+function paFilterClassDrop() {
+  const q = (document.getElementById('pa-cls-search')?.value || '').toLowerCase();
+  const filtered = _paClassOptions.filter(o => o.name.toLowerCase().includes(q));
+  _paRenderClassList(filtered);
+}
+
+function paSelectClass(id, name) {
+  _paClassSelected = id;
+  _paSetClassTriggerText(name || 'All Classes');
+  const panel   = document.getElementById('pa-cls-panel');
+  const trigger = document.getElementById('pa-cls-trigger');
+  if (panel)   panel.classList.remove('open');
+  if (trigger) trigger.classList.remove('open');
+  paOnClassChange();
+}
+
+// ── Filter inputs ────────────────────────────────────────────────
+function paOnClassChange() {
+  _paSelectedStud = null;
+  _paResetStudentUI();
+  _paApplyStudentFilters();
+}
+
+function paOnNameInput() {
+  _paApplyStudentFilters();
+  paShowDropdown();
+}
+
+function paOnGrInput() {
+  _paApplyStudentFilters();
+  paShowDropdown();
+}
+
+function _paApplyStudentFilters() {
+  const classId = _paClassSelected || '';
+  const name    = (document.getElementById('pa-name-input')?.value  || '').toLowerCase().trim();
+  const gr      = (document.getElementById('pa-gr-input')?.value    || '').toLowerCase().trim();
+
+  _paFilteredStud = _paAllStudents.filter(s => {
+    if (classId && String(s.class_id) !== classId) return false;
+    if (name && !(s.student_name || '').toLowerCase().includes(name)) return false;
+    if (gr   && !(s.gr_number    || '').toLowerCase().includes(gr))   return false;
+    return true;
+  });
+  _paRenderDropdown();
+}
+
+function _paRenderDropdown() {
+  const dd = document.getElementById('pa-name-dropdown');
+  if (!dd) return;
+  const list = _paFilteredStud.slice(0, 30);
+  if (!list.length) {
+    dd.innerHTML = `<div style="padding:12px 14px;color:var(--text-muted);font-size:0.85rem">No students found</div>`;
+  } else {
+    dd.innerHTML = list.map(s => `
+      <div class="pa-dd-item" data-id="${s.id}"
+        style="padding:9px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(201,168,76,0.07);transition:background .1s"
+        onmousedown="paSelectStudent(${s.id})"
+        onmouseover="this.style.background='rgba(201,168,76,0.09)'"
+        onmouseout="this.style.background=''">
+        <span style="font-size:0.88rem;color:var(--text);font-weight:600">${escapeHtml(s.student_name||'—')}</span>
+        <span style="font-size:0.78rem;color:var(--text-muted);margin-left:auto">GR: ${escapeHtml(s.gr_number||'—')}</span>
+        ${s.class_name ? `<span style="font-size:0.75rem;color:var(--accent);background:rgba(201,168,76,0.1);padding:1px 7px;border-radius:8px">${escapeHtml(s.class_name)}</span>` : ''}
+      </div>`).join('');
+  }
+  dd.style.display = 'block';
+}
+
+function paShowDropdown() {
+  clearTimeout(_paDropTimer);
+  _paApplyStudentFilters();
+}
+
+function paHideDropdown() {
+  _paDropTimer = setTimeout(() => {
+    const dd = document.getElementById('pa-name-dropdown');
+    if (dd) dd.style.display = 'none';
+  }, 200);
+}
+
+async function paSelectStudent(id) {
+  const dd = document.getElementById('pa-name-dropdown');
+  if (dd) dd.style.display = 'none';
+
+  _paSelectedStud = _paAllStudents.find(s => s.id == id) || null;
+  if (!_paSelectedStud) return;
+
+  // Fill name/gr inputs
+  const nameInp = document.getElementById('pa-name-input');
+  const grInp   = document.getElementById('pa-gr-input');
+  if (nameInp) nameInp.value = _paSelectedStud.student_name || '';
+  if (grInp)   grInp.value   = _paSelectedStud.gr_number    || '';
+
+  // Show student strip
+  _paShowStudentStrip(_paSelectedStud);
+
+  // Load history
+  const tbody = document.getElementById('pa-body');
+  if (tbody) tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:44px;color:var(--text-muted)">Loading…</td></tr>`;
+
+  try {
+    _paAllRecords = await api(`${API.performanceMarks}?student_id=${id}`);
+    _paAllRecords = Array.isArray(_paAllRecords) ? _paAllRecords : [];
+    _paBuildSubjectPills();
+    _paBuildDateFilters();
+    _paBuildSubjectFilter();
+    _paActiveSubject = '';
+    paFilterTable();
+    _paUpdateStats();
+  } catch(e) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:44px;color:#ff5555">${escapeHtml(e.message)}</td></tr>`;
+    toast(e.message, 'error');
+  }
+}
+
+function _paShowStudentStrip(s) {
+  const strip = document.getElementById('pa-student-strip');
+  if (!strip) return;
+
+  // Avatar
+  const avatarWrap = document.getElementById('pa-avatar-wrap');
+  if (avatarWrap) {
+    avatarWrap.innerHTML = s.photo
+      ? `<img src="${escapeHtml(s.photo)}" class="pa-avatar" onerror="this.style.display='none'">`
+      : `<div class="pa-avatar-placeholder">&#128100;</div>`;
+  }
+
+  const nameEl = document.getElementById('pa-s-name');
+  const metaEl = document.getElementById('pa-s-meta');
+  if (nameEl) nameEl.textContent = s.student_name || '—';
+  if (metaEl) {
+    const parts = [];
+    if (s.gr_number)   parts.push(`GR: ${s.gr_number}`);
+    if (s.class_name)  parts.push(s.class_name);
+    if (s.father_name) parts.push(`Father: ${s.father_name}`);
+    metaEl.textContent = parts.join('  ·  ') || '—';
+  }
+  strip.classList.add('visible');
+}
+
+function _paUpdateStats() {
+  const scored = _paAllRecords.filter(r => !r.is_absent && !r.is_skip && r.marks_obtained !== null && r.marks_obtained !== '');
+  const total  = _paAllRecords.length;
+  const absent = _paAllRecords.filter(r => r.is_absent == 1).length;
+
+  let avg = '—', best = '—';
+  if (scored.length) {
+    const pcts = scored.map(r => r.total_marks > 0 ? (parseFloat(r.marks_obtained) / parseFloat(r.total_marks)) * 100 : null).filter(p => p !== null);
+    if (pcts.length) {
+      avg  = (pcts.reduce((a,b) => a+b, 0) / pcts.length).toFixed(1) + '%';
+      best = Math.max(...pcts).toFixed(1) + '%';
+    }
+  }
+
+  _paSet('pa-chip-tests',  total);
+  _paSet('pa-chip-avg',    avg);
+  _paSet('pa-chip-best',   best);
+  _paSet('pa-chip-absent', absent);
+}
+
+function _paSet(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+
+function _paBuildSubjectPills() {
+  const row = document.getElementById('pa-subject-row');
+  const pills = document.getElementById('pa-subject-pills');
+  if (!row || !pills) return;
+
+  const subjects = [...new Map(_paAllRecords.map(r => [r.subject_name, r.subject_name])).entries()].map(([k]) => k).filter(Boolean);
+  if (!subjects.length) { row.style.display = 'none'; return; }
+
+  pills.innerHTML = `<button class="pa-subject-pill active" onclick="paSetSubjectPill('',this)">All</button>` +
+    subjects.map(s => `<button class="pa-subject-pill" onclick="paSetSubjectPill('${escapeHtml(s)}',this)">${escapeHtml(s)}</button>`).join('');
+  row.style.display = 'block';
+}
+
+function paSetSubjectPill(subject, btn) {
+  _paActiveSubject = subject;
+  document.querySelectorAll('.pa-subject-pill').forEach(p => p.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  paFilterTable();
+}
+
+function _paBuildDateFilters() {
+  const dates = [...new Set(_paAllRecords.map(r => r.test_date).filter(Boolean))].sort();
+  const fromSel = document.getElementById('pa-date-from');
+  const toSel   = document.getElementById('pa-date-to');
+  if (!fromSel || !toSel) return;
+  const opts = dates.map(d => `<option value="${d}">${d}</option>`).join('');
+  fromSel.innerHTML = '<option value="">From Date</option>' + opts;
+  toSel.innerHTML   = '<option value="">To Date</option>'   + opts;
+}
+
+function _paBuildSubjectFilter() {
+  const subjects = [...new Set(_paAllRecords.map(r => r.subject_name).filter(Boolean))];
+  const sel = document.getElementById('pa-subject-filter');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">All Subjects</option>' +
+    subjects.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+}
+
+// ── Table filter + render ────────────────────────────────────────
+function paFilterTable() {
+  const search  = (document.getElementById('pa-table-search')?.value    || '').toLowerCase().trim();
+  const subject = document.getElementById('pa-subject-filter')?.value   || '';
+  const status  = document.getElementById('pa-status-filter')?.value    || '';
+  const dFrom   = document.getElementById('pa-date-from')?.value        || '';
+  const dTo     = document.getElementById('pa-date-to')?.value          || '';
+
+  let rows = _paAllRecords.filter(r => {
+    if (_paActiveSubject && r.subject_name !== _paActiveSubject) return false;
+    if (subject && r.subject_name !== subject) return false;
+    if (dFrom && r.test_date && r.test_date < dFrom) return false;
+    if (dTo   && r.test_date && r.test_date > dTo)   return false;
+    if (status) {
+      const s = _paRowStatus(r);
+      if (s !== status) return false;
+    }
+    if (search) {
+      const hay = [r.test_name, r.class_name, r.subject_name].map(v => (v||'').toLowerCase()).join(' ');
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  // Sort
+  rows = _paSort(rows);
+  _paTableRows = rows;
+
+  // Per page
+  const perPage = parseInt(document.getElementById('pa-per-page')?.value || '25');
+  const shown   = perPage > 0 ? rows.slice(0, perPage) : rows;
+
+  const lbl = document.getElementById('pa-count-label');
+  if (lbl) lbl.textContent = `${rows.length} record${rows.length !== 1 ? 's' : ''}`;
+
+  _paRenderTable(shown);
+}
+
+function _paRowStatus(r) {
+  if (r.is_absent == 1) return 'absent';
+  if (r.is_skip   == 1) return 'skip';
+  if (r.marks_obtained !== null && r.marks_obtained !== '') return 'scored';
+  return 'pending';
+}
+
+function _paSort(rows) {
+  const dir = _paSortDir === 'asc' ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    let va, vb;
+    switch (_paSortKey) {
+      case 'sr':       return 0;
+      case 'date':     va = a.test_date    || ''; vb = b.test_date    || ''; break;
+      case 'test':     va = a.test_name    || ''; vb = b.test_name    || ''; break;
+      case 'class':    va = a.class_name   || ''; vb = b.class_name   || ''; break;
+      case 'subject':  va = a.subject_name || ''; vb = b.subject_name || ''; break;
+      case 'teacher':  va = a.teacher_name || ''; vb = b.teacher_name || ''; break;
+      case 'obtained': va = parseFloat(a.marks_obtained ?? -1); vb = parseFloat(b.marks_obtained ?? -1); return dir * (va - vb);
+      case 'total':    va = parseFloat(a.total_marks    ?? -1); vb = parseFloat(b.total_marks    ?? -1); return dir * (va - vb);
+      case 'pct':
+        va = (a.total_marks > 0 && a.marks_obtained !== null && a.marks_obtained !== '') ? parseFloat(a.marks_obtained)/parseFloat(a.total_marks) : -1;
+        vb = (b.total_marks > 0 && b.marks_obtained !== null && b.marks_obtained !== '') ? parseFloat(b.marks_obtained)/parseFloat(b.total_marks) : -1;
+        return dir * (va - vb);
+      case 'status':   va = _paRowStatus(a); vb = _paRowStatus(b); break;
+      default:         va = ''; vb = '';
+    }
+    if (va < vb) return -1 * dir;
+    if (va > vb) return  1 * dir;
+    return 0;
+  });
+}
+
+function paSortBy(key) {
+  if (_paSortKey === key) _paSortDir = _paSortDir === 'asc' ? 'desc' : 'asc';
+  else { _paSortKey = key; _paSortDir = key === 'date' ? 'desc' : 'asc'; }
+  // Update header icons
+  document.querySelectorAll('#pa-table thead th').forEach(th => {
+    th.classList.remove('pa-sorted');
+    const icon = th.querySelector('.pa-sort-icon');
+    if (icon) icon.textContent = '⇅';
+  });
+  const sortedTh = document.querySelector(`#pa-table thead th[onclick="paSortBy('${key}')"]`);
+  if (sortedTh) {
+    sortedTh.classList.add('pa-sorted');
+    const icon = sortedTh.querySelector('.pa-sort-icon');
+    if (icon) icon.textContent = _paSortDir === 'asc' ? '↑' : '↓';
+  }
+  paFilterTable();
+}
+
+function _paScoreColor(pct) {
+  if (pct >= 80) return '#44cc88';
+  if (pct >= 60) return '#c9a84c';
+  if (pct >= 40) return '#ffaa33';
+  return '#ff5555';
+}
+
+function _paRenderTable(rows) {
+  const tbody = document.getElementById('pa-body');
+  if (!tbody) return;
+  if (!rows.length) {
+    const msg = _paSelectedStud ? 'No records match your filters.' : 'Select a student to view performance records.';
+    const title = _paSelectedStud ? 'No Records Found' : 'Select a Student';
+    const icon  = _paSelectedStud ? '&#128269;' : '&#128202;';
+    tbody.innerHTML = `<tr><td colspan="11"><div class="pa-empty-state">
+      <div class="pa-empty-icon-ring">${icon}</div>
+      <div class="pa-empty-title">${title}</div>
+      <div class="pa-empty-sub">${msg}</div>
+    </div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map((r, i) => {
+    const status   = _paRowStatus(r);
+    const obtained = r.marks_obtained !== null && r.marks_obtained !== '' ? parseFloat(r.marks_obtained) : null;
+    const total    = r.total_marks != null ? parseFloat(r.total_marks) : null;
+    const pct      = (obtained !== null && total > 0) ? (obtained / total * 100) : null;
+    const color    = pct !== null ? _paScoreColor(pct) : 'var(--text-muted)';
+
+    const statusBadge = {
+      absent:  `<span class="pa-badge pa-badge-absent">Absent</span>`,
+      skip:    `<span class="pa-badge pa-badge-skip">Skipped</span>`,
+      scored:  `<span class="pa-badge pa-badge-scored">Scored</span>`,
+      pending: `<span class="pa-badge pa-badge-pending">Pending</span>`,
+    }[status];
+
+    const scoreBar = pct !== null
+      ? `<div class="pa-score-bar-wrap">
+           <div class="pa-score-bar-bg"><div class="pa-score-bar-fill" style="width:${Math.min(pct,100).toFixed(1)}%;background:${color}"></div></div>
+           <span class="pa-score-text" style="color:${color}">${pct.toFixed(1)}%</span>
+         </div>`
+      : `<span style="color:var(--text-muted);font-size:0.82rem">—</span>`;
+
+    const dateStr = r.test_date ? new Date(r.test_date + 'T00:00:00').toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}) : '—';
+    const comment = r.comment ? escapeHtml(r.comment) : '';
+
+    return `<tr>
+      <td class="pa-col-sr"      style="color:var(--text-muted);font-size:0.8rem;text-align:center">${i+1}</td>
+      <td class="pa-col-date"    style="white-space:nowrap;font-size:0.85rem;color:var(--text-muted)">${dateStr}</td>
+      <td class="pa-col-test"    ><span class="pa-test-link" onclick="paGoToTestMarks(${r.test_id || 0})">${escapeHtml(r.test_name||'—')}</span></td>
+      <td class="pa-col-class"   style="font-size:0.85rem">${escapeHtml(r.class_name||'—')}</td>
+      <td class="pa-col-subject" style="font-size:0.85rem;color:var(--accent)">${escapeHtml(r.subject_name||'—')}</td>
+      <td class="pa-col-teacher" style="font-size:0.82rem;color:var(--text-muted)">${escapeHtml(r.teacher_name||'—')}</td>
+      <td class="pa-col-obtained" style="font-weight:700;font-size:0.95rem;color:${obtained !== null ? color : 'var(--text-muted)'}">
+        ${obtained !== null ? obtained : (status === 'absent' ? '—' : status === 'skip' ? '—' : '—')}
+      </td>
+      <td class="pa-col-total"   style="font-size:0.88rem;color:var(--text-muted)">${total !== null ? total : '—'}</td>
+      <td class="pa-col-pct">${scoreBar}</td>
+      <td class="pa-col-status">${statusBadge}</td>
+      <td class="pa-col-comment"><div class="pa-comment-cell" title="${comment}">${comment || '<span style="color:var(--text-muted);font-size:0.8rem">—</span>'}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Column visibility ────────────────────────────────────────────
+function paApplyCols() {
+  const cols = ['sr','date','test','class','subject','teacher','obtained','total','pct','status','comment'];
+  cols.forEach(c => {
+    const cb   = document.getElementById(`pa-col-${c}`);
+    const show = !cb || cb.checked;
+    document.querySelectorAll(`.pa-col-${c}`).forEach(el => { el.style.display = show ? '' : 'none'; });
+  });
+}
+
+function paSetAllCols(val, e) {
+  if (e) e.stopPropagation();
+  const cols = ['sr','date','test','class','subject','teacher','obtained','total','pct','status','comment'];
+  cols.forEach(c => {
+    const cb = document.getElementById(`pa-col-${c}`);
+    if (cb) cb.checked = val;
+  });
+  paApplyCols();
+}
+
+function paToggleColPanel(e) {
+  e.stopPropagation();
+  const panel = document.getElementById('pa-col-panel');
+  if (!panel) return;
+  panel.classList.toggle('open');
+  // Close class dropdown if open
+  document.querySelectorAll('.pa-cs-panel.open').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.pa-cs-trigger.open').forEach(t => t.classList.remove('open'));
+}
+
+// ── Click student name → open student modal ──────────────────────────
+function paOpenStudentProfile() {
+  if (!_paSelectedStud) return;
+  if (typeof viewStudent === 'function') viewStudent(_paSelectedStud.id);
+}
+
+// ── Click test name → go to Performance Marks with that test ──────────
+function paGoToTestMarks(testId) {
+  if (!testId) return;
+  showPage('performance-marks').then(() => {
+    setTimeout(() => {
+      const sel = document.getElementById('pm-test-select');
+      if (sel) {
+        sel.value = testId;
+        pmSelectTest(testId);
+        // Sync the custom searchable wrapper if present
+        const w = sel.closest('.ss-wrapper');
+        if (w && w._ssRefresh) w._ssRefresh();
+      }
+    }, 80);
+  }).catch(() => {});
+}
+
+// ── Click class name → go to Class List with that class ───────────────
+function paGoToClassList() {
+  if (!_paSelectedStud || !_paSelectedStud.class_id) return;
+  const classId   = _paSelectedStud.class_id;
+  const className = _paSelectedStud.class_name || '';
+  showPage('class-list').then(() => {
+    setTimeout(() => {
+      if (typeof clSelectClass === 'function') clSelectClass(classId, className);
+    }, 80);
+  }).catch(() => {});
+}
+
+// Close col panel and class dropdown on outside click
+document.addEventListener('click', () => {
+  const panel = document.getElementById('pa-col-panel');
+  if (panel) panel.classList.remove('open');
+  document.querySelectorAll('.pa-cs-panel.open').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.pa-cs-trigger.open').forEach(t => t.classList.remove('open'));
+});
+
+// ── Reset ────────────────────────────────────────────────────────
+function paResetFilters() {
+  ['pa-date-from','pa-date-to','pa-subject-filter','pa-status-filter'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.selectedIndex = 0;
+  });
+  ['pa-name-input','pa-gr-input','pa-table-search'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  // Reset custom class dropdown
+  _paClassSelected = '';
+  _paSetClassTriggerText('All Classes');
+  _paRenderClassList(_paClassOptions);
+  _paSelectedStud  = null;
+  _paAllRecords    = [];
+  _paActiveSubject = '';
+  _paResetStudentUI();
+  _paFilteredStud = _paAllStudents;
+}
+
+function _paResetStudentUI() {
+  const strip = document.getElementById('pa-student-strip');
+  if (strip) strip.classList.remove('visible');
+  const sRow = document.getElementById('pa-subject-row');
+  if (sRow) sRow.style.display = 'none';
+  const tbody = document.getElementById('pa-body');
+  if (tbody) tbody.innerHTML = `<tr><td colspan="11"><div class="pa-empty-state">
+  
+    <div class="pa-empty-title">Select a Student</div>
+  </div></td></tr>`;
+  const lbl = document.getElementById('pa-count-label');
+  if (lbl) lbl.textContent = '';
+}
+
+// ── PDF / Excel downloads ────────────────────────────────────────
+function paDownloadPDF(orientation) {
+  if (!_paSelectedStud) { toast('Please select a student first', 'error'); return; }
+  const scale = getMenuScale(document.getElementById('pa-dm'));
+  const studentInfo = {
+    name:  _paSelectedStud.student_name || 'Student',
+    gr:    _paSelectedStud.gr_number    || '',
+    cls:   _paSelectedStud.class_name   || '',
+    photo: _paSelectedStud.photo        || ''
+  };
+  downloadTableDoc('pa-body', `performance_${_paSelectedStud.student_name || 'student'}`,
+    ['#','Test Date','Test Name','Class','Subject','Teacher','Obtained','Total','Score %','Status','Comment'],
+    'pdf', 'A4', orientation, scale, null, studentInfo);
+}
+
+function paDownloadExcel() {
+  if (!_paSelectedStud) { toast('Please select a student first', 'error'); return; }
+  const studentInfo = {
+    name:  _paSelectedStud.student_name || 'Student',
+    gr:    _paSelectedStud.gr_number    || '',
+    photo: _paSelectedStud.photo        || ''
+  };
+  downloadGenericExcel('pa-body',
+    ['#','Test Date','Test Name','Class','Subject','Teacher','Obtained','Total','Score %','Status','Comment'],
+    `Performance – ${_paSelectedStud.student_name || 'Student'}`,
+    `IDL_Performance_${((_paSelectedStud.student_name||'student').replace(/\s+/g,'_'))}`,
+    studentInfo);
+}
+

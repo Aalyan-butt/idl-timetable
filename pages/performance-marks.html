@@ -204,6 +204,162 @@
 .pm-gr-text { font-weight: 700; color: var(--text-muted); font-size: 0.82rem; }
 .pm-name-link { color: var(--accent); font-weight: 600; cursor: pointer; text-decoration: none; }
 .pm-name-link:hover { color: var(--accent2); text-decoration: underline; }
+
+/* Manage Students button — same gold theme as Save All Marks but compact */
+.pm-manage-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 28px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 50%, var(--accent) 100%);
+  color: #05050e;
+  font-family: 'Cinzel', serif;
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: .05em;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(201,168,76,0.3);
+  transition: transform .15s, box-shadow .15s, opacity .15s;
+}
+.pm-manage-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(201,168,76,0.5); }
+.pm-manage-btn:active { transform: translateY(0); opacity: .9; }
+
+/* Shared overlay modal base */
+.pm-overlay-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  z-index: 1500;
+  align-items: center;
+  justify-content: center;
+}
+.pm-overlay-modal.open { display: flex; }
+.pm-popup-box {
+  background: linear-gradient(150deg,#0d0d1f,#09091a);
+  border: 1px solid rgba(201,168,76,0.35);
+  border-radius: 14px;
+  width: min(440px,92vw);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.7);
+}
+.pm-popup-header {
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid rgba(201,168,76,0.18);
+  font-family:'Cinzel',serif;
+  font-size: 1.05rem;
+  color: var(--accent);
+  font-weight: 700;
+}
+.pm-popup-body {
+  padding: 18px 22px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+.pm-popup-footer {
+  padding: 14px 22px;
+  border-top: 1px solid rgba(201,168,76,0.18);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+/* Manage Students modal */
+.pm-ms-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  z-index: 1100;
+  align-items: center;
+  justify-content: center;
+}
+.pm-ms-modal-overlay.open { display: flex; }
+.pm-ms-modal {
+  background: linear-gradient(150deg,#0d0d1f,#09091a);
+  border: 1px solid rgba(201,168,76,0.35);
+  border-radius: 14px;
+  width: min(640px, 96vw);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.7);
+}
+.pm-ms-modal-header {
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid rgba(201,168,76,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pm-ms-modal-title { font-family:'Cinzel',serif; font-size: 1.05rem; color: var(--accent); font-weight: 700; }
+.pm-ms-modal-body { padding: 18px 22px; overflow-y: auto; flex: 1; }
+.pm-ms-modal-footer { padding: 14px 22px; border-top: 1px solid rgba(201,168,76,0.18); display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+.pm-ms-section-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--accent);
+  margin: 14px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pm-ms-section-label:first-child { margin-top: 0; }
+.pm-ms-badge-current { background: rgba(68,204,136,0.15); color: #44cc88; border: 1px solid rgba(68,204,136,0.3); padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; }
+.pm-ms-badge-prev    { background: rgba(201,168,76,0.12); color: var(--accent); border: 1px solid rgba(201,168,76,0.3); padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; }
+.pm-ms-student-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  transition: background .12s;
+  cursor: pointer;
+}
+.pm-ms-student-row:hover { background: rgba(201,168,76,0.07); }
+.pm-ms-student-row input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+.pm-ms-student-name { font-size: 0.88rem; color: var(--text); flex: 1; }
+.pm-ms-student-gr { font-size: 0.78rem; color: var(--text-muted); }
+.pm-ms-search {
+  width: 100%;
+  padding: 9px 13px;
+  border-radius: 8px;
+  border: 1px solid rgba(201,168,76,0.25);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 0.88rem;
+  outline: none;
+  margin-bottom: 4px;
+}
+.pm-ms-search:focus { border-color: var(--accent); }
+.pm-ms-select-bar { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.pm-ms-select-bar button {
+  padding: 5px 13px;
+  border-radius: 7px;
+  border: 1px solid rgba(201,168,76,0.25);
+  background: rgba(201,168,76,0.08);
+  color: var(--accent);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.pm-ms-select-bar button:hover { background: rgba(201,168,76,0.18); }
+.pm-ms-empty { text-align: center; padding: 22px; color: var(--text-muted); font-size: 0.88rem; }
+.pm-ms-info-note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: rgba(255,255,255,0.04);
+  border-radius: 7px;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
 </style>
 
       <!-- ── Page Header ────────────────────────────────────────────────── -->
@@ -223,6 +379,22 @@
           <button class="btn btn-excel btn-sm" onclick="downloadGenericExcel('pm-students-body',['#','GR#','Student Name','Marks','Skip','Absent','Notes'],'Performance Marks','IDL_Performance_Marks')">&#128202; Download Excel</button>
         </div>
       </div>
+
+      <!-- ── Unsaved Changes Guard Modal ─────────────────────────────────── -->
+      <div id="pm-unsaved-modal" class="pm-overlay-modal">
+        <div class="pm-popup-box">
+          <div class="pm-popup-header">&#9888; Unsaved Changes</div>
+          <div class="pm-popup-body">
+            You have unsaved marks for this test. What would you like to do before leaving?
+          </div>
+          <div class="pm-popup-footer">
+            <button class="btn btn-secondary" onclick="pmUnsavedCancel()">Cancel</button>
+            <button class="btn btn-secondary" style="color:#ff6b6b;border-color:rgba(255,80,80,0.35)" onclick="pmUnsavedDiscard()">Discard</button>
+            <button class="pm-save-all-btn" style="padding:10px 24px;font-size:0.9rem" onclick="pmUnsavedSave()">&#10003;&nbsp; Save &amp; Leave</button>
+          </div>
+        </div>
+      </div>
+
 
       <!-- ── Test Selector Card ─────────────────────────────────────────── -->
       <div class="pm-card">
@@ -250,20 +422,6 @@
             </div>
           </div>
 
-        </div>
-      </div>
-
-      <!-- ── Column Visibility (always visible) ──────────────────────────── -->
-      <div class="pm-card" style="padding:14px 18px">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-          <div class="pm-label" style="margin-bottom:0">&#9868; Column Visibility</div>
-          <div class="pm-col-panel-inner">
-            <label class="pm-col-label"><input type="checkbox" id="pm-col-cb-gr"      checked onchange="pmApplyCols()"> G.R #</label>
-            <label class="pm-col-label"><input type="checkbox" id="pm-col-cb-photo"   checked onchange="pmApplyCols()"> Photo</label>
-            <label class="pm-col-label"><input type="checkbox" id="pm-col-cb-skip"    checked onchange="pmApplyCols()"> Skip</label>
-            <label class="pm-col-label"><input type="checkbox" id="pm-col-cb-absent"  checked onchange="pmApplyCols()"> Absent</label>
-            <label class="pm-col-label"><input type="checkbox" id="pm-col-cb-comment" checked onchange="pmApplyCols()"> Notes</label>
-          </div>
         </div>
       </div>
 
@@ -312,7 +470,21 @@
         </div>
       </div>
 
-      <!-- ── Marks Section (always visible) ───────────────────────────────── -->
+      <!-- ── Column Visibility (shown after test details) ───────────────── -->
+      <div class="pm-card" style="padding:14px 18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div class="pm-label" style="margin-bottom:0">&#9868; Column Visibility</div>
+          <div class="pm-col-panel-inner">
+            <label class="pm-col-label"><input type="checkbox" id="pm-col-cb-gr"      checked onchange="pmApplyCols()"> G.R #</label>
+            <label class="pm-col-label"><input type="checkbox" id="pm-col-cb-photo"   checked onchange="pmApplyCols()"> Photo</label>
+            <label class="pm-col-label"><input type="checkbox" id="pm-col-cb-skip"    checked onchange="pmApplyCols()"> Skip</label>
+            <label class="pm-col-label"><input type="checkbox" id="pm-col-cb-absent"  checked onchange="pmApplyCols()"> Absent</label>
+            <label class="pm-col-label"><input type="checkbox" id="pm-col-cb-comment" checked onchange="pmApplyCols()"> Notes</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Marks Section ─────────────────────────────────────────────── -->
       <div id="pm-marks-section">
 
         <!-- Stats + fill-all (hidden until test selected) -->
@@ -331,7 +503,15 @@
           </div>
         </div>
 
-        <!-- Students table (always visible) -->
+        <!-- Manage Students button row (hidden until test selected) -->
+        <div id="pm-manage-students-row" style="display:none;margin-bottom:12px;align-items:center;justify-content:flex-end;gap:12px">
+          <span id="pm-roster-note" style="font-size:0.8rem;color:var(--text-muted)"></span>
+          <button class="pm-manage-btn admin-only" onclick="pmManageStudents()">
+            &#128101; Manage Students
+          </button>
+        </div>
+
+        <!-- Students table -->
         <div class="pm-card" style="padding:0;overflow:hidden">
           <div class="table-wrap">
             <table id="pm-table">
@@ -359,7 +539,7 @@
             </table>
           </div>
 
-          <!-- Save All Marks button (hidden until test selected) -->
+          <!-- Save All Marks button -->
           <div id="pm-save-row" style="display:none;padding:24px;text-align:center;border-top:1px solid rgba(201,162,39,0.12)">
             <button class="pm-save-all-btn admin-only" onclick="pmSaveAll()">
               &#10003;&nbsp; Save All Marks
@@ -368,3 +548,32 @@
         </div>
 
       </div><!-- /pm-marks-section -->
+
+      <!-- ── Manage Students Modal ─────────────────────────────────────── -->
+      <div id="pm-ms-modal-overlay" class="pm-ms-modal-overlay" onclick="if(event.target===this)pmCloseMsModal()">
+        <div class="pm-ms-modal">
+          <div class="pm-ms-modal-header">
+            <div class="pm-ms-modal-title">&#128101; Manage Students for this Test</div>
+            <button onclick="pmCloseMsModal()" style="background:none;border:none;color:var(--text-muted);font-size:1.3rem;cursor:pointer;padding:0 4px">&#10005;</button>
+          </div>
+          <div class="pm-ms-modal-body">
+            <div class="pm-ms-info-note">
+              Checked students will appear in the marks record for this test. Unchecked students will be hidden.<br>
+              <strong style="color:var(--accent)">Default:</strong> all current class students are included.
+            </div>
+            <div class="pm-ms-select-bar">
+              <button onclick="pmMsSelectAll()">Select All</button>
+              <button onclick="pmMsSelectNone()">Select None</button>
+              <button onclick="pmMsSelectCurrent()">Select Current Only</button>
+            </div>
+            <input type="text" id="pm-ms-search" class="pm-ms-search" placeholder="Search students..." oninput="pmMsFilter(this.value)">
+            <div id="pm-ms-list">
+              <div class="pm-ms-empty">Loading...</div>
+            </div>
+          </div>
+          <div class="pm-ms-modal-footer">
+            <button class="btn btn-secondary" onclick="pmCloseMsModal()">Cancel</button>
+            <button class="btn btn-primary admin-only" onclick="pmSaveRoster()">&#10003; Save Roster</button>
+          </div>
+        </div>
+      </div>
