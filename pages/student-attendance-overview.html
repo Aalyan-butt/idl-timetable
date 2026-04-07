@@ -1,0 +1,144 @@
+<style>
+/* Student Attendance Overview — reuses ao-* classes from attendance-overview.html */
+</style>
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Student Attendance Overview</div>
+    <div class="page-subtitle">Filter, view and download student attendance records</div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="ao-filter-card">
+  <div class="ao-filter-row">
+    <div class="ao-filter-group">
+      <span class="ao-filter-label">From</span>
+      <input type="date" id="sao-from" class="ao-filter-input">
+    </div>
+    <div class="ao-filter-group">
+      <span class="ao-filter-label">To</span>
+      <input type="date" id="sao-to" class="ao-filter-input">
+    </div>
+    <div class="ao-filter-group" style="min-width:180px">
+      <span class="ao-filter-label">Class</span>
+      <select id="sao-class" class="ao-filter-select" onchange="saoLoad(1)">
+        <option value="">All Classes</option>
+      </select>
+    </div>
+    <div class="ao-filter-group" style="min-width:180px">
+      <span class="ao-filter-label">Student</span>
+      <select id="sao-student" class="ao-filter-select" onchange="saoLoad(1)">
+        <option value="">All Students</option>
+      </select>
+    </div>
+    <div class="ao-filter-group">
+      <span class="ao-filter-label">Status</span>
+      <select id="sao-status" class="ao-filter-select">
+        <option value="">All</option>
+        <option value="present">Present</option>
+        <option value="absent">Absent</option>
+        <option value="late">Late</option>
+        <option value="leave">Leave</option>
+        <option value="pending">Pending</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;align-items:flex-end">
+      <button class="btn-action btn-download" onclick="saoDownloadExcel()">Excel</button>
+      <button class="btn-action btn-acct"     onclick="saoDownloadPDF()">PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="ao-stats-grid">
+  <div class="ao-stat ao-stat-total">
+    <div class="ao-stat-num" id="sao-stat-total">—</div>
+    <div class="ao-stat-label">Total Records</div>
+  </div>
+  <div class="ao-stat ao-stat-present">
+    <div class="ao-stat-num" id="sao-stat-present">—</div>
+    <div class="ao-stat-label">Present</div>
+    <div class="ao-stat-pct" id="sao-stat-present-pct"></div>
+  </div>
+  <div class="ao-stat ao-stat-absent">
+    <div class="ao-stat-num" id="sao-stat-absent">—</div>
+    <div class="ao-stat-label">Absent</div>
+    <div class="ao-stat-pct" id="sao-stat-absent-pct"></div>
+  </div>
+  <div class="ao-stat ao-stat-late">
+    <div class="ao-stat-num" id="sao-stat-late">—</div>
+    <div class="ao-stat-label">Late</div>
+  </div>
+  <div class="ao-stat ao-stat-leave">
+    <div class="ao-stat-num" id="sao-stat-leave">—</div>
+    <div class="ao-stat-label">Leave</div>
+  </div>
+  <div class="ao-stat ao-stat-pending">
+    <div class="ao-stat-num" id="sao-stat-pending">—</div>
+    <div class="ao-stat-label">Pending</div>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="ao-table-card">
+  <div class="ao-table-header">
+    <span class="ao-table-title">Student Records</span>
+    <span style="font-size:0.8rem;color:var(--text-muted)" id="sao-count-label"></span>
+  </div>
+  <div class="ao-table-wrap">
+    <table class="ao-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Student</th>
+          <th>Reg No.</th>
+          <th>Class</th>
+          <th>Status</th>
+          <th>Remarks</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="sao-tbody">
+        <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ao-pagination" id="sao-pagination"></div>
+</div>
+
+<!-- Edit modal -->
+<div class="ao-detail-modal" id="sao-edit-modal" style="display:none" onclick="if(event.target===this)saoCloseEditModal()">
+  <div class="ao-detail-inner" style="max-width:420px">
+    <div class="ao-detail-head">
+      <span class="ao-detail-title" id="sao-edit-title">Edit Record</span>
+      <span class="ao-detail-close" onclick="saoCloseEditModal()">✕</span>
+    </div>
+    <div class="ao-detail-body">
+      <input type="hidden" id="sao-edit-id">
+      <div style="margin-bottom:14px">
+        <div class="ao-filter-label" style="margin-bottom:6px">Student</div>
+        <div id="sao-edit-name" style="font-weight:600;color:var(--text);font-size:0.92rem"></div>
+        <div id="sao-edit-date-disp" style="font-size:0.78rem;color:var(--text-muted);margin-top:3px"></div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div class="ao-filter-label" style="margin-bottom:8px">Status</div>
+        <div class="att-status-row" id="sao-edit-status-row">
+          <button class="att-status-btn" data-s="present" onclick="saoEditPickStatus('present')">Present</button>
+          <button class="att-status-btn" data-s="absent"  onclick="saoEditPickStatus('absent')">Absent</button>
+          <button class="att-status-btn" data-s="late"    onclick="saoEditPickStatus('late')">Late</button>
+          <button class="att-status-btn" data-s="leave"   onclick="saoEditPickStatus('leave')">Leave</button>
+          <button class="att-status-btn" data-s="pending" onclick="saoEditPickStatus('pending')">Pending</button>
+        </div>
+      </div>
+      <div style="margin-bottom:18px">
+        <div class="ao-filter-label" style="margin-bottom:6px">Remarks</div>
+        <input type="text" id="sao-edit-notes" class="ao-filter-input" style="width:100%" placeholder="Optional remark…" maxlength="255">
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-secondary" onclick="saoCloseEditModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saoSaveEdit()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,4 +1,4 @@
-
+﻿
 <style>
 /* ── Performance Marks — uses site CSS vars ──────────────────────── */
 .pm-card {
@@ -369,14 +369,14 @@
           <div class="page-subtitle">Select a test and enter student marks</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
-          <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('pm-dm', this)">&#128196; Download PDF</button>
+          <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('pm-dm', this)">Download PDF</button>
           <div class="download-menu" id="pm-dm">
             <div class="download-menu-inner">
-              <div class="download-opt" onclick="downloadTableDoc('pm-students-body','performance_marks',['#','GR#','Student Name','Marks','Skip','Absent','Notes'],'pdf','A4','portrait',getMenuScale(this.closest('.download-menu')))">&#128196; PDF &mdash; A4 Portrait</div>
-              <div class="download-opt" onclick="downloadTableDoc('pm-students-body','performance_marks',['#','GR#','Student Name','Marks','Skip','Absent','Notes'],'pdf','A4','landscape',getMenuScale(this.closest('.download-menu')))">&#128196; PDF &mdash; A4 Landscape</div>
+              <div class="download-opt" onclick="downloadTableDoc('pm-students-body','performance_marks',['#','GR#','Student Name','Marks','Skip','Absent','Notes'],'pdf','A4','portrait',getMenuScale(this.closest('.download-menu')))">PDF — A4 Portrait</div>
+              <div class="download-opt" onclick="downloadTableDoc('pm-students-body','performance_marks',['#','GR#','Student Name','Marks','Skip','Absent','Notes'],'pdf','A4','landscape',getMenuScale(this.closest('.download-menu')))">PDF — A4 Landscape</div>
             </div>
           </div>
-          <button class="btn btn-excel btn-sm" onclick="downloadGenericExcel('pm-students-body',['#','GR#','Student Name','Marks','Skip','Absent','Notes'],'Performance Marks','IDL_Performance_Marks')">&#128202; Download Excel</button>
+          <button class="btn btn-excel btn-sm" onclick="downloadGenericExcel('pm-students-body',['#','GR#','Student Name','Marks','Skip','Absent','Notes'],'Performance Marks','IDL_Performance_Marks')">Download Excel</button>
         </div>
       </div>
 

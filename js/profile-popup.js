@@ -165,7 +165,7 @@ async function openStudentBio(id) {
         <td style="padding:5px 10px;border:1px solid rgba(201,168,76,0.15);font-weight:600;text-align:right;background:#080818;color:#44cc88">${r.amt.toLocaleString()}</td>
       </tr>`).join('');
 
-    const editBtn = isAdmin ? `<button onclick="closeBioPopup();editStudent(${s.id})" style="background:#c9a84c;color:#05050e;border:none;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:0.8rem;margin-left:8px;vertical-align:middle;font-weight:600">&#9998; Edit</button>` : '';
+    const editBtn = isAdmin ? `<button onclick="closeBioPopup();editStudent(${s.id})" style="background:#c9a84c;color:#05050e;border:none;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:0.8rem;margin-left:8px;vertical-align:middle;font-weight:600">Edit</button>` : '';
     const parentClickStyle = s.father_cnic ? `style="color:#c9a84c;cursor:pointer;font-weight:600" onclick="openParentBio('${escapeHtml(s.father_cnic).replace(/'/g,"\\'")}')"` : '';
 
     const html = `<div style="font-family:'Segoe UI',Arial,sans-serif;color:#e0e0f0;background:#05050e;border-radius:10px">
@@ -369,7 +369,7 @@ async function openTeacherBio(id) {
     const statusColor = isActive ? '#44cc88' : '#ff5555';
     const statusText  = isActive ? 'Active Status' : `Left ${_bioFmtDate(t.leaving_date)}`;
 
-    const editBtn = isAdmin ? `<button onclick="closeBioPopup();editTeacher(${t.id})" style="background:#c9a84c;color:#05050e;border:none;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:0.8rem;margin-left:8px;vertical-align:middle;font-weight:600">&#9998; Edit</button>` : '';
+    const editBtn = isAdmin ? `<button onclick="closeBioPopup();editTeacher(${t.id})" style="background:#c9a84c;color:#05050e;border:none;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:0.8rem;margin-left:8px;vertical-align:middle;font-weight:600">Edit</button>` : '';
 
     const html = `<div style="font-family:'Segoe UI',Arial,sans-serif;color:#e0e0f0;background:#05050e;border-radius:10px">
       ${_bioHeader('Institute of Dynamic Learning')}
@@ -506,7 +506,7 @@ async function openParentBio(cnic) {
     const uc = await _ensureUsersCache();
 
     const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin');
-    const editBtn = isAdmin ? `<button onclick="closeBioPopup();openEditParentModal('${escapeHtml(cnic).replace(/'/g,"\\'")}')" style="background:#c9a84c;color:#05050e;border:none;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:0.8rem;margin-left:6px;vertical-align:middle;font-weight:600">&#9998; Edit</button>` : '';
+    const editBtn = isAdmin ? `<button onclick="closeBioPopup();openEditParentModal('${escapeHtml(cnic).replace(/'/g,"\\'")}')" style="background:#c9a84c;color:#05050e;border:none;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:0.8rem;margin-left:6px;vertical-align:middle;font-weight:600">Edit</button>` : '';
 
     // Parent account email: find user with role='parent' linked to one of the parent's children
     let parentEmail = '—';

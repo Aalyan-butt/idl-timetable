@@ -1,4 +1,4 @@
-
+﻿
 <style>
 /* ── Class Enrollment — premium redesign ─────────────────────────── */
 .ce-stat-chip {
@@ -266,7 +266,7 @@
             &#10003; Save All Changes
           </button>
           <div style="position:relative;display:inline-block">
-            <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('ce-dm', this)">&#128196; Download PDF</button>
+            <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('ce-dm', this)">Download PDF</button>
             <div id="ce-dm" class="download-menu">
               <div class="dm-scale-row">
                 <span class="dm-scale-label">Page Scale</span>
@@ -278,12 +278,12 @@
                 </div>
               </div>
               <div class="download-divider"></div>
-              <div class="download-opt" onclick="downloadTableDoc('ce-body','class_enrollment',['#','Student Name','GR #','Father Name','Current Class','Assign/Update'],'pdf','A4','portrait',getMenuScale(this.closest('.download-menu')))">&#128196; PDF &mdash; A4 Portrait</div>
-              <div class="download-opt" onclick="downloadTableDoc('ce-body','class_enrollment',['#','Student Name','GR #','Father Name','Current Class'],'pdf','A4','landscape',getMenuScale(this.closest('.download-menu')))">&#128196; PDF &mdash; A4 Landscape</div>
+              <div class="download-opt" onclick="downloadTableDoc('ce-body','class_enrollment',['#','Student Name','GR #','Father Name','Current Class','Assign/Update'],'pdf','A4','portrait',getMenuScale(this.closest('.download-menu')))">PDF — A4 Portrait</div>
+              <div class="download-opt" onclick="downloadTableDoc('ce-body','class_enrollment',['#','Student Name','GR #','Father Name','Current Class'],'pdf','A4','landscape',getMenuScale(this.closest('.download-menu')))">PDF — A4 Landscape</div>
               <div class="download-divider"></div>
             </div>
           </div>
-          <button class="btn btn-excel btn-sm" onclick="downloadGenericExcel('ce-body',['#','Student Name','GR #','Father Name','Current Class','Assign/Update'],'Class Enrollment','IDL_Class_Enrollment')">&#128202; Download Excel</button>
+          <button class="btn btn-excel btn-sm" onclick="downloadGenericExcel('ce-body',['#','Student Name','GR #','Father Name','Current Class','Assign/Update'],'Class Enrollment','IDL_Class_Enrollment')">Download Excel</button>
         </div>
       </div>
 

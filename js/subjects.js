@@ -165,12 +165,8 @@ function renderClassSubjects() {
               <td style="padding:10px 16px;font-weight:600;color:var(--text)">${escapeHtml(s.subject_name)}</td>
               <td style="padding:10px 8px;text-align:center">
                 <div style="display:flex;gap:6px;justify-content:center">
-                  <button onclick="openEditSubjectModal(${s.id},'${escapeHtml(s.subject_name).replace(/'/g,"&#39;")}')"
-                    style="background:#00897B;color:#fff;border:none;border-radius:7px;width:32px;height:32px;cursor:pointer;font-size:0.95rem;display:inline-flex;align-items:center;justify-content:center;transition:opacity .15s"
-                    title="Edit Subject" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">&#9998;</button>
-                  <button onclick="deleteSubject(${s.id},'${escapeHtml(s.subject_name).replace(/'/g,"&#39;")}')"
-                    style="background:#E53935;color:#fff;border:none;border-radius:7px;width:32px;height:32px;cursor:pointer;font-size:0.95rem;display:inline-flex;align-items:center;justify-content:center;transition:opacity .15s"
-                    title="Delete Subject" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">&#128465;</button>
+                  <button class="btn-action btn-edit" onclick="openEditSubjectModal(${s.id},'${escapeHtml(s.subject_name).replace(/'/g,"&#39;")}')" title="Edit Subject">Edit</button>
+                  <button class="btn-action btn-danger" onclick="deleteSubject(${s.id},'${escapeHtml(s.subject_name).replace(/'/g,"&#39;")}')" title="Delete Subject">Delete</button>
                 </div>
               </td>
             </tr>`).join('')}

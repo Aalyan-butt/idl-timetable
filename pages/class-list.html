@@ -1,4 +1,4 @@
-<style>
+﻿<style>
 /* ── Class List — premium styles ─────────────────────────────── */
 .cl-page-header {
   display: flex;
@@ -336,6 +336,71 @@
   border-bottom: 1px solid rgba(201,168,76,0.07);
 }
 .cl-count-label span { color: var(--accent); font-weight: 700; }
+
+/* Column panel */
+.cl-col-panel {
+  display: none;
+  background: linear-gradient(160deg,#0f0f22,#09091a);
+  border-top: 1px solid rgba(201,168,76,0.28);
+  border-bottom: 1px solid rgba(201,168,76,0.18);
+  overflow: hidden;
+}
+.cl-col-panel.open { display: block; }
+.cl-col-panel-inner {
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.cl-col-panel-title {
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: rgba(201,168,76,0.6);
+  margin-right: 6px;
+}
+.cl-col-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(201,168,76,0.2);
+  background: rgba(255,255,255,0.03);
+  font-size: 0.79rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all .15s;
+  user-select: none;
+}
+.cl-col-label input { accent-color: var(--accent); cursor: pointer; }
+.cl-col-label:has(input:checked) {
+  border-color: rgba(201,168,76,0.45);
+  background: rgba(201,168,76,0.08);
+  color: var(--text);
+}
+.cl-col-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(201,168,76,0.28);
+  background: rgba(255,255,255,0.03);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Cinzel', serif;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  transition: all .15s;
+}
+.cl-col-toggle-btn:hover,
+.cl-col-toggle-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(201,168,76,0.06); }
 </style>
 
 <!-- ── Page Header ─────────────────────────────────────────────── -->
@@ -345,8 +410,9 @@
     <div class="cl-page-subtitle">View all enrolled students for a selected class</div>
   </div>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <button id="cl-col-toggle-btn" class="cl-col-toggle-btn" onclick="toggleCLColPanel()">&#9776; Columns</button>
     <div style="position:relative;display:inline-block">
-      <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('cl-dm', this)">&#128196; Download PDF</button>
+      <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('cl-dm', this)">Download PDF</button>
       <div id="cl-dm" class="download-menu">
         <div class="dm-scale-row">
           <span class="dm-scale-label">Page Scale</span>
@@ -358,12 +424,12 @@
           </div>
         </div>
         <div class="download-divider"></div>
-        <div class="download-opt" onclick="clDownloadPDF('portrait')">&#128196; PDF &mdash; A4 Portrait</div>
-        <div class="download-opt" onclick="clDownloadPDF('landscape')">&#128196; PDF &mdash; A4 Landscape</div>
+        <div class="download-opt" onclick="clDownloadPDF('portrait')">PDF — A4 Portrait</div>
+        <div class="download-opt" onclick="clDownloadPDF('landscape')">PDF — A4 Landscape</div>
         <div class="download-divider"></div>
       </div>
     </div>
-    <button class="btn btn-excel btn-sm" onclick="clDownloadExcel()">&#128202; Download Excel</button>
+    <button class="btn btn-excel btn-sm" onclick="clDownloadExcel()">Download Excel</button>
   </div>
 </div>
 
@@ -444,6 +510,13 @@
 
 <!-- ── Table Card ─────────────────────────────────────────────── -->
 <div class="cl-table-card">
+  <!-- Column visibility panel -->
+  <div id="cl-col-panel" class="cl-col-panel">
+    <div class="cl-col-panel-inner">
+      <span class="cl-col-panel-title">Show Columns:</span>
+      <div id="cl-col-checkboxes" style="display:contents"></div>
+    </div>
+  </div>
   <div id="cl-count-bar" class="cl-count-label" style="display:none">
     Showing <span id="cl-showing-count">0</span> student(s) in <span id="cl-class-label-bar">—</span>
   </div>
@@ -452,14 +525,14 @@
       <thead>
         <tr>
           <th style="width:42px;text-align:center">#</th>
-          <th style="width:48px;text-align:center">Photo</th>
+          <th data-col="cl-photo" style="width:48px;text-align:center">Photo</th>
           <th>Student Name</th>
-          <th>GR Number</th>
-          <th>Gender</th>
-          <th>Father Name</th>
-          <th>Contact</th>
-          <th style="width:120px">Admitted</th>
-          <th style="width:80px;text-align:center">Action</th>
+          <th data-col="cl-gr">GR Number</th>
+          <th data-col="cl-gender">Gender</th>
+          <th data-col="cl-father">Father Name</th>
+          <th data-col="cl-contact">Contact</th>
+          <th data-col="cl-admitted" style="width:120px">Admitted</th>
+          <th data-col="cl-actions" style="width:80px;text-align:center">Action</th>
         </tr>
       </thead>
       <tbody id="cl-tbody">

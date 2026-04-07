@@ -1,4 +1,4 @@
-
+﻿
       <div class="page-header">
         <div>
           <div class="page-title">Students</div>
@@ -7,7 +7,7 @@
         <div style="display:flex;gap:8px;align-items:center">
           <button class="btn btn-primary admin-only" onclick="openStudentModal()">+ Add Student</button>
           <div style="position:relative;display:inline-block">
-            <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('students-dm', this)">📄 Download PDF</button>
+            <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('students-dm', this)">Download PDF</button>
             <div id="students-dm" class="download-menu">
               <div class="dm-scale-row">
                 <span class="dm-scale-label">Page Scale</span>
@@ -19,12 +19,12 @@
                 </div>
               </div>
               <div class="download-divider"></div>
-              <div class="download-opt" onclick="bulkDownloadPDF('portrait')">📄 PDF — Portrait</div>
-              <div class="download-opt" onclick="bulkDownloadPDF('landscape')">📄 PDF — Landscape</div>
+              <div class="download-opt" onclick="bulkDownloadPDF('portrait')">PDF — Portrait</div>
+              <div class="download-opt" onclick="bulkDownloadPDF('landscape')">PDF — Landscape</div>
               <div class="download-divider"></div>
             </div>
           </div>
-          <button class="btn btn-excel btn-sm" onclick="bulkDownloadExcel()">📊 Download Excel</button>
+          <button class="btn btn-excel btn-sm" onclick="bulkDownloadExcel()">Download Excel</button>
         </div>
       </div>
 

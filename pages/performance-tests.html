@@ -1,18 +1,18 @@
-
+﻿
       <div class="page-header">
         <div>
           <div class="page-title">Performance Tests</div>
           <div class="page-subtitle">Create and manage student performance tests</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('pt-dm', this)">&#128196; Download PDF</button>
+          <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('pt-dm', this)">Download PDF</button>
           <div class="download-menu" id="pt-dm" style="display:none">
             <div class="download-menu-inner">
-              <div class="download-opt" onclick="downloadTableDoc('pt-body','performance_tests',['#','Test Name','Status','Date','Class','Subject','Marks','Teacher'],'pdf','A4','portrait',getMenuScale(this.closest('.download-menu')))">&#128196; PDF &mdash; A4 Portrait</div>
-              <div class="download-opt" onclick="downloadTableDoc('pt-body','performance_tests',['#','Test Name','Status','Date','Class','Subject','Marks','Teacher'],'pdf','A4','landscape',getMenuScale(this.closest('.download-menu')))">&#128196; PDF &mdash; A4 Landscape</div>
+              <div class="download-opt" onclick="downloadTableDoc('pt-body','performance_tests',['#','Test Name','Status','Date','Class','Subject','Marks','Teacher'],'pdf','A4','portrait',getMenuScale(this.closest('.download-menu')))">PDF — A4 Portrait</div>
+              <div class="download-opt" onclick="downloadTableDoc('pt-body','performance_tests',['#','Test Name','Status','Date','Class','Subject','Marks','Teacher'],'pdf','A4','landscape',getMenuScale(this.closest('.download-menu')))">PDF — A4 Landscape</div>
             </div>
           </div>
-          <button class="btn btn-excel btn-sm" onclick="downloadGenericExcel('pt-body',['#','Test Name','Status','Date','Class','Subject','Marks','Teacher'],'Performance Tests','IDL_Performance_Tests')">&#128202; Download Excel</button>
+          <button class="btn btn-excel btn-sm" onclick="downloadGenericExcel('pt-body',['#','Test Name','Status','Date','Class','Subject','Marks','Teacher'],'Performance Tests','IDL_Performance_Tests')">Download Excel</button>
           <button class="btn btn-primary admin-only" onclick="openPTModal()">+ Add Test</button>
         </div>
       </div>

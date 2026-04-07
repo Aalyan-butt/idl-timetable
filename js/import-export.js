@@ -13,6 +13,24 @@ async function _ensureLogo() {
   } catch(e) { _logoBase64 = ''; }
 }
 
+// Converts any photo URL (relative path, absolute URL, or already-base64) to a
+// base64 data URI so it can be safely embedded in print-window HTML.
+async function _photoToBase64(url) {
+  if (!url) return '';
+  if (url.startsWith('data:')) return url; // already a data URI
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return '';
+    const blob = await res.blob();
+    return await new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result || '');
+      reader.onerror   = () => resolve('');
+      reader.readAsDataURL(blob);
+    });
+  } catch(e) { return ''; }
+}
+
 // ===== DOWNLOAD MENU =====
 function openDownloadMenu(menuId, btn) {
   document.querySelectorAll('.download-menu').forEach(m => { if (m.id !== menuId) m.classList.remove('open'); });
@@ -279,12 +297,18 @@ async function downloadTableDoc(tbodyId, filename, headers, format, pageSize, or
   const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => !r.querySelector('td[colspan]') && r.style.display !== 'none');
   if (rows.length === 0) { toast('No data to download', 'error'); return; }
 
+  function _xCell(td) {
+    const img = td.querySelector('img');
+    if (img && !td.textContent.trim()) return `<img src="${img.src}" width="36" height="36" style="border-radius:50%;object-fit:cover;vertical-align:middle">`;
+    if (td.querySelector('svg') && !td.textContent.trim()) return '—';
+    return td.textContent.trim();
+  }
   const hasDataCol = rows[0]?.querySelector('td[data-col]');
   const dataRows = hasDataCol
     ? rows.map(r => Array.from(r.querySelectorAll('td[data-col]'))
         .filter(td => td.style.display !== 'none' && !td.dataset.col.endsWith('-actions'))
-        .map(td => td.querySelector('img,svg') && !td.textContent.trim() ? '' : td.textContent.trim()))
-    : rows.map(r => Array.from(r.querySelectorAll('td')).slice(0, effectiveHeaders.length).map(td => td.textContent.trim()));
+        .map(td => _xCell(td)))
+    : rows.map(r => Array.from(r.querySelectorAll('td')).slice(0, effectiveHeaders.length).map(td => _xCell(td)));
 
   const headerHtml = `<thead><tr>${effectiveHeaders.map(h=>`<th>${h}</th>`).join('')}</tr></thead>`;
   const bodyHtml = `<tbody>${dataRows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>`;

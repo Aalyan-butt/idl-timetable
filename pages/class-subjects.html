@@ -1,4 +1,4 @@
-
+﻿
       <div class="page-header">
         <div>
           <div class="page-title">Class Subjects</div>
@@ -6,7 +6,7 @@
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <div style="position:relative;display:inline-block">
-            <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('cs-dm', this)">&#128196; Download PDF</button>
+            <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('cs-dm', this)">Download PDF</button>
             <div id="cs-dm" class="download-menu">
               <div class="download-opt download-scale-row">
                 <span class="dscale-btn" onclick="setMenuScale('cs-dm',100,this)">100%</span>
@@ -14,26 +14,33 @@
                 <span class="dscale-btn" onclick="setMenuScale('cs-dm',80,this)">80%</span>
                 <span class="dscale-btn" onclick="setMenuScale('cs-dm',70,this)">70%</span>
               </div>
-              <div class="download-opt" onclick="downloadTableDoc('cs-body','class_subjects',['#','Subject Name'],'pdf','A4','portrait',getMenuScale('cs-dm'))">&#128196; PDF &mdash; A4 Portrait</div>
-              <div class="download-opt" onclick="downloadTableDoc('cs-body','class_subjects',['#','Subject Name'],'pdf','A4','landscape',getMenuScale('cs-dm'))">&#128196; PDF &mdash; A4 Landscape</div>
+              <div class="download-opt" onclick="downloadTableDoc('cs-body','class_subjects',['#','Subject Name'],'pdf','A4','portrait',getMenuScale('cs-dm'))">PDF — A4 Portrait</div>
+              <div class="download-opt" onclick="downloadTableDoc('cs-body','class_subjects',['#','Subject Name'],'pdf','A4','landscape',getMenuScale('cs-dm'))">PDF — A4 Landscape</div>
             </div>
           </div>
-          <button class="btn btn-excel btn-sm" onclick="downloadGenericExcel('cs-body',['#','Subject Name'],'Class Subjects','IDL_Class_Subjects')">&#128202; Download Excel</button>
+          <button class="btn btn-excel btn-sm" onclick="downloadGenericExcel('cs-body',['#','Subject Name'],'Class Subjects','IDL_Class_Subjects')">Download Excel</button>
           <button class="btn btn-primary" onclick="openAddSubjectModal()" style="gap:6px">+ Add Subject</button>
         </div>
       </div>
 
       <!-- Class selector -->
-      <div class="card" style="padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <label class="filter-label" style="white-space:nowrap;margin-bottom:0">Select Class:</label>
-        <div style="position:relative;flex:1;max-width:300px">
-          <div id="cs-class-trigger" onclick="openCSClassPicker()" class="ce-trigger"
-            style="padding:7px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;user-select:none;min-width:200px">
-            <span id="cs-class-label" style="font-size:0.88rem;color:var(--text-muted)">— Choose a class —</span>
-            <span style="font-size:0.7rem;color:var(--text-muted)">&#9660;</span>
+      <div class="card" style="padding:18px 22px;margin-bottom:16px;border-left:4px solid var(--accent);background:linear-gradient(90deg,rgba(201,168,76,0.06) 0%,transparent 60%)">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px;white-space:nowrap">
+            <div style="width:28px;height:28px;border-radius:6px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);display:inline-flex;align-items:center;justify-content:center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            </div>
+            <span style="font-size:0.88rem;font-weight:700;color:var(--accent);letter-spacing:0.3px">Select Class</span>
           </div>
+          <div style="position:relative;flex:1;max-width:320px">
+            <div id="cs-class-trigger" onclick="openCSClassPicker()" class="ce-trigger"
+              style="padding:9px 14px;border-radius:8px;border:1px solid rgba(201,168,76,0.35);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;user-select:none;min-width:200px;transition:border-color 0.2s">
+              <span id="cs-class-label" style="font-size:0.88rem;color:var(--text-muted)">— Choose a class —</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <span id="cs-class-name-badge" style="display:none;background:rgba(201,168,76,0.15);color:var(--accent);padding:4px 14px;border-radius:20px;font-size:0.85rem;font-weight:700;border:1px solid rgba(201,168,76,0.3)"></span>
         </div>
-        <span id="cs-class-name-badge" style="display:none;background:rgba(42,74,142,0.15);color:var(--accent);padding:3px 12px;border-radius:6px;font-size:0.85rem;font-weight:700"></span>
       </div>
 
       <!-- Search bar (shown after class selected) -->
@@ -59,7 +66,7 @@
 
           <!-- Class multi-select (add mode) -->
           <div class="form-group" style="margin:0" id="subject-modal-class-group">
-            <label style="font-size:0.85rem;font-weight:600">Select Class(es) <span style="color:var(--danger)">*</span></label>
+            <label style="font-size:0.85rem;font-weight:600;color:var(--accent)">Select Class(es) <span style="color:var(--danger)">*</span></label>
             <div style="margin-top:6px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface)">
               <input type="text" id="subject-modal-class-search" placeholder="Search class…"
                 oninput="filterSMClassList(this.value)"
@@ -73,12 +80,12 @@
 
           <!-- Class read-only (edit mode) -->
           <div class="form-group" style="margin:0;display:none" id="subject-modal-class-readonly">
-            <label style="font-size:0.85rem;font-weight:600">Class</label>
+            <label style="font-size:0.85rem;font-weight:600;color:var(--accent)">Class</label>
             <div id="subject-modal-class-display" style="padding:7px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--accent);font-weight:600;font-size:0.88rem;margin-top:4px"></div>
           </div>
 
           <div class="form-group" style="margin:0">
-            <label style="font-size:0.85rem;font-weight:600">Subject Name <span style="color:var(--danger)">*</span></label>
+            <label style="font-size:0.85rem;font-weight:600;color:var(--accent)">Subject Name <span style="color:var(--danger)">*</span></label>
             <input type="text" id="subject-modal-name" placeholder="e.g. Mathematics, Science…" style="margin-top:4px">
           </div>
           <div id="subject-modal-error" style="display:none;color:var(--danger);font-size:0.85rem;background:rgba(231,76,60,.1);padding:8px 12px;border-radius:6px"></div>

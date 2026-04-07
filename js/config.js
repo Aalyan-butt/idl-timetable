@@ -24,6 +24,7 @@ const API = {
   performanceTests:   'api/performance_tests.php',
   performanceMarks:   'api/performance_marks.php',
   testStudents:       'api/test_students.php',
+  attendance:         'api/attendance.php',
 };
 
 async function api(url, method = 'GET', body = null) {

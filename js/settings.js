@@ -92,6 +92,10 @@ async function loadSettings() {
 
   document.getElementById('settings-start').value = s.school_start || '08:00';
   document.getElementById('settings-end').value   = s.school_end   || '14:00';
+  const tlEl = document.getElementById('settings-teacher-late');
+  const slEl = document.getElementById('settings-student-late');
+  if (tlEl) tlEl.value = s.teacher_late_after || '08:15';
+  if (slEl) slEl.value = s.student_late_after || '08:10';
 
   const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
 
@@ -272,7 +276,9 @@ async function saveSettings() {
   msgEl.style.display = 'none';
 
   const days    = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
-  const payload = { school_start, school_end };
+  const teacher_late_after = document.getElementById('settings-teacher-late')?.value || '08:15';
+  const student_late_after = document.getElementById('settings-student-late')?.value || '08:10';
+  const payload = { school_start, school_end, teacher_late_after, student_late_after };
 
   // School hours by day
   days.forEach(day => {

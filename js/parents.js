@@ -133,10 +133,10 @@ function renderParentTable() {
       <td data-col="col-pi-profession" style="white-space:nowrap;padding:7px 6px;color:var(--text-muted);font-size:0.9rem">${escapeHtml(p.profession || '—')}</td>
       <td data-col="col-pi-children" style="padding:7px 6px;text-align:left">${childrenHtml}</td>
       <td data-col="col-pi-actions" style="white-space:nowrap;padding:7px 6px">
-        <button class="btn btn-secondary btn-sm" onclick="openParentBio('${safeCnic}')" title="View Profile">&#9432; View</button>
-        <button class="btn btn-secondary btn-sm" onclick="openEditParentModal('${safeCnic}')">Edit</button>
-        <button class="btn btn-secondary btn-sm" onclick="openQuickAccountModal('parent',${p.id},'${safeName}')" title="Manage Login Account" style="padding:4px 8px;font-size:1rem">&#128274;</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteParentFamily('${safeCnic}','${safeName}')">Delete</button>
+        <button class="btn-action btn-view" onclick="openParentBio('${safeCnic}')" title="View Profile">View</button>
+        <button class="btn-action btn-edit" onclick="openEditParentModal('${safeCnic}')">Edit</button>
+        <button class="btn-action btn-acct" onclick="openQuickAccountModal('parent',${p.id},'${safeName}')" title="Manage Login Account">Acct</button>
+        <button class="btn-action btn-danger" onclick="deleteParentFamily('${safeCnic}','${safeName}')">Delete</button>
       </td>
     </tr>`;
   }).join('');

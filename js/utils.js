@@ -33,9 +33,13 @@ function _generateExcel(headers, dataRows, sheetName, filename, logoBase64, stud
   ).join('');
   const bodyRows = dataRows.map((row, i) => {
     const bg = i % 2 === 0 ? '#f0f0ff' : '#ffffff';
-    const cells = row.map(val =>
-      `<td style="background:${bg};color:#1a1a2e;font-size:12pt;font-family:Calibri,Arial,sans-serif;padding:7px 12px;border:1px solid #d0d0e8;vertical-align:middle">${x(val)}</td>`
-    ).join('');
+    const cells = row.map(val => {
+      if (typeof val === 'string' && val.startsWith('__IMG__')) {
+        const src = val.slice(7);
+        return `<td style="background:${bg};padding:4px 12px;border:1px solid #d0d0e8;text-align:center;vertical-align:middle"><img src="${src}" width="40" height="40" style="border-radius:50%;vertical-align:middle"></td>`;
+      }
+      return `<td style="background:${bg};color:#1a1a2e;font-size:12pt;font-family:Calibri,Arial,sans-serif;padding:7px 12px;border:1px solid #d0d0e8;vertical-align:middle">${x(val)}</td>`;
+    }).join('');
     return `<tr>${cells}</tr>`;
   }).join('');
   const logoRow = logoBase64
@@ -86,11 +90,17 @@ async function downloadGenericExcel(tbodyId, headers, sheetName, filename, stude
 
   // If table uses data-col, filter to visible non-actions cells
   const hasDataCol = rows[0]?.querySelector('td[data-col]');
+  function _extractCellVal(td) {
+    const img = td.querySelector('img');
+    if (img && !td.textContent.trim()) return '__IMG__' + img.src;
+    if (td.querySelector('svg') && !td.textContent.trim()) return '—';
+    return td.textContent.trim();
+  }
   const dataRows = hasDataCol
     ? rows.map(r => Array.from(r.querySelectorAll('td[data-col]'))
         .filter(td => td.style.display !== 'none' && !td.dataset.col.endsWith('-actions'))
-        .map(td => td.querySelector('img,svg') && !td.textContent.trim() ? '' : td.textContent.trim()))
-    : rows.map(r => Array.from(r.querySelectorAll('td')).slice(0, effectiveHeaders.length).map(td => td.textContent.trim()));
+        .map(td => _extractCellVal(td)))
+    : rows.map(r => Array.from(r.querySelectorAll('td')).slice(0, effectiveHeaders.length).map(td => _extractCellVal(td)));
 
   const logo = (typeof _logoBase64 !== 'undefined' && _logoBase64) ? _logoBase64 : null;
   _generateExcel(effectiveHeaders, dataRows, sheetName, filename, logo, studentInfo || null);
@@ -152,6 +162,16 @@ function _hideLoader() {
   if (!loader) return;
   loader.classList.add('fade-out');
   setTimeout(() => { loader.style.display = 'none'; }, 380);
+}
+
+function showSpinner() {
+  const s = document.getElementById('page-spinner');
+  if (s) s.style.display = 'block';
+}
+
+function hideSpinner() {
+  const s = document.getElementById('page-spinner');
+  if (s) s.style.display = 'none';
 }
 
 async function checkAuth() {
@@ -493,6 +513,12 @@ function initAllSelects() {
     'assign-class-select',
     // ── Performance marks ──
     'pm-test-select',
+    // ── Staff Attendance ──
+    'ao-teacher', 'ao-status',
+    // ── Student Attendance ──
+    'statt-class',
+    // ── Student Attendance Overview ──
+    'sao-class', 'sao-student', 'sao-status',
   ];
   ids.forEach(id => {
     const el = document.getElementById(id);

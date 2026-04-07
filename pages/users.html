@@ -1,4 +1,4 @@
-
+﻿
       <div class="page-header">
         <div>
           <div class="page-title">Users</div>
@@ -6,7 +6,7 @@
         </div>
         <div style="display:flex;gap:8px;align-items:center">
           <div style="position:relative;display:inline-block">
-            <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('users-dm', this)">📄 Download PDF</button>
+            <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('users-dm', this)">Download PDF</button>
             <div id="users-dm" class="download-menu">
               <div class="dm-scale-row">
                 <span class="dm-scale-label">Page Scale</span>
@@ -18,12 +18,12 @@
                 </div>
               </div>
               <div class="download-divider"></div>
-              <div class="download-opt" onclick="downloadTableDoc('users-body','users_list',['Username','Role','Schedule Access','Created'],'pdf','A4','portrait',getMenuScale(this.closest('.download-menu')))">📄 PDF — A4 Portrait</div>
-              <div class="download-opt" onclick="downloadTableDoc('users-body','users_list',['Username','Role','Schedule Access','Created'],'pdf','A4','landscape',getMenuScale(this.closest('.download-menu')))">📄 PDF — A4 Landscape</div>
+              <div class="download-opt" onclick="downloadTableDoc('users-body','users_list',['Username','Role','Schedule Access','Created'],'pdf','A4','portrait',getMenuScale(this.closest('.download-menu')))">PDF — A4 Portrait</div>
+              <div class="download-opt" onclick="downloadTableDoc('users-body','users_list',['Username','Role','Schedule Access','Created'],'pdf','A4','landscape',getMenuScale(this.closest('.download-menu')))">PDF — A4 Landscape</div>
               <div class="download-divider"></div>
             </div>
           </div>
-          <button class="btn btn-excel btn-sm" onclick="downloadGenericExcel('users-body',['Username','Role','Schedule Access','Created'],'Users','IDL_Users')">📊 Download Excel</button>
+          <button class="btn btn-excel btn-sm" onclick="downloadGenericExcel('users-body',['Username','Role','Schedule Access','Created'],'Users','IDL_Users')">Download Excel</button>
           <button class="btn btn-primary admin-only" onclick="openUserModal()">+ Add User</button>
         </div>
       </div>

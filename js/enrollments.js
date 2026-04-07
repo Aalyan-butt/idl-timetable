@@ -1,4 +1,4 @@
-// ===== CLASS ENROLLMENT =====
+﻿// ===== CLASS ENROLLMENT =====
 let _ceTab = 'all';
 let _ceDirtySet = new Set(); // student IDs with unsaved changes
 
@@ -80,7 +80,7 @@ function _ceUpdateStats() {
   if (document.getElementById('ce-float-picker')) return;
   const el = document.createElement('div');
   el.id = 'ce-float-picker';
-  el.style.cssText = 'display:none;position:fixed;z-index:9999;min-width:200px;overflow:hidden';
+  el.style.cssText = 'display:none;position:fixed;z-index:9999;min-width:200px;overflow:hidden;background:linear-gradient(150deg,#0f0f22,#0a0a1a);border:1px solid rgba(201,168,76,0.32);border-radius:10px;box-shadow:0 10px 36px rgba(0,0,0,0.75)';
   el.innerHTML = `
     <div style="padding:9px 11px;border-bottom:1px solid rgba(201,168,76,0.18)">
       <input id="ce-float-search" type="text" placeholder="Search class…" autocomplete="off"
@@ -592,7 +592,7 @@ async function _seLoadAll() {
     const rows = data.length ? data.map((e, i) => {
       const dateStr = e.enrolled_at ? new Date(e.enrolled_at).toLocaleDateString('en-PK') : '\u2014';
       const actCell = isAdm
-        ? `<td><div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="openSEEditModal(${e.id})">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteSEEnroll(${e.id})">Delete</button></div></td>`
+        ? `<td><div style="display:flex;gap:6px"><button class="btn-action btn-edit" onclick="openSEEditModal(${e.id})">Edit</button><button class="btn-action btn-danger" onclick="deleteSEEnroll(${e.id})">Delete</button></div></td>`
         : '';
       return `<tr style="font-size:0.9rem">
         <td style="text-align:center;color:var(--text-muted);font-weight:600">${i + 1}</td>
@@ -625,7 +625,7 @@ function _seRenderBySubject() {
   const rows = data.length ? data.map((e, i) => {
     const dateStr = e.enrolled_at ? new Date(e.enrolled_at).toLocaleDateString('en-PK') : '\u2014';
     const actCell = isAdm
-      ? `<td><div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="openSEEditModal(${e.id})">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteSEEnroll(${e.id})">Delete</button></div></td>`
+      ? `<td><div style="display:flex;gap:6px"><button class="btn-action btn-edit" onclick="openSEEditModal(${e.id})">Edit</button><button class="btn-action btn-danger" onclick="deleteSEEnroll(${e.id})">Delete</button></div></td>`
       : '';
     return `<tr style="font-size:0.9rem">
       <td style="text-align:center;color:var(--text-muted);font-weight:600">${i + 1}</td>
@@ -657,7 +657,7 @@ function _seRenderByStudent() {
   const rows = data.length ? data.map((e, i) => {
     const dateStr = e.enrolled_at ? new Date(e.enrolled_at).toLocaleDateString('en-PK') : '\u2014';
     const actCell = isAdm
-      ? `<td><div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="openSEEditModal(${e.id})">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteSEEnroll(${e.id})">Delete</button></div></td>`
+      ? `<td><div style="display:flex;gap:6px"><button class="btn-action btn-edit" onclick="openSEEditModal(${e.id})">Edit</button><button class="btn-action btn-danger" onclick="deleteSEEnroll(${e.id})">Delete</button></div></td>`
       : '';
     return `<tr style="font-size:0.9rem">
       <td style="text-align:center;color:var(--text-muted);font-weight:600">${i + 1}</td>

@@ -16,6 +16,8 @@ if ($method === 'GET') {
     }
     if (!isset($settings['school_start'])) $settings['school_start'] = '08:00';
     if (!isset($settings['school_end']))   $settings['school_end']   = '14:00';
+    if (!isset($settings['teacher_late_after'])) $settings['teacher_late_after'] = '08:15';
+    if (!isset($settings['student_late_after'])) $settings['student_late_after'] = '08:10';
     // Return per-day settings (empty string = use default / school off)
     foreach ($days as $d) {
         if (!isset($settings["{$d}_start"])) $settings["{$d}_start"] = '';
@@ -51,6 +53,8 @@ if ($method === 'POST') {
 
     $school_start      = trim($data['school_start'] ?? '08:00');
     $school_end        = trim($data['school_end']   ?? '14:00');
+    $teacher_late      = trim($data['teacher_late_after'] ?? '08:15');
+    $student_late      = trim($data['student_late_after'] ?? '08:10');
     $update_timetable  = !empty($data['update_timetable']);
 
     if (empty($school_start) || empty($school_end)) {
@@ -74,7 +78,8 @@ if ($method === 'POST') {
     $stmt = $db->prepare("INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?");
 
     // Save school defaults
-    foreach (['school_start' => $school_start, 'school_end' => $school_end] as $key => $val) {
+    foreach (['school_start' => $school_start, 'school_end' => $school_end,
+              'teacher_late_after' => $teacher_late, 'student_late_after' => $student_late] as $key => $val) {
         $stmt->bind_param('sss', $key, $val, $val);
         $stmt->execute();
     }

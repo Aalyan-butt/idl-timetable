@@ -51,6 +51,57 @@ h1, h2, h3, .page-title, .modal-title { font-family: 'Cinzel', serif; }
 
 .page-action-btn { width: auto !important; min-width: 140px; }
 
+/* ===== ACTION TABLE BUTTONS (small buttons inside data tables) ===== */
+.btn-action {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 5px 13px; height: 30px; min-width: 52px;
+  border-radius: 6px; border: 1px solid transparent;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 0.82rem; font-weight: 700; cursor: pointer;
+  white-space: nowrap; letter-spacing: 0.4px; line-height: 1;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.22s, transform 0.16s;
+  vertical-align: middle; text-decoration: none;
+  background: rgba(255,255,255,0.04);
+}
+.btn-action:hover { transform: translateY(-2px); }
+.btn-action:active { transform: translateY(0); }
+
+/* View — deep blue */
+.btn-view  { color: #7ec8f5; border-color: rgba(30,120,200,0.45); background: rgba(20,80,160,0.12); }
+.btn-view:hover  { color: #b8dfff; border-color: #2196f3; background: rgba(30,120,200,0.28); box-shadow: 0 4px 16px rgba(30,120,200,0.35), inset 0 1px 0 rgba(255,255,255,0.07); }
+
+/* Edit — dark base → golden hover */
+.btn-edit  { color: #c9a84c; border-color: rgba(201,168,76,0.38); background: rgba(201,168,76,0.06); }
+.btn-edit:hover  { color: #f0d060; border-color: #c9a84c; background: rgba(201,168,76,0.22); box-shadow: 0 4px 16px rgba(201,168,76,0.32), inset 0 1px 0 rgba(255,255,255,0.06); }
+
+/* WA — whatsapp green */
+.btn-wa    { color: #66d87a; border-color: rgba(37,211,102,0.38); background: rgba(37,211,102,0.07); }
+.btn-wa:hover    { color: #a8edba; border-color: #25d366; background: rgba(37,211,102,0.22); box-shadow: 0 4px 14px rgba(37,211,102,0.28); }
+
+/* Download — slate/teal */
+.btn-download { color: #80cbc4; border-color: rgba(0,168,150,0.38); background: rgba(0,137,123,0.08); }
+.btn-download:hover { color: #b2dfdb; border-color: #00bfa5; background: rgba(0,137,123,0.22); box-shadow: 0 4px 14px rgba(0,137,123,0.28); }
+
+/* Confirm (ok) — emerald green */
+.btn-ok    { color: #69e09a; border-color: rgba(67,160,71,0.42); background: rgba(67,160,71,0.08); }
+.btn-ok:hover    { color: #abefc6; border-color: #43a047; background: rgba(67,160,71,0.24); box-shadow: 0 4px 14px rgba(67,160,71,0.3); }
+
+/* Acct — violet */
+.btn-acct  { color: #ce93d8; border-color: rgba(142,68,220,0.38); background: rgba(92,53,165,0.08); }
+.btn-acct:hover  { color: #e8bbf0; border-color: #ab47bc; background: rgba(142,68,220,0.22); box-shadow: 0 4px 14px rgba(142,68,220,0.32); }
+
+/* Profile — sky blue */
+.btn-profile { color: #4fc3f7; border-color: rgba(2,136,209,0.38); background: rgba(2,119,189,0.08); }
+.btn-profile:hover { color: #9de4ff; border-color: #0288d1; background: rgba(2,119,189,0.24); box-shadow: 0 4px 14px rgba(2,119,189,0.32); }
+
+/* Save (old alias — keep for compatibility) */
+.btn-save  { color: #80cbc4; border-color: rgba(0,168,150,0.38); background: rgba(0,137,123,0.08); }
+.btn-save:hover  { color: #b2dfdb; border-color: #00bfa5; background: rgba(0,137,123,0.22); box-shadow: 0 4px 14px rgba(0,137,123,0.28); }
+
+/* Delete / Danger */
+.btn-action.btn-danger { color: #f48a8a; border: 1px solid rgba(229,57,53,0.42); background: rgba(200,30,30,0.08); padding: 5px 13px; height: 30px; border-radius: 6px; }
+.btn-action.btn-danger:hover { color: #ffcdd2; border-color: #e53935; background: rgba(229,57,53,0.24); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(229,57,53,0.35), inset 0 1px 0 rgba(255,255,255,0.05); }
+
 /* ===== ALERTS ===== */
 .alert { padding: 12px 16px; border-radius: 8px; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
 .alert-error { background: rgba(255,85,85,0.1); color: var(--danger); border: 1px solid rgba(255,85,85,0.25); }

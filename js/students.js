@@ -3,6 +3,7 @@ let _studentsCache = [];
 
 async function loadStudents() {
   const body = document.getElementById('students-body');
+  showSpinner();
   try {
     _studentsCache = await api(API.students);
     initStudentColFilter();
@@ -11,6 +12,8 @@ async function loadStudents() {
   } catch(e) {
     _studentsCache = [];
     if (body) body.innerHTML = `<tr><td colspan="19" style="text-align:center;padding:24px;color:var(--danger)">${escapeHtml(e.message)}</td></tr>`;
+  } finally {
+    hideSpinner();
   }
 }
 
@@ -66,8 +69,6 @@ function renderStudents(list) {
     return y + ' yrs';
   }
 
-  const btnBase = 'border:none;border-radius:8px;cursor:pointer;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;font-size:1rem;color:#fff;transition:opacity .15s;vertical-align:middle';
-
   const req = s => `<span style="color:#e74c3c;font-style:italic;font-size:0.82rem">${s}</span>`;
 
   body.innerHTML = limited.map((s, idx) => {
@@ -104,18 +105,21 @@ function renderStudents(list) {
       ? `<span class="badge badge-break" style="font-size:0.72rem">Pending</span>`
       : `<span class="badge badge-green" style="font-size:0.72rem">&#10003; Confirmed</span>`;
 
-    // Colorful icon action buttons
+    // Action buttons using CSS classes for consistent theming
     const safeName    = fullName.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    const btnView     = `<button onclick="openStudentBio(${s.id})" title="View Student Profile" style="${btnBase};background:#1565C0" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">&#9432;</button>`;
-    const btnEdit     = isAdmin ? `<button onclick="editStudent(${s.id})" title="Edit Student Record" style="${btnBase};background:#00897B" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">&#9998;</button>` : '';
+    const btnView     = `<button class="btn-action btn-view" onclick="openStudentBio(${s.id})" title="View Student Profile">View</button>`;
+    const btnEdit     = isAdmin ? `<button class="btn-action btn-edit" onclick="editStudent(${s.id})" title="Edit Student Record">Edit</button>` : '';
     const waNum       = parentPhone.replace(/[^0-9]/g,'');
-    const btnWA       = parentPhone ? `<button onclick="window.open('https://wa.me/${waNum}','_blank')" title="Open WhatsApp Chat with Parent" style="${btnBase};background:#25D366" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">&#128172;</button>` : '';
-    const btnDownload = `<div style="position:relative;display:inline-block"><button onclick="toggleStudentDownloadMenu(event,${s.id})" title="Download / Print Options" style="${btnBase};background:#546E7A" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">&#128438;</button></div>`;
-    const btnConfirm  = (isAdmin && isPending) ? `<button onclick="confirmStudentRegistration(${s.id})" title="Confirm Registration" style="${btnBase};background:#43A047" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">&#10004;</button>` : '';
-    const btnAcct     = isAdmin ? `<button onclick="openQuickAccountModal('student',${s.id},'${safeName}')" title="Manage Login Account" style="${btnBase};background:#5C35A5" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">&#128274;</button>` : '';
-    const btnDelete   = isAdmin ? `<button onclick="deleteStudent(${s.id},'${safeName}')" title="Delete Student Record" style="${btnBase};background:#E53935" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">&#128465;</button>` : '';
+    const btnWA       = parentPhone ? `<button class="btn-action btn-wa" onclick="window.open('https://wa.me/${waNum}','_blank')" title="Open WhatsApp Chat with Parent">WA</button>` : '';
+    const btnDownload = `<div style="position:relative;display:inline-block"><button class="btn-action btn-download" onclick="toggleStudentDownloadMenu(event,${s.id})" title="Download / Print Options">Download</button></div>`;
+    const btnConfirm  = (isAdmin && isPending) ? `<button class="btn-action btn-ok" onclick="confirmStudentRegistration(${s.id})" title="Confirm Registration">Confirm</button>` : '';
+    const btnAcct     = isAdmin ? `<button class="btn-action btn-acct" onclick="openQuickAccountModal('student',${s.id},'${safeName}')" title="Manage Login Account">Acct</button>` : '';
+    const btnDelete   = isAdmin ? `<button class="btn-action btn-danger" onclick="deleteStudent(${s.id},'${safeName}')" title="Delete Student Record">Delete</button>` : '';
 
-    const actions = `<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;max-width:120px">${btnView}${btnEdit}${btnWA}${btnDownload}${btnConfirm}${btnAcct}${btnDelete}</div>`;
+    const row1 = `<div style="display:flex;gap:5px;justify-content:center">${btnView}${btnEdit}${btnWA}</div>`;
+    const row2 = (btnDownload || btnConfirm) ? `<div style="display:flex;gap:5px;justify-content:center;margin-top:4px">${btnDownload}${btnConfirm}</div>` : '';
+    const row3 = (btnAcct || btnDelete) ? `<div style="display:flex;gap:5px;justify-content:center;margin-top:4px">${btnAcct}${btnDelete}</div>` : '';
+    const actions = `<div style="display:flex;flex-direction:column;align-items:center">${row1}${row2}${row3}</div>`;
 
     const photoCell = s.photo
       ? `<img src="${escapeHtml(s.photo)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid rgba(201,168,76,0.3)">`
@@ -239,7 +243,7 @@ function renderStudentNotifications(incomplete) {
       </div>
       <div style="flex-shrink:0;display:flex;align-items:center">
         <button onclick="editStudentFromNotif(${s.id})" style="background:#e74c3c;color:#fff;border:none;border-radius:8px;padding:8px 18px;cursor:pointer;font-size:0.88rem;font-weight:700;display:flex;align-items:center;gap:6px;transition:opacity .15s" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">
-          &#9998; Complete Record
+          Complete Record
         </button>
       </div>
     </div>`;
@@ -1233,7 +1237,7 @@ async function loadStudentSiblings(fatherCnic, currentStudentId) {
       return `<div style="display:flex;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid var(--border)">
         <span style="font-weight:600">${escapeHtml(((s.first_name||'') + ' ' + (s.last_name||'')).trim())}</span>
         <span class="badge badge-blue">${s.class_name ? escapeHtml(s.class_name) : (cls ? escapeHtml(cls.name) : '—')}</span>
-        <button class="btn btn-secondary btn-sm" onclick="viewStudentProfile(${s.id})" style="margin-left:auto">View</button>
+        <button class="btn-action btn-view" onclick="viewStudentProfile(${s.id})" style="margin-left:auto">View</button>
       </div>`;
     }).join('');
   } catch { container.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem">Could not load siblings.</p>'; }

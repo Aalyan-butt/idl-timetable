@@ -1424,26 +1424,28 @@ function _paResetStudentUI() {
 }
 
 // ── PDF / Excel downloads ────────────────────────────────────────
-function paDownloadPDF(orientation) {
+async function paDownloadPDF(orientation) {
   if (!_paSelectedStud) { toast('Please select a student first', 'error'); return; }
   const scale = getMenuScale(document.getElementById('pa-dm'));
+  const photo = await _photoToBase64(_paSelectedStud.photo || '');
   const studentInfo = {
     name:  _paSelectedStud.student_name || 'Student',
     gr:    _paSelectedStud.gr_number    || '',
     cls:   _paSelectedStud.class_name   || '',
-    photo: _paSelectedStud.photo        || ''
+    photo
   };
   downloadTableDoc('pa-body', `performance_${_paSelectedStud.student_name || 'student'}`,
     ['#','Test Date','Test Name','Class','Subject','Teacher','Obtained','Total','Score %','Status','Comment'],
     'pdf', 'A4', orientation, scale, null, studentInfo);
 }
 
-function paDownloadExcel() {
+async function paDownloadExcel() {
   if (!_paSelectedStud) { toast('Please select a student first', 'error'); return; }
+  const photo = await _photoToBase64(_paSelectedStud.photo || '');
   const studentInfo = {
     name:  _paSelectedStud.student_name || 'Student',
     gr:    _paSelectedStud.gr_number    || '',
-    photo: _paSelectedStud.photo        || ''
+    photo
   };
   downloadGenericExcel('pa-body',
     ['#','Test Date','Test Name','Class','Subject','Teacher','Obtained','Total','Score %','Status','Comment'],

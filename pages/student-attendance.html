@@ -1,0 +1,76 @@
+<style>
+/* Student Attendance Mark page — reuses att-* classes from staff-attendance.html */
+.sa-class-select {
+  background:#1c1c2c; border:1px solid rgba(201,168,76,0.3); border-radius:8px;
+  color:#f0ead0; padding:6px 12px; font-size:0.88rem; outline:none; min-width:200px;
+}
+.sa-class-select:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(201,168,76,0.12); }
+.statt-enroll-info { font-size:0.78rem; color:var(--text-muted); margin-bottom:14px; padding:0 2px; }
+</style>
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Student Attendance</div>
+    <div class="page-subtitle">Mark daily attendance for students by class</div>
+  </div>
+</div>
+
+<!-- Top bar: class + date + summary pills -->
+<div class="att-top-bar" id="statt-top-bar">
+  <div class="att-date-group">
+    <span class="att-date-label">Class</span>
+    <select id="statt-class" class="sa-class-select" onchange="stattLoad()">
+      <option value="">— Select Class —</option>
+    </select>
+  </div>
+  <div class="att-date-group">
+    <span class="att-date-label">Date</span>
+    <input type="date" id="statt-date" class="att-date-input" onchange="stattLoad()">
+  </div>
+  <div class="att-summary-pills" id="statt-pills" style="margin-left:auto">
+    <span class="att-pill att-pill-unmarked" id="statt-pill-unmarked">— Unmarked</span>
+    <span class="att-pill att-pill-present"  id="statt-pill-present">0 Present</span>
+    <span class="att-pill att-pill-absent"   id="statt-pill-absent">0 Absent</span>
+    <span class="att-pill att-pill-late"     id="statt-pill-late">0 Late</span>
+    <span class="att-pill att-pill-leave"    id="statt-pill-leave">0 Leave</span>
+    <span class="att-pill att-pill-pending"  id="statt-pill-pending">0 Pending</span>
+  </div>
+</div>
+<div class="statt-enroll-info" id="statt-enroll-info"></div>
+
+<!-- Bulk actions -->
+<div class="att-bulk-row" id="statt-bulk" style="display:none">
+  <span class="att-bulk-label">Mark All:</span>
+  <button class="btn-action btn-ok"       onclick="stattMarkAll('present')">Present</button>
+  <button class="btn-action btn-danger"   onclick="stattMarkAll('absent')">Absent</button>
+  <button class="btn-action btn-edit"     onclick="stattMarkAll('late')">Late</button>
+  <button class="btn-action btn-download" onclick="stattMarkAll('leave')">Leave</button>
+  <span style="flex:1"></span>
+  <button class="btn-action btn-acct" id="statt-pending-btn" onclick="stattFilterPending()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    View Pending
+  </button>
+  <span style="font-size:0.78rem;color:var(--text-muted)" id="statt-saved-note"></span>
+</div>
+
+<!-- Table -->
+<div class="att-table-wrap" id="statt-table-wrap">
+  <table class="att-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Student</th>
+        <th>Status</th>
+        <th>Remarks</th>
+      </tr>
+    </thead>
+    <tbody id="statt-tbody">
+      <tr><td colspan="4" style="text-align:center;padding:48px 20px;color:var(--text-muted)">Select a class above to load students</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="att-save-bar" id="statt-save-bar" style="display:none">
+  <span id="statt-progress" style="font-size:0.82rem;color:var(--text-muted)"></span>
+  <button class="btn btn-primary" onclick="stattSave()">Save Attendance</button>
+</div>

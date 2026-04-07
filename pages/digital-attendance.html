@@ -1,0 +1,272 @@
+<style>
+/* ── Digital Attendance — Scanner ──────────────────────────── */
+/* Scanner layout */
+.da-scanner-grid {
+  display:grid; grid-template-columns:1fr 360px; gap:18px;
+}
+@media(max-width:860px) { .da-scanner-grid { grid-template-columns:1fr; } }
+
+.da-panel {
+  background:linear-gradient(135deg,#0d0d22 60%,#0a0a1a);
+  border:1px solid rgba(201,168,76,0.22); border-radius:var(--radius);
+  padding:18px; position:relative; overflow:hidden;
+}
+.da-panel::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,#c9a84c 40%,transparent);
+}
+.da-panel-title {
+  font-family:'Cinzel',serif; font-size:0.75rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:.1em; color:var(--accent);
+  margin-bottom:14px;
+}
+
+/* Video feed */
+.da-video-wrap {
+  position:relative; width:100%; aspect-ratio:4/3;
+  background:#020208; border-radius:10px; overflow:hidden;
+  margin-bottom:14px; border:1px solid rgba(201,168,76,0.15);
+}
+.da-video-wrap video {
+  width:100%; height:100%; object-fit:cover; display:block;
+}
+.da-scan-overlay {
+  position:absolute; inset:0; display:flex; align-items:center;
+  justify-content:center; pointer-events:none;
+}
+.da-scan-frame { width:190px; height:190px; position:relative; }
+.da-scan-frame::before, .da-scan-frame::after,
+.da-scan-frame span:nth-child(1), .da-scan-frame span:nth-child(2) {
+  content:''; position:absolute; width:26px; height:26px; border-style:solid;
+  border-color:var(--accent);
+}
+.da-scan-frame::before  { top:0; left:0;    border-width:3px 0 0 3px; border-radius:4px 0 0 0; }
+.da-scan-frame::after   { bottom:0; right:0; border-width:0 3px 3px 0; border-radius:0 0 4px 0; }
+.da-scan-frame span:nth-child(1) { top:0; right:0;    border-width:3px 3px 0 0; border-radius:0 4px 0 0; }
+.da-scan-frame span:nth-child(2) { bottom:0; left:0;  border-width:0 0 3px 3px; border-radius:0 0 0 4px; }
+.da-scan-line {
+  position:absolute; left:10%; right:10%; height:2px;
+  background:linear-gradient(90deg,transparent,rgba(201,168,76,0.9),transparent);
+  animation:da-sweep 2.2s ease-in-out infinite;
+}
+@keyframes da-sweep { 0%,100%{top:8%} 50%{top:86%} }
+.da-cam-idle {
+  position:absolute; inset:0; display:flex; align-items:center;
+  justify-content:center; flex-direction:column; gap:10px;
+  background:rgba(2,2,8,0.85);
+}
+.da-cam-idle-icon {
+  font-size:3rem; opacity:.25;
+}
+.da-cam-idle-text {
+  font-family:'Cinzel',serif; font-size:0.72rem; color:var(--text-muted);
+  text-transform:uppercase; letter-spacing:.1em;
+}
+.da-cam-status {
+  position:absolute; bottom:8px; left:0; right:0; text-align:center;
+  font-size:0.7rem; color:rgba(201,168,76,0.7); font-family:'Cinzel',serif;
+}
+.da-cam-controls { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+
+/* Mode + status row */
+.da-ctrl-row {
+  display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+  margin-bottom:14px; padding-bottom:14px;
+  border-bottom:1px solid rgba(201,168,76,0.1);
+}
+.da-ctrl-label {
+  font-family:'Cinzel',serif; font-size:0.68rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:.1em; color:var(--accent);
+  white-space:nowrap;
+}
+.da-toggle-group { display:flex; border:1px solid rgba(201,168,76,0.3); border-radius:20px; overflow:hidden; }
+.da-toggle-btn {
+  padding:5px 16px; font-size:0.76rem; font-weight:700;
+  font-family:'Cinzel',serif; letter-spacing:.04em; cursor:pointer;
+  background:transparent; border:none; color:var(--text-muted);
+  transition:all .15s; white-space:nowrap;
+}
+.da-toggle-btn.active { background:rgba(201,168,76,0.18); color:var(--accent); }
+.da-status-select {
+  background:#1c1c2c; border:1px solid rgba(201,168,76,0.3); border-radius:8px;
+  color:#f0ead0; padding:5px 10px; font-size:0.82rem; outline:none;
+}
+.da-status-select:focus { border-color:var(--accent); }
+
+/* Manual entry */
+.da-manual-row {
+  display:flex; gap:8px; margin-top:2px;
+}
+.da-manual-input {
+  flex:1; background:#14142a; border:1px solid rgba(201,168,76,0.22);
+  border-radius:8px; color:var(--text); padding:7px 12px;
+  font-size:0.84rem; outline:none; font-family:monospace;
+}
+.da-manual-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(201,168,76,0.1); }
+.da-manual-input::placeholder { color:var(--text-muted); font-family:inherit; }
+
+/* Result panel */
+.da-result-card {
+  min-height:110px; margin-bottom:14px;
+  display:flex; align-items:center; justify-content:center;
+}
+.da-result-idle {
+  text-align:center; color:var(--text-muted); font-size:0.82rem;
+  padding:14px;
+}
+.da-result-idle svg { display:block; margin:0 auto 10px; opacity:.25; }
+.da-result-content {
+  width:100%; display:flex; gap:14px; align-items:flex-start;
+  animation: da-pop .25s ease-out;
+}
+@keyframes da-pop { 0%{transform:scale(0.92);opacity:0} 100%{transform:scale(1);opacity:1} }
+.da-result-avatar {
+  width:52px; height:52px; border-radius:50%; flex-shrink:0;
+  background:linear-gradient(135deg,rgba(201,168,76,0.3),rgba(201,168,76,0.1));
+  border:2px solid rgba(201,168,76,0.4);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Cinzel',serif; font-size:1.2rem; font-weight:700; color:var(--accent);
+}
+.da-result-info { flex:1; min-width:0; }
+.da-result-name {
+  font-family:'Cinzel',serif; font-size:0.95rem; font-weight:700;
+  color:var(--accent2); margin-bottom:3px; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
+}
+.da-result-sub { font-size:0.75rem; color:var(--text-muted); margin-bottom:8px; }
+.da-result-footer { display:flex; gap:8px; align-items:center; }
+.da-result-time { font-size:0.72rem; color:var(--text-muted); }
+.da-result-dup { color:#ffd54f; font-size:0.75rem; padding:2px 8px; border-radius:10px; background:rgba(255,193,7,0.12); border:1px solid rgba(255,193,7,0.3); }
+.da-result-err { color:#f48a8a; font-size:0.85rem; padding:14px; text-align:center; animation:da-pop .25s ease-out; }
+
+/* Log */
+.da-log-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:12px;
+}
+.da-log-count {
+  font-size:0.72rem; color:var(--text-muted);
+  background:rgba(201,168,76,0.1); border:1px solid rgba(201,168,76,0.2);
+  padding:2px 10px; border-radius:12px; font-family:'Cinzel',serif;
+}
+.da-log-list { max-height:240px; overflow-y:auto; }
+.da-log-item {
+  display:flex; align-items:center; gap:10px;
+  padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.da-log-item:last-child { border-bottom:none; }
+.da-log-time { font-size:0.68rem; color:var(--text-muted); min-width:42px; font-family:monospace; }
+.da-log-name { flex:1; font-size:0.82rem; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.da-log-empty { text-align:center; padding:24px; color:var(--text-muted); font-size:0.8rem; }
+</style>
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Digital Attendance</div>
+    <div class="page-subtitle">QR code scanner — scan staff and student barcodes</div>
+  </div>
+  <a href="scanner.html" target="_blank" style="
+    display:inline-flex;align-items:center;gap:8px;
+    padding:10px 20px;background:rgba(201,168,76,0.14);
+    border:1px solid rgba(201,168,76,0.45);border-radius:10px;
+    color:var(--accent);font-size:0.84rem;font-weight:700;
+    font-family:'Cinzel',serif;letter-spacing:.06em;
+    text-decoration:none;text-transform:uppercase;
+    transition:background .2s;white-space:nowrap;
+  " onmouseover="this.style.background='rgba(201,168,76,0.24)'" onmouseout="this.style.background='rgba(201,168,76,0.14)'">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+      <rect x="3" y="14" width="7" height="7"/>
+      <path d="M14 14h3v3"/><path d="M17 17h4v4"/><path d="M14 21h3"/>
+    </svg>
+    Open Live Scanner
+  </a>
+</div>
+
+<!-- ── QR Scanner ──────────────────────────────────────────── -->
+<div class="da-scanner-grid">
+
+    <!-- Left: camera + controls -->
+    <div class="da-panel">
+      <div class="da-panel-title">Camera Scanner</div>
+
+      <!-- Mode + Status -->
+      <div class="da-ctrl-row">
+        <span class="da-ctrl-label">Mode</span>
+        <div class="da-toggle-group">
+          <button class="da-toggle-btn active" id="da-mode-staff"   onclick="daSetMode('staff')">Staff</button>
+          <button class="da-toggle-btn"        id="da-mode-student" onclick="daSetMode('student')">Students</button>
+        </div>
+        <span class="da-ctrl-label" style="margin-left:8px">Status</span>
+        <select id="da-status-select" class="da-status-select">
+          <option value="present">Present</option>
+          <option value="late">Late</option>
+          <option value="absent">Absent</option>
+          <option value="leave">Leave</option>
+          <option value="pending">Pending</option>
+        </select>
+        <span class="da-ctrl-label" style="margin-left:8px">Date</span>
+        <input type="date" id="da-date" class="att-date-input" style="font-size:0.82rem;padding:5px 10px">
+      </div>
+
+      <!-- Video -->
+      <div class="da-video-wrap" id="da-video-wrap">
+        <video id="da-video" playsinline muted></video>
+        <canvas id="da-canvas" style="display:none"></canvas>
+        <div class="da-scan-overlay" id="da-scan-overlay" style="display:none">
+          <div class="da-scan-frame">
+            <span></span><span></span>
+            <div class="da-scan-line"></div>
+          </div>
+        </div>
+        <div class="da-cam-idle" id="da-cam-idle">
+          <div class="da-cam-idle-icon">📷</div>
+          <div class="da-cam-idle-text">Camera Off</div>
+        </div>
+        <div class="da-cam-status" id="da-cam-status"></div>
+      </div>
+
+      <div class="da-cam-controls">
+        <button class="btn btn-primary" id="da-btn-start" onclick="daStartCamera()">Start Camera</button>
+        <button class="btn btn-secondary" id="da-btn-stop" onclick="daStopCamera()" style="display:none">Stop Camera</button>
+        <span style="font-size:0.72rem;color:var(--text-muted);margin-left:4px" id="da-cam-err"></span>
+      </div>
+
+      <!-- Manual entry -->
+      <div class="da-ctrl-label" style="margin-bottom:6px">Manual Entry</div>
+      <div class="da-manual-row">
+        <input type="text" id="da-manual-input" class="da-manual-input"
+          placeholder="IDL-STAFF-1 or IDL-STUDENT-3"
+          onkeydown="if(event.key==='Enter')daManualMark()">
+        <button class="btn-action btn-ok" onclick="daManualMark()">Mark</button>
+      </div>
+    </div>
+
+    <!-- Right: result + log -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+
+      <!-- Last scan result -->
+      <div class="da-panel" style="padding:16px">
+        <div class="da-panel-title">Last Scan</div>
+        <div class="da-result-card" id="da-result-card">
+          <div class="da-result-idle">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Waiting for scan…
+          </div>
+        </div>
+      </div>
+
+      <!-- Scan log -->
+      <div class="da-panel" style="padding:16px;flex:1">
+        <div class="da-log-header">
+          <span class="da-panel-title" style="margin:0">Today's Log</span>
+          <span class="da-log-count" id="da-log-count">0 scanned</span>
+        </div>
+        <div class="da-log-list" id="da-log-list">
+          <div class="da-log-empty">No scans yet</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

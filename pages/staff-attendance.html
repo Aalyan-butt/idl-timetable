@@ -1,0 +1,64 @@
+<style>
+/* ── Staff Attendance — page-specific only ──────────────────── */
+/* All shared att-* styles live in css/components.css */
+</style>
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Staff Attendance</div>
+    <div class="page-subtitle">Mark daily attendance for all staff members</div>
+  </div>
+</div>
+
+<!-- Top bar: date picker + quick summary pills -->
+<div class="att-top-bar" id="sa-top-bar">
+  <div class="att-date-group">
+    <span class="att-date-label">Date</span>
+    <input type="date" id="sa-date" class="att-date-input" onchange="saLoadAttendance()">
+  </div>
+  <div class="att-summary-pills" id="sa-pills">
+    <span class="att-pill att-pill-unmarked" id="sa-pill-unmarked">— Unmarked</span>
+    <span class="att-pill att-pill-present"  id="sa-pill-present">0 Present</span>
+    <span class="att-pill att-pill-absent"   id="sa-pill-absent">0 Absent</span>
+    <span class="att-pill att-pill-late"     id="sa-pill-late">0 Late</span>
+    <span class="att-pill att-pill-leave"    id="sa-pill-leave">0 Leave</span>
+    <span class="att-pill att-pill-pending"  id="sa-pill-pending">0 Pending</span>
+  </div>
+</div>
+
+<!-- Bulk action row -->
+<div class="att-bulk-row">
+  <span class="att-bulk-label">Mark All:</span>
+  <button class="btn-action btn-ok"   onclick="saMarkAll('present')">Present</button>
+  <button class="btn-action btn-danger" onclick="saMarkAll('absent')">Absent</button>
+  <button class="btn-action btn-edit"   onclick="saMarkAll('late')">Late</button>
+  <button class="btn-action btn-download" onclick="saMarkAll('leave')">Leave</button>
+  <span style="flex:1"></span>
+  <button class="btn-action btn-acct" id="sa-pending-btn" onclick="saFilterPending()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    View Pending
+  </button>
+  <span style="font-size:0.78rem;color:var(--text-muted)" id="sa-saved-note"></span>
+</div>
+
+<!-- Attendance table -->
+<div class="att-table-wrap">
+  <table class="att-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Staff Member</th>
+        <th>Status</th>
+        <th>Remarks</th>
+      </tr>
+    </thead>
+    <tbody id="sa-tbody">
+      <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted)">Loading…</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="att-save-bar">
+  <span id="sa-progress" style="font-size:0.82rem;color:var(--text-muted)"></span>
+  <button class="btn btn-primary" onclick="saSaveAttendance()" id="sa-save-btn">Save Attendance</button>
+</div>

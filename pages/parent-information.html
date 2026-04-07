@@ -1,4 +1,4 @@
-
+﻿
       <div class="page-header">
         <div>
           <div class="page-title">Parent Information</div>
@@ -6,7 +6,7 @@
         </div>
         <div style="display:flex;gap:8px;align-items:center">
           <div style="position:relative;display:inline-block">
-            <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('pi-dm', this)">📄 Download PDF</button>
+            <button class="btn btn-pdf btn-sm" onclick="openDownloadMenu('pi-dm', this)">Download PDF</button>
             <div id="pi-dm" class="download-menu">
               <div class="dm-scale-row">
                 <span class="dm-scale-label">Page Scale</span>
@@ -18,12 +18,12 @@
                 </div>
               </div>
               <div class="download-divider"></div>
-              <div class="download-opt" onclick="downloadTableDoc('pi-table-body','parent_information',['Family ID','Parent Name','NIC Number','Phone','Children'],'pdf','A4','portrait',getMenuScale(this.closest('.download-menu')))">📄 PDF — A4 Portrait</div>
-              <div class="download-opt" onclick="downloadTableDoc('pi-table-body','parent_information',['Family ID','Parent Name','NIC Number','Phone','Children'],'pdf','A4','landscape',getMenuScale(this.closest('.download-menu')))">📄 PDF — A4 Landscape</div>
+              <div class="download-opt" onclick="downloadTableDoc('pi-table-body','parent_information',['Family ID','Parent Name','NIC Number','Phone','Children'],'pdf','A4','portrait',getMenuScale(this.closest('.download-menu')))">PDF — A4 Portrait</div>
+              <div class="download-opt" onclick="downloadTableDoc('pi-table-body','parent_information',['Family ID','Parent Name','NIC Number','Phone','Children'],'pdf','A4','landscape',getMenuScale(this.closest('.download-menu')))">PDF — A4 Landscape</div>
               <div class="download-divider"></div>
             </div>
           </div>
-          <button class="btn btn-excel btn-sm" onclick="downloadGenericExcel('pi-table-body',['Family ID','Parent Name','NIC Number','Phone','Children'],'Parent Information','IDL_Parents')">📊 Download Excel</button>
+          <button class="btn btn-excel btn-sm" onclick="downloadGenericExcel('pi-table-body',['Family ID','Parent Name','NIC Number','Phone','Children'],'Parent Information','IDL_Parents')">Download Excel</button>
           <button class="btn btn-primary" onclick="openAddParentModal()" style="gap:6px">+ Add Parent</button>
         </div>
       </div>
@@ -223,7 +223,7 @@
           <div style="padding:0 14px 12px;display:flex;gap:12px">
             <!-- Doc 1 -->
             <div style="flex:1;display:flex;flex-direction:column;gap:5px">
-              <div style="font-size:0.8rem;font-weight:600;color:var(--text-muted)">&#128196; Document 1</div>
+              <div style="font-size:0.8rem;font-weight:600;color:var(--text-muted)">PDF Document 1</div>
               <div id="pm-doc1-frame"
                    style="height:90px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);position:relative;overflow:hidden;cursor:pointer"
                    onclick="document.getElementById('pm-doc1-input').click()"
@@ -250,7 +250,7 @@
             </div>
             <!-- Doc 2 -->
             <div style="flex:1;display:flex;flex-direction:column;gap:5px">
-              <div style="font-size:0.8rem;font-weight:600;color:var(--text-muted)">&#128196; Document 2</div>
+              <div style="font-size:0.8rem;font-weight:600;color:var(--text-muted)">PDF Document 2</div>
               <div id="pm-doc2-frame"
                    style="height:90px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);position:relative;overflow:hidden;cursor:pointer"
                    onclick="document.getElementById('pm-doc2-input').click()"

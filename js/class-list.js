@@ -4,10 +4,56 @@ let _clClassOptions  = [];
 let _clSelectedClass = null; // { id, name }
 let _clInitialised   = false;
 
+// ── Column visibility ──────────────────────────────────────────────
+const CL_COLS = [
+  { key: 'cl-photo',    label: 'Photo',       def: true },
+  { key: 'cl-gr',       label: 'GR Number',   def: true },
+  { key: 'cl-gender',   label: 'Gender',      def: true },
+  { key: 'cl-father',   label: 'Father Name', def: true },
+  { key: 'cl-contact',  label: 'Contact',     def: true },
+  { key: 'cl-admitted', label: 'Admitted',    def: true },
+  { key: 'cl-actions',  label: 'Action',      def: true },
+];
+let _clColState = {};
+
+function _initCLColFilter() {
+  const wrap = document.getElementById('cl-col-checkboxes');
+  if (!wrap || wrap.dataset.init) return;
+  wrap.dataset.init = '1';
+  CL_COLS.forEach(c => {
+    if (_clColState[c.key] === undefined) _clColState[c.key] = c.def;
+    const lbl = document.createElement('label');
+    lbl.className = 'cl-col-label';
+    lbl.innerHTML = `<input type="checkbox" ${_clColState[c.key] ? 'checked' : ''} onchange="toggleCLCol('${c.key}',this.checked)"> ${c.label}`;
+    wrap.appendChild(lbl);
+  });
+  _applyCLColVisibility();
+}
+
+function toggleCLCol(key, visible) {
+  _clColState[key] = visible;
+  _applyCLColVisibility();
+}
+
+function _applyCLColVisibility() {
+  CL_COLS.forEach(c => {
+    document.querySelectorAll(`[data-col="${c.key}"]`).forEach(el => {
+      el.style.display = _clColState[c.key] ? '' : 'none';
+    });
+  });
+}
+
+function toggleCLColPanel() {
+  const panel = document.getElementById('cl-col-panel');
+  const btn   = document.getElementById('cl-col-toggle-btn');
+  if (!panel) return;
+  const open = panel.classList.toggle('open');
+  if (btn) btn.classList.toggle('active', open);
+}
+
 async function loadClassList() {
   if (!_clInitialised) {
     _clInitialised = true;
-    // Load class options from global or API
     if (typeof classes !== 'undefined' && classes.length) {
       _clClassOptions = classes;
     } else {
@@ -15,6 +61,9 @@ async function loadClassList() {
     }
     _clBuildClassDrop();
     _clCloseOnOutsideClick();
+    _initCLColFilter();
+  } else {
+    _initCLColFilter();
   }
   // If navigated here with a pre-selected class, data is already loaded via clSelectClass()
 }
@@ -113,17 +162,18 @@ function clRenderTable() {
     const avatarEl = s.photo
       ? `<div class="cl-avatar"><img src="${escapeHtml(s.photo)}" alt="photo" onerror="this.parentElement.innerHTML='&#128100;'"></div>`
       : `<div class="cl-avatar">&#128100;</div>`;
+    const vis = _clColState;
     return `<tr>
       <td style="text-align:center;color:var(--text-muted);font-size:0.8rem">${i+1}</td>
-      <td style="text-align:center">${avatarEl}</td>
+      <td data-col="cl-photo" style="text-align:center${vis['cl-photo']===false?';display:none':''}">${avatarEl}</td>
       <td><span class="cl-name-link" onclick="viewStudent(${s.id})">${escapeHtml(fullName)}</span></td>
-      <td style="font-size:0.82rem;color:var(--text-muted)">${escapeHtml(s.gr_number||'—')}</td>
-      <td style="font-size:0.85rem;color:${gColor};font-weight:600">${escapeHtml(gender)}</td>
-      <td style="font-size:0.85rem">${escapeHtml(s.father_name||'—')}</td>
-      <td style="font-size:0.82rem;color:var(--text-muted)">${escapeHtml(contact)}</td>
-      <td style="font-size:0.8rem;color:var(--text-muted);white-space:nowrap">${admitted}</td>
-      <td style="text-align:center">
-        <button class="cl-action-btn" onclick="viewStudent(${s.id})">&#128100; View</button>
+      <td data-col="cl-gr" style="font-size:0.82rem;color:var(--text-muted)${vis['cl-gr']===false?';display:none':''}">${escapeHtml(s.gr_number||'—')}</td>
+      <td data-col="cl-gender" style="font-size:0.85rem;color:${gColor};font-weight:600${vis['cl-gender']===false?';display:none':''}">${escapeHtml(gender)}</td>
+      <td data-col="cl-father" style="font-size:0.85rem${vis['cl-father']===false?';display:none':''}">${escapeHtml(s.father_name||'—')}</td>
+      <td data-col="cl-contact" style="font-size:0.82rem;color:var(--text-muted)${vis['cl-contact']===false?';display:none':''}">${escapeHtml(contact)}</td>
+      <td data-col="cl-admitted" style="font-size:0.8rem;color:var(--text-muted);white-space:nowrap${vis['cl-admitted']===false?';display:none':''}">${admitted}</td>
+      <td data-col="cl-actions" style="text-align:center${vis['cl-actions']===false?';display:none':''}">
+        <button class="cl-action-btn" onclick="viewStudent(${s.id})">View</button>
       </td>
     </tr>`;
   }).join('');
@@ -208,11 +258,24 @@ function clClearSearch() {
 }
 
 function clResetFilters() {
+  // Reset search + gender
   const inp = document.getElementById('cl-search');
   const g   = document.getElementById('cl-gender-filter');
   if (inp) inp.value = '';
   if (g)   g.value   = '';
   clClearBtnToggle({ value: '' });
+  // Reset class selection
+  _clSelectedClass = null;
+  _clAllStudents   = [];
+  const trigText = document.getElementById('cl-cls-trigger-text');
+  if (trigText) trigText.textContent = 'Select Class…';
+  document.querySelectorAll('.cl-cs-item').forEach(el => el.classList.remove('selected'));
+  // Reset stats
+  ['cl-stat-total','cl-stat-male','cl-stat-female'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = '—';
+  });
+  const countBar = document.getElementById('cl-count-bar');
+  if (countBar) countBar.style.display = 'none';
   clRenderTable();
 }
 

@@ -1,4 +1,4 @@
-// ===== NAVIGATION =====
+﻿// ===== NAVIGATION =====
 function toggleNavGroup(groupId) {
   const group = document.getElementById(groupId);
   if (!group) return;
@@ -28,6 +28,7 @@ async function showPage(name) {
   if (!_pageLoaded.has(name)) {
     const container = document.getElementById(`page-${name}`);
     if (container) {
+      showSpinner();
       try {
         const res = await fetch(`pages/${name}.html`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -35,9 +36,11 @@ async function showPage(name) {
         _pageLoaded.add(name);
         initAllSelects();
       } catch (err) {
+        hideSpinner();
         container.innerHTML = `<div class="empty-state" style="padding:48px;text-align:center;color:var(--text-muted)">Failed to load page.<br><button class="btn btn-secondary btn-sm" style="margin-top:12px" onclick="showPage('${name}')">Retry</button></div>`;
         return;
       }
+      hideSpinner();
     }
   }
 
@@ -87,6 +90,13 @@ async function showPage(name) {
   if (name === 'performance-tests')    loadPerformanceTests();
   if (name === 'performance-marks')    loadPerformanceMarks();
   if (name === 'performance-analysis') loadPerformanceAnalysis();
+  if (name === 'staff-attendance')            initStaffAttendancePage();
+  if (name === 'attendance-overview')         initAttendanceOverviewPage();
+  if (name === 'student-attendance')          initStudentAttendancePage();
+  if (name === 'student-attendance-overview') initStudentAttendanceOverviewPage();
+  if (name === 'digital-attendance') initDigitalAttendancePage();
+  if (name === 'staff-id-cards')    initStaffIdCardsPage();
+  if (name === 'student-id-cards')  initStudentIdCardsPage();
 }
 
 // ===== DATA LOADING =====
@@ -431,6 +441,8 @@ async function _loadParentTodayDashboard() {
 }
 
 async function loadTeachers() {
+  showSpinner();
+  try {
   teachers = await api(API.teachers).catch(() => []);
   const canManage    = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
   const isPrivileged = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
@@ -444,11 +456,11 @@ async function loadTeachers() {
   tbody.innerHTML = teachers.map(t => {
     const displayTitle = normalizeTitle(t.title);
     const profileBtn = isPrivileged
-      ? `<button class="btn btn-secondary btn-sm" onclick="editTeacher(${t.id})" title="View / Edit Full Profile" style="padding:4px 8px;font-size:1rem">&#128100;</button>`
+      ? `<button class="btn-action btn-profile" onclick="editTeacher(${t.id})" title="View / Edit Full Profile">Profile</button>`
       : '';
     const safeName = (displayTitle + ' ' + t.name).replace(/'/g, "\\'");
     const acctBtn = isPrivileged
-      ? `<button class="btn btn-secondary btn-sm" onclick="openQuickAccountModal('teacher',${t.id},'${safeName}')" title="Manage Login Account" style="padding:4px 8px;font-size:1rem">&#128274;</button>`
+      ? `<button class="btn-action btn-acct" onclick="openQuickAccountModal('teacher',${t.id},'${safeName}')" title="Manage Login Account">Acct</button>`
       : '';
     const badgeClass = t.title === 'Sir' ? 'badge-blue' : 'badge-gold';
     const photoCell = t.photo
@@ -465,14 +477,17 @@ async function loadTeachers() {
       <td data-col="col-tm-employment" style="padding:7px 6px;white-space:nowrap">${escapeHtml(t.employment_type||'—')}</td>
       <td data-col="col-tm-joining" style="padding:7px 6px;white-space:nowrap;color:var(--text-muted);font-size:0.82rem">${joiningDate}</td>
       <td data-col="col-tm-added" style="padding:7px 6px;white-space:nowrap;color:var(--text-muted);font-size:0.82rem">${formatDate(t.created_at)}</td>
-      ${canManage ? `<td data-col="col-tm-actions" style="padding:7px 6px;white-space:nowrap"><button class="btn btn-secondary btn-sm" onclick="openTeacherBio(${t.id})" title="View Profile">&#9432; View</button> <button class="btn btn-secondary btn-sm" onclick="quickEditTeacher(${t.id})">Edit</button>${profileBtn}${acctBtn}<button class="btn btn-danger btn-sm" onclick="confirmDelete('teacher',${t.id},'${(displayTitle + ' ' + t.name).replace(/'/g, '&#39;')}')">Delete</button></td>` : ''}
+      ${canManage ? `<td data-col="col-tm-actions" style="padding:7px 6px;white-space:nowrap;display:flex;gap:4px;align-items:center"><button class="btn-action btn-view" onclick="openTeacherBio(${t.id})" title="View Profile">View</button><button class="btn-action btn-edit" onclick="quickEditTeacher(${t.id})">Edit</button>${profileBtn}${acctBtn}<button class="btn-action btn-danger" onclick="confirmDelete('teacher',${t.id},'${(displayTitle + ' ' + t.name).replace(/'/g, '&#39;')}')">Delete</button></td>` : ''}
     </tr>`;
   }).join('');
   initTeacherColFilter();
   filterTeachers();
+  } finally { hideSpinner(); }
 }
 
 async function loadClasses() {
+  showSpinner();
+  try {
   classes = await api(API.classes).catch(() => []);
   const canManage = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
   const isViewer  = currentUser?.role === 'user';
@@ -531,9 +546,10 @@ async function loadClasses() {
       }).join('&#10;');
       freeIcon = `<span class="free-slot-icon" title="${tooltipLines}" style="display:inline-flex;align-items:center;justify-content:center;margin-left:8px;width:20px;height:20px;border-radius:50%;background:rgba(255,170,0,0.15);border:1px solid rgba(255,170,0,0.4);color:#ffaa00;font-size:0.7rem;cursor:pointer;flex-shrink:0;position:relative;vertical-align:middle;transition:background 0.15s,border-color 0.15s" onmouseenter="showFreeTooltip(event,this)" onmouseleave="hideFreeTooltip()" onclick="toggleFreeTooltipLock(event,this)" data-free='${JSON.stringify(dayMap)}'>⚠</span>`;
     }
-    return `<tr><td><span class="badge badge-blue">${c.name}</span>${freeIcon}</td><td style="color:var(--text-muted);font-size:0.82rem">${formatDate(c.created_at)}</td>${canManage ? `<td><button class="btn btn-secondary btn-sm" onclick="editClass(${c.id})">Edit</button><button class="btn btn-danger btn-sm" onclick="confirmDelete('class',${c.id},'${c.name.replace(/'/g, '&#39;')}')">Delete</button></td>` : ''}</tr>`;
+    return `<tr><td><span class="badge badge-blue">${c.name}</span>${freeIcon}</td><td style="color:var(--text-muted);font-size:0.82rem">${formatDate(c.created_at)}</td>${canManage ? `<td><button class="btn-action btn-edit" onclick="editClass(${c.id})">Edit</button><button class="btn-action btn-danger" onclick="confirmDelete('class',${c.id},'${c.name.replace(/'/g, '&#39;')}')">Delete</button></td>` : ''}</tr>`;
   }).join('');
   filterClasses();
+  } finally { hideSpinner(); }
 }
 
 async function loadTimetable() {
@@ -599,14 +615,14 @@ async function loadTimetable() {
 
   tbody.innerHTML = filtered.map(s => {
     if (s.is_break) {
-      return `<tr class="break-row"><td><span class="badge badge-blue">${s.class_name}</span></td><td colspan="2" style="text-align:center"><span class="break-label">☕ BREAK</span></td><td style="white-space:nowrap;font-size:0.82rem">${getDisplayDays(s.days)}</td><td style="white-space:nowrap;font-size:0.82rem">${formatTime(s.start_time)} – ${formatTime(s.end_time)}</td>${canManage ? `<td style="white-space:nowrap"><button class="btn btn-secondary btn-sm" onclick="editTimetable(${s.id})">Edit</button><button class="btn btn-danger btn-sm" onclick="confirmDelete('timetable',${s.id},'Break in ${String(s.class_name).replace(/'/g, '&#39;')}')">Delete</button></td>` : ''}</tr>`;
+      return `<tr class="break-row"><td><span class="badge badge-blue">${s.class_name}</span></td><td colspan="2" style="text-align:center"><span class="break-label">☕ BREAK</span></td><td style="white-space:nowrap;font-size:0.82rem">${getDisplayDays(s.days)}</td><td style="white-space:nowrap;font-size:0.82rem">${formatTime(s.start_time)} – ${formatTime(s.end_time)}</td>${canManage ? `<td style="white-space:nowrap"><button class="btn-action btn-edit" onclick="editTimetable(${s.id})">Edit</button><button class="btn-action btn-danger" onclick="confirmDelete('timetable',${s.id},'Break in ${String(s.class_name).replace(/'/g, '&#39;')}')">Delete</button></td>` : ''}</tr>`;
     }
     const ids = (s.teacher_ids ? s.teacher_ids.split(',') : [String(s.teacher_id)]);
     const teacherBadges = ids.map(function(tid) {
       const t = teachers.find(function(x) { return String(x.id) === String(tid); });
       return t ? `<div style="white-space:nowrap;margin:2px 0"><span class="badge badge-gold" onclick="openTeacherBio(${t.id})" style="cursor:pointer" title="View staff profile">${normalizeTitle(t.title)} ${t.name}</span></div>` : '';
     }).join('');
-    return `<tr><td><span class="badge badge-blue">${s.class_name}</span></td><td style="white-space:nowrap"><strong>${String(s.subject).replace(/'/g, '&#39;')}</strong></td><td>${teacherBadges}</td><td style="white-space:nowrap;font-size:0.82rem">${getDisplayDays(s.days)}</td><td style="white-space:nowrap;font-size:0.82rem">${formatTime(s.start_time)} – ${formatTime(s.end_time)}</td>${canManage ? `<td style="white-space:nowrap"><button class="btn btn-secondary btn-sm" onclick="editTimetable(${s.id})">Edit</button><button class="btn btn-danger btn-sm" onclick="confirmDelete('timetable',${s.id},'${String(s.subject).replace(/'/g, '&#39;')} in ${String(s.class_name).replace(/'/g, '&#39;')}')">Delete</button></td>` : ''}</tr>`;
+    return `<tr><td><span class="badge badge-blue">${s.class_name}</span></td><td style="white-space:nowrap"><strong>${String(s.subject).replace(/'/g, '&#39;')}</strong></td><td>${teacherBadges}</td><td style="white-space:nowrap;font-size:0.82rem">${getDisplayDays(s.days)}</td><td style="white-space:nowrap;font-size:0.82rem">${formatTime(s.start_time)} – ${formatTime(s.end_time)}</td>${canManage ? `<td style="white-space:nowrap"><button class="btn-action btn-edit" onclick="editTimetable(${s.id})">Edit</button><button class="btn-action btn-danger" onclick="confirmDelete('timetable',${s.id},'${String(s.subject).replace(/'/g, '&#39;')} in ${String(s.class_name).replace(/'/g, '&#39;')}')">Delete</button></td>` : ''}</tr>`;
   }).join('');
 }
 
@@ -701,7 +717,7 @@ async function loadBreak() {
   tbody.innerHTML = paged.map(s => {
     const dur = getDuration(s.start_time, s.end_time);
     const actions = canManage
-      ? `<td style="white-space:nowrap"><button class="btn btn-secondary btn-sm" onclick="editTimetable(${s.id})">Edit</button><button class="btn btn-danger btn-sm" onclick="confirmDelete('timetable',${s.id},'Break in ${String(s.class_name).replace(/'/g, '&#39;')}')">Delete</button></td>`
+      ? `<td style="white-space:nowrap"><button class="btn-action btn-edit" onclick="editTimetable(${s.id})">Edit</button><button class="btn-action btn-danger" onclick="confirmDelete('timetable',${s.id},'Break in ${String(s.class_name).replace(/'/g, '&#39;')}')">Delete</button></td>`
       : '';
     return `<tr class="break-row">
       <td><span class="badge badge-blue">${escapeHtml(s.class_name || '—')}</span></td>
@@ -1296,7 +1312,7 @@ async function loadUsers() {
             return parts.length ? parts.join(', ') : 'Full Access';
           })()
         : 'Full Access';
-    return `<tr><td>${u.username}</td><td><span class="badge ${badgeClass}">${roleLabel}</span></td><td style="color:var(--text-muted);font-size:0.82rem">${schedAccess}</td><td style="color:var(--text-muted);font-size:0.82rem">${formatDate(u.created_at)}</td><td>${canEdit ? `<button class="btn btn-secondary btn-sm" onclick="editUser(${u.id})">Edit</button><button class="btn btn-danger btn-sm" onclick="confirmDelete('user',${u.id},'${String(u.username).replace(/'/g, '&#39;')}')">Delete</button>` : '<span style=\"color:var(--text-muted);font-size:0.82rem\">Protected</span>'}</td></tr>`;
+    return `<tr><td>${u.username}</td><td><span class="badge ${badgeClass}">${roleLabel}</span></td><td style="color:var(--text-muted);font-size:0.82rem">${schedAccess}</td><td style="color:var(--text-muted);font-size:0.82rem">${formatDate(u.created_at)}</td><td>${canEdit ? `<button class="btn-action btn-edit" onclick="editUser(${u.id})">Edit</button><button class="btn-action btn-danger" onclick="confirmDelete('user',${u.id},'${String(u.username).replace(/'/g, '&#39;')}')">Delete</button>` : '<span style=\"color:var(--text-muted);font-size:0.82rem\">Protected</span>'}</td></tr>`;
   }).join('');
   filterUsers();
 }

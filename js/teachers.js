@@ -443,7 +443,7 @@ async function editTeacher(id) {
   if (!t) { toast('Could not load teacher data. Please try again.', 'error'); return; }
   tmClearForm();
   tmFillForm(t);
-  document.getElementById('teacher-modal-title').textContent = '✏️ Edit Staff Member';
+  document.getElementById('teacher-modal-title').textContent = 'Edit Staff Member';
   document.getElementById('teacher-modal-error').style.display = 'none';
   openModal('teacher-modal-overlay');
 }
