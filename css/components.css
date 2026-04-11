@@ -717,6 +717,12 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.5); cur
   .bgc-pair-wrap { break-inside:avoid; }
   .bgc-card { box-shadow:none !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   .bgc-front,.bgc-back { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  /* Blue-Gold student card print */
+  .sic-page-controls,.sic-settings-panel,.sic-btn-row { display:none !important; }
+  .sic-grid { grid-template-columns:repeat(2,1fr) !important; gap:6mm !important; }
+  .sic-pair-wrap { break-inside:avoid; }
+  .sic-card { box-shadow:none !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .sic-front,.sic-back { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 }
 
 /* ===================================================================
@@ -858,12 +864,12 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.5); cur
 .bgc-f-fval { font-size:7.6px; color:#22263a; font-weight:600; line-height:1.45; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 /* Barcode column on front — fixed width, clamps JsBarcode SVG output */
 .bgc-f-barcode {
-  position:absolute; bottom:34px; right:8px;
-  width:90px; overflow:hidden;
-  display:flex; flex-direction:column; align-items:center; gap:2px;
+  position:absolute; bottom:30px; right:6px;
+  width:94px; overflow:hidden;
+  display:flex; flex-direction:column; align-items:center;
 }
-.bgc-f-barcode svg { width:90px !important; max-width:90px; height:22px !important; flex-shrink:0; }
-.bgc-f-barcode-num { font-size:5px; color:#4d5266; letter-spacing:.5px; font-weight:600; white-space:nowrap; max-width:90px; overflow:hidden; text-overflow:ellipsis; }
+.bgc-f-barcode svg { width:94px !important; max-width:94px; height:28px !important; flex-shrink:0; }
+.bgc-f-barcode-num { display:none; }
 /* Gold footer line */
 .bgc-f-gold-footer-line {
   position:absolute; bottom:28px; left:0; right:0; height:2px;
@@ -974,15 +980,11 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.5); cur
 /* Back barcode — fixed slot, SVG clamped to container width */
 .bgc-b-barcode {
   flex-shrink:0;
-  display:flex; flex-direction:column; align-items:center; gap:1px;
-  width:100%; max-width:160px; overflow:hidden; padding:1px 0;
+  display:flex; flex-direction:column; align-items:center;
+  width:100%; max-width:170px; overflow:hidden; padding:1px 0;
 }
-.bgc-b-barcode svg { width:100% !important; max-width:150px; height:16px !important; }
-.bgc-b-barcode-num {
-  font-size:5px; color:#0d1b6e; font-family:'Montserrat',sans-serif;
-  letter-spacing:.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  max-width:150px;
-}
+.bgc-b-barcode svg { width:100% !important; max-width:170px; height:22px !important; }
+.bgc-b-barcode-num { display:none; }
 /* Keep old .bgc-b-content class inert so nothing breaks */
 .bgc-b-content { display:none; }
 /* Back gold lines */
@@ -1000,3 +1002,165 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.5); cur
   font-family:'Playfair Display',serif; font-size:7px; color:#f7df9e;
   letter-spacing:1.5px; font-weight:600;
 }
+
+/* ── Staff card — Principal Signature block ──────────────── */
+.bgc-f-principal {
+  position:absolute; top:118px; right:6px; width:88px;
+  display:flex; flex-direction:column; align-items:center; z-index:3;
+}
+.bgc-f-sig-area {
+  width:76px; height:24px;
+  border-bottom:1.4px solid #2a3990;
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden; padding-bottom:2px;
+}
+.bgc-f-sig-area img { max-width:100%; max-height:100%; object-fit:contain; display:block; }
+.bgc-f-principal-lbl {
+  font-size:6.5px; font-weight:700; color:#2a3990;
+  letter-spacing:1.5px; text-transform:uppercase; margin-top:3px;
+}
+
+/* ===================================================================
+   STUDENT ID CARD — Blue-Gold Template  (SIC)
+   Matches IDL_student_id_card.html design
+   =================================================================== */
+
+.sic-card {
+  width:380px; height:230px; border-radius:16px; position:relative;
+  overflow:hidden; border:1px solid rgba(40,53,147,0.18);
+  box-shadow:0 16px 34px rgba(25,34,89,0.16);
+}
+
+/* ── Front ───────────────────────────────────────────────── */
+.sic-front { background:linear-gradient(180deg,#fcfbf7 0%,#f5f2e9 100%); }
+.sic-f-header {
+  position:absolute; top:0; left:0; right:0; height:70px;
+  background:linear-gradient(135deg,#202c7a 0%,#2f3fa7 55%,#3949b8 100%);
+}
+.sic-f-hcontent {
+  position:absolute; top:0; left:0; right:0; height:70px;
+  display:flex; align-items:center; padding:0 16px; gap:10px; z-index:2;
+}
+.sic-f-logo {
+  width:46px; height:46px; border-radius:50%;
+  background:rgba(255,255,255,0.18); border:1.7px solid rgba(240,191,85,0.7);
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden; flex-shrink:0; box-shadow:0 4px 10px rgba(0,0,0,0.15);
+}
+.sic-f-logo img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.sic-f-org-name { font-size:9px; font-weight:700; color:#fff8e8; letter-spacing:1.3px; line-height:1.45; }
+.sic-f-org-sub  { font-size:7px; color:#f1cf7a; letter-spacing:2px; margin-top:1px; }
+.sic-f-dots { position:absolute; top:9px; right:13px; display:grid; grid-template-columns:repeat(4,6px); gap:5px; z-index:4; }
+.sic-f-dot  { width:6px; height:6px; border-radius:50%; background:rgba(240,191,85,0.55); }
+.sic-f-gold-line {
+  position:absolute; top:68px; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent 0%,#c9a84c 25%,#f0c45e 50%,#c9a84c 75%,transparent 100%);
+  z-index:5;
+}
+.sic-f-ribbon {
+  position:absolute; top:70px; left:0; width:68px; height:14px;
+  background:linear-gradient(135deg,#c08b18 0%,#f0c45e 60%,#d4a535 100%);
+  display:flex; align-items:center; justify-content:center; z-index:4;
+  clip-path:polygon(0 0,100% 0,92% 100%,0 100%);
+}
+.sic-f-ribbon span { font-size:6px; font-weight:800; color:#1a2060; letter-spacing:1.5px; text-transform:uppercase; padding-left:4px; }
+.sic-f-photo {
+  position:absolute; top:34px; right:14px; width:66px; height:62px;
+  border-radius:8px; background:linear-gradient(180deg,#f7f3e6 0%,#ede4c8 100%);
+  border:2.5px solid #fff; box-shadow:0 8px 18px rgba(18,25,72,0.18);
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden; z-index:3;
+}
+.sic-f-photo img { width:100%; height:100%; object-fit:cover; display:block; }
+.sic-f-photo-init { font-family:'Playfair Display',serif; font-size:18px; font-weight:800; color:#24327f; }
+/* Principal block */
+.sic-f-principal {
+  position:absolute; top:102px; right:6px; width:88px;
+  display:flex; flex-direction:column; align-items:center; z-index:3;
+}
+.sic-f-sig-area {
+  width:76px; height:26px;
+  border-bottom:1.4px solid #2a3990;
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden; padding-bottom:2px;
+}
+.sic-f-sig-area img { max-width:100%; max-height:100%; object-fit:contain; display:block; }
+.sic-f-principal-lbl { font-size:6.5px; font-weight:700; color:#2a3990; letter-spacing:1.5px; text-transform:uppercase; margin-top:3px; }
+/* Right-column barcode (below principal) */
+.sic-f-right-barcode {
+  position:absolute; top:162px; right:6px; width:94px;
+  display:flex; flex-direction:column; align-items:center; z-index:3; overflow:hidden;
+}
+.sic-f-right-barcode svg { width:94px !important; max-width:94px; height:26px !important; }
+.sic-f-right-barcode-num { display:none; }
+/* Left body */
+.sic-f-body {
+  position:absolute; top:88px; left:14px; right:102px; bottom:32px;
+  overflow:hidden; display:flex; flex-direction:column;
+}
+.sic-f-name {
+  font-family:'Cormorant Garamond',serif; font-size:19px; font-weight:700;
+  color:#24327f; line-height:1; margin-bottom:4px;
+  overflow:hidden; white-space:nowrap; text-overflow:ellipsis; flex-shrink:0;
+}
+.sic-f-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px 10px; overflow:hidden; }
+.sic-f-field { display:flex; flex-direction:column; min-width:0; overflow:hidden; padding-bottom:1px; }
+.sic-f-flbl { font-size:6px; color:#7a7685; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; white-space:nowrap; margin-bottom:1px; }
+.sic-f-fval { font-size:7.4px; color:#22263a; font-weight:600; line-height:1.4; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.sic-f-gold-footer-line {
+  position:absolute; bottom:28px; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent 0%,#c9a84c 25%,#f0c45e 50%,#c9a84c 75%,transparent 100%); z-index:3;
+}
+.sic-f-footer {
+  position:absolute; bottom:0; left:0; right:0; height:28px;
+  background:linear-gradient(135deg,#1f2a73 0%,#2a3990 100%);
+  display:flex; align-items:center; padding:0 10px; justify-content:space-between;
+  border-top:1px solid rgba(240,191,85,0.35);
+}
+.sic-f-ftxt { font-size:6.4px; color:#f9e6b0; font-weight:500; letter-spacing:0.3px; }
+
+/* ── Back (same structure as BGC back) ───────────────────── */
+.sic-back { background:linear-gradient(180deg,#fcfbf7 0%,#f6f2e7 100%); }
+.sic-b-header {
+  position:absolute; top:0; left:0; right:0; height:54px;
+  background:linear-gradient(135deg,#202c7a 0%,#2f3fa7 55%,#3949b8 100%);
+  display:flex; align-items:center; padding:0 16px; gap:10px;
+}
+.sic-b-logo {
+  width:35px; height:35px; border-radius:50%;
+  background:rgba(255,255,255,0.18); border:1.5px solid rgba(240,191,85,0.7);
+  display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;
+}
+.sic-b-logo img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.sic-b-hname { font-family:'Playfair Display',serif; font-size:10.5px; font-weight:700; color:#fff8e8; letter-spacing:1px; line-height:1.4; }
+.sic-b-hsub  { font-size:6.5px; color:#f1cf7a; letter-spacing:1.4px; }
+.sic-b-dots  { display:grid; grid-template-columns:repeat(4,5px); gap:3px; margin-left:auto; }
+.sic-b-dot   { width:5px; height:5px; border-radius:50%; background:rgba(240,191,85,0.45); }
+.sic-b-gold-line { position:absolute; top:54px; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent 0%,#c9a84c 25%,#f0c45e 50%,#c9a84c 75%,transparent 100%); z-index:6; }
+.sic-b-deco-tl { position:absolute; top:54px; left:0; width:92px; height:92px; background:linear-gradient(135deg,#f0c45e 0%,#d4a535 50%,#b07a10 100%); border-bottom-right-radius:100%; opacity:.92; }
+.sic-b-deco-br { position:absolute; bottom:28px; right:0; width:76px; height:76px; background:linear-gradient(315deg,#f0c45e 0%,#d4a535 50%,#b07a10 100%); border-top-left-radius:100%; opacity:.9; }
+.sic-b-inner {
+  position:absolute; top:56px; left:0; right:0; bottom:28px;
+  display:flex; flex-direction:column; align-items:center;
+  padding:4px 14px 2px; overflow:hidden; z-index:5; gap:3px;
+}
+.sic-b-tc-block { flex:1 1 auto; min-height:0; overflow:hidden; width:100%; display:flex; flex-direction:column; align-items:center; padding-bottom:2px; }
+.sic-b-tc-title { font-family:'Playfair Display',serif; font-size:16px; font-weight:800; color:#1e2c7a; letter-spacing:1.5px; text-align:center; margin-bottom:3px; flex-shrink:0; white-space:nowrap; }
+.sic-b-tc-line  { width:52px; height:2px; background:linear-gradient(90deg,#c69423 0%,#f0c45e 100%); margin:0 auto 7px; border-radius:2px; flex-shrink:0; }
+.sic-b-tc-text  { font-family:'Playfair Display',serif; font-size:7.5px; color:#353a56; line-height:1.55; text-align:center; margin-bottom:3px; overflow:hidden; width:100%; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; }
+.sic-b-contact-row  { flex-shrink:0; display:flex; justify-content:center; gap:12px; width:100%; padding:1px 0; }
+.sic-b-contact-item { display:flex; align-items:center; gap:4px; min-width:0; overflow:hidden; }
+.sic-b-contact-icon { width:12px; height:12px; background:linear-gradient(135deg,#24327f 0%,#3d4eb5 100%); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.sic-b-contact-txt  { font-family:'Playfair Display',serif; font-size:7px; color:#2f3346; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sic-b-barcode { flex-shrink:0; display:flex; flex-direction:column; align-items:center; width:100%; max-width:170px; overflow:hidden; padding:1px 0; }
+.sic-b-barcode svg { width:100% !important; max-width:170px; height:22px !important; }
+.sic-b-barcode-num  { display:none; }
+.sic-b-gold-footer-line { position:absolute; bottom:28px; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent 0%,#c9a84c 25%,#f0c45e 50%,#c9a84c 75%,transparent 100%); }
+.sic-b-footer { position:absolute; bottom:0; left:0; right:0; height:28px; background:linear-gradient(135deg,#1f2a73 0%,#2a3990 100%); display:flex; align-items:center; justify-content:center; border-top:1px solid rgba(240,191,85,0.35); }
+.sic-b-ftxt   { font-family:'Playfair Display',serif; font-size:7px; color:#f7df9e; letter-spacing:1.5px; font-weight:600; }
+
+/* Grid wrapper */
+.sic-grid      { display:grid; grid-template-columns:repeat(auto-fill,minmax(400px,1fr)); gap:30px; }
+.sic-pair-wrap { display:flex; flex-direction:column; align-items:flex-start; gap:8px; }
+.sic-pair-label { font-size:.68rem; color:var(--text-muted); font-weight:700; letter-spacing:.04em; }
+.sic-btn-row   { display:flex; gap:6px; }

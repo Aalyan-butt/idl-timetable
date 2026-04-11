@@ -288,6 +288,7 @@ if ($method === 'POST') {
         $marker = $_SESSION['user_id'] ?? null;
         if (!in_array($status, ['present','absent','late','leave','pending'])) $status = 'present';
         $info = parseAttendanceBarcode($db, $code);
+        if (!$info) jsonResponse(['error' => 'Unknown barcode: ' . $code], 404);
         if ($info['person_type'] === 'staff') {
             $stmt = $db->prepare(
                 "INSERT INTO staff_attendance (teacher_id, date, status, notes, marked_by)
@@ -307,7 +308,8 @@ if ($method === 'POST') {
             $stmt->bind_param('iisssi', $id, $class_id, $date, $status, $notes, $marker);
         }
         $stmt->execute();
-        $info['already_marked'] = $stmt->affected_rows === 0;
+        // affected_rows: 1=new insert, 2=duplicate updated, 0=no change
+        $info['already_marked'] = $stmt->affected_rows >= 2;
         jsonResponse(array_merge($info, ['status_marked' => $status, 'date' => $date]));
     }
 

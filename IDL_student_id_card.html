@@ -1,0 +1,367 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,700&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Montserrat',sans-serif;
+  background:#f3f4f8;
+  color:#1f2433;
+}
+.stage{
+  padding:28px 16px 40px;
+  display:flex;
+  flex-direction:column;
+  gap:34px;
+  align-items:center;
+}
+.card-label{
+  font-size:10px;font-weight:700;letter-spacing:3px;
+  color:#6e6a78;text-transform:uppercase;text-align:center;margin-bottom:12px;
+}
+.card{
+  width:380px;height:230px;border-radius:16px;position:relative;
+  overflow:hidden;border:1px solid rgba(40,53,147,0.18);
+  box-shadow:0 16px 34px rgba(25,34,89,0.16);
+}
+
+/* ===== FRONT ===== */
+.front{ background:linear-gradient(180deg,#fcfbf7 0%,#f5f2e9 100%); }
+
+.f-header{
+  position:absolute;top:0;left:0;right:0;height:70px;
+  background:linear-gradient(135deg,#202c7a 0%,#2f3fa7 55%,#3949b8 100%);
+}
+.f-hcontent{
+  position:absolute;top:0;left:0;right:0;height:70px;
+  display:flex;align-items:center;padding:0 16px;gap:10px;z-index:2;
+}
+.f-logo-circle{
+  width:46px;height:46px;border-radius:50%;
+  background:rgba(255,255,255,0.18);border:1.7px solid rgba(240,191,85,0.7);
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;flex-shrink:0;box-shadow:0 4px 10px rgba(0,0,0,0.15);
+}
+.f-logo-circle img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.f-org-name{font-size:9px;font-weight:700;color:#fff8e8;letter-spacing:1.3px;line-height:1.45;}
+.f-org-sub{font-size:7px;color:#f1cf7a;letter-spacing:2px;margin-top:1px;}
+
+.f-gold-line{position:absolute;top:68px;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,#c9a84c 25%,#f0c45e 50%,#c9a84c 75%,transparent 100%);z-index:5;}
+.f-gold-footer-line{position:absolute;bottom:28px;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,#c9a84c 25%,#f0c45e 50%,#c9a84c 75%,transparent 100%);z-index:3;}
+
+.f-dots{position:absolute;top:9px;right:13px;display:grid;grid-template-columns:repeat(4,6px);gap:5px;z-index:4;}
+.f-dot{width:6px;height:6px;border-radius:50%;background:rgba(240,191,85,0.55);}
+
+.f-student-ribbon{
+  position:absolute;top:70px;left:0;width:68px;height:14px;
+  background:linear-gradient(135deg,#c08b18 0%,#f0c45e 60%,#d4a535 100%);
+  display:flex;align-items:center;justify-content:center;z-index:4;
+  clip-path:polygon(0 0,100% 0,92% 100%,0 100%);
+}
+.f-student-ribbon span{font-size:6px;font-weight:800;color:#1a2060;letter-spacing:1.5px;text-transform:uppercase;padding-left:4px;}
+
+/* Photo */
+.f-photo{
+  position:absolute;top:34px;right:14px;width:66px;height:62px;
+  border-radius:8px;
+  background:linear-gradient(180deg,#f7f3e6 0%,#ede4c8 100%);
+  border:2.5px solid #ffffff;
+  box-shadow:0 8px 18px rgba(18,25,72,0.18);
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;z-index:3;
+}
+.f-photo-lbl{font-size:8px;color:#2a377f;font-weight:700;letter-spacing:1px;}
+
+/* Principal block */
+.f-principal{
+  position:absolute;
+  top:102px;right:6px;
+  width:88px;
+  display:flex;flex-direction:column;align-items:center;
+  z-index:3;
+}
+.f-sig-line{
+  width:72px;height:24px;
+  border-bottom:1.4px solid #2a3990;
+  display:flex;align-items:flex-end;justify-content:center;
+  padding-bottom:1px;overflow:hidden;
+}
+.f-principal-lbl{
+  font-size:6.5px;font-weight:700;color:#2a3990;
+  letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;
+}
+
+/* Barcode under principal */
+.f-right-barcode{
+  position:absolute;
+  top:158px;right:8px;
+  width:88px;
+  display:flex;flex-direction:column;align-items:center;
+  gap:2px;
+  z-index:3;
+}
+.f-right-barcode-num{
+  font-size:5px;color:#4d5266;letter-spacing:0.8px;font-weight:600;
+}
+
+/* Left body */
+.f-body{
+  position:absolute;top:88px;left:14px;right:102px;bottom:32px;
+}
+.f-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:19px;font-weight:700;color:#24327f;
+  line-height:1;margin-bottom:3px;
+}
+.f-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:3px 8px;
+}
+.f-field{display:flex;flex-direction:column;}
+.f-flbl{font-size:6px;color:#7a7685;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;}
+.f-fval{font-size:7.2px;color:#22263a;font-weight:600;line-height:1.35;}
+
+.f-footer{
+  position:absolute;bottom:0;left:0;right:0;height:28px;
+  background:linear-gradient(135deg,#1f2a73 0%,#2a3990 100%);
+  display:flex;align-items:center;padding:0 10px;justify-content:space-between;
+  border-top:1px solid rgba(240,191,85,0.35);
+}
+.f-ftxt{font-size:6.4px;color:#f9e6b0;font-weight:500;letter-spacing:0.3px;}
+
+/* ===== BACK ===== */
+.back{ background:linear-gradient(180deg,#fcfbf7 0%,#f6f2e7 100%); }
+
+.b-header{
+  position:absolute;top:0;left:0;right:0;height:54px;
+  background:linear-gradient(135deg,#202c7a 0%,#2f3fa7 55%,#3949b8 100%);
+  display:flex;align-items:center;padding:0 16px;gap:10px;
+}
+.b-logo-circle{
+  width:35px;height:35px;border-radius:50%;
+  background:rgba(255,255,255,0.18);border:1.5px solid rgba(240,191,85,0.7);
+  display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;
+}
+.b-logo-circle img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.b-hname{font-family:'Playfair Display',serif;font-size:10.5px;font-weight:700;color:#fff8e8;letter-spacing:1px;line-height:1.4;}
+.b-hsub{font-size:6.5px;color:#f1cf7a;letter-spacing:2px;margin-top:1px;}
+.b-dots{position:absolute;top:9px;right:13px;display:grid;grid-template-columns:repeat(4,6px);gap:5px;z-index:4;}
+.b-dot{width:6px;height:6px;border-radius:50%;background:rgba(240,191,85,0.45);}
+
+.b-gold-line{position:absolute;top:54px;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,#c9a84c 25%,#f0c45e 50%,#c9a84c 75%,transparent 100%);z-index:6;}
+.b-gold-divider{width:70px;height:2px;background:linear-gradient(90deg,#c69423 0%,#f0c45e 50%,#c69423 100%);margin:0 auto 8px;border-radius:2px;}
+.b-gold-footer-line{position:absolute;bottom:28px;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,#c9a84c 25%,#f0c45e 50%,#c9a84c 75%,transparent 100%);}
+
+.b-content{position:absolute;top:64px;left:16px;right:16px;bottom:88px;}
+.b-tc-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;color:#1e2c7a;letter-spacing:1.5px;text-align:center;margin-bottom:4px;}
+.b-tc-text{font-family:'Playfair Display',serif;font-size:8px;color:#353a56;line-height:1.65;text-align:center;margin-bottom:4px;}
+
+.b-contact-absolute{position:absolute;bottom:58px;left:0;right:0;display:flex;justify-content:center;gap:14px;}
+.b-contact-item{display:flex;align-items:center;gap:4px;}
+.b-contact-icon{width:12px;height:12px;background:linear-gradient(135deg,#24327f 0%,#3d4eb5 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.b-contact-txt{font-family:'Playfair Display',serif;font-size:7.8px;color:#2f3346;font-weight:600;}
+
+.b-barcode-bottom{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:1px;white-space:nowrap;}
+.b-footer{position:absolute;bottom:0;left:0;right:0;height:28px;background:linear-gradient(135deg,#1f2a73 0%,#2a3990 100%);display:flex;align-items:center;justify-content:center;border-top:1px solid rgba(240,191,85,0.35);}
+.b-ftxt{font-family:'Playfair Display',serif;font-size:7px;color:#f7df9e;letter-spacing:1.5px;font-weight:600;}
+</style>
+
+<div class="stage">
+
+<!-- ===== FRONT ===== -->
+<div>
+  <div class="card-label">Front — Student Identity Card</div>
+  <div class="card front">
+    <div class="f-header"></div>
+    <div class="f-dots">
+      <div class="f-dot"></div><div class="f-dot"></div><div class="f-dot"></div><div class="f-dot"></div>
+      <div class="f-dot"></div><div class="f-dot"></div><div class="f-dot"></div><div class="f-dot"></div>
+      <div class="f-dot"></div><div class="f-dot"></div><div class="f-dot"></div><div class="f-dot"></div>
+    </div>
+    <div class="f-hcontent">
+      <div class="f-logo-circle">
+        <img src="/mnt/user-data/uploads/1775830873508_idl-logo.jpeg" alt="IDL"
+          onerror="this.style.display='none';this.parentNode.innerHTML='<span style=\'font-size:8px;font-weight:700;color:#c9a84c;\'>IDL</span>'"/>
+      </div>
+      <div>
+        <div class="f-org-name">INSTITUTE OF DYNAMIC LEARNING</div>
+        <div class="f-org-sub">STUDENT IDENTITY CARD</div>
+      </div>
+    </div>
+    <div class="f-gold-line"></div>
+    <div class="f-student-ribbon"><span>STUDENT</span></div>
+
+    <!-- Photo -->
+    <div class="f-photo"><span class="f-photo-lbl">PHOTO</span></div>
+
+    <!-- Principal: signature + label below photo -->
+    <div class="f-principal">
+      <div class="f-sig-line">
+        <svg width="68" height="24" viewBox="0 0 68 24" fill="none">
+          <path d="M4 18 C9 7,15 5,20 11 C24 16,22 19,27 15 C31 11,33 7,38 9 C43 11,41 17,46 14 C50 11,52 8,57 10 C60 12,62 15,64 13" stroke="#1a2565" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 20 C24 19,44 20,56 19" stroke="#1a2565" stroke-width="0.9" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="f-principal-lbl">PRINCIPAL</div>
+    </div>
+
+    <!-- Barcode below principal -->
+    <div class="f-right-barcode">
+      <svg width="80" height="22" viewBox="0 0 80 22">
+        <rect x="0"  y="0" width="1.5" height="22" fill="#0d1b6e"/>
+        <rect x="3"  y="0" width="1"   height="22" fill="#0d1b6e"/>
+        <rect x="5.5" y="0" width="2"  height="22" fill="#0d1b6e"/>
+        <rect x="9"  y="0" width="1"   height="22" fill="#0d1b6e"/>
+        <rect x="11.5" y="0" width="1.5" height="22" fill="#0d1b6e"/>
+        <rect x="14.5" y="0" width="1" height="22" fill="#0d1b6e"/>
+        <rect x="17" y="0" width="2.5" height="22" fill="#0d1b6e"/>
+        <rect x="21" y="0" width="1"   height="22" fill="#0d1b6e"/>
+        <rect x="23.5" y="0" width="1.5" height="22" fill="#0d1b6e"/>
+        <rect x="26.5" y="0" width="1" height="22" fill="#0d1b6e"/>
+        <rect x="29" y="0" width="2"   height="22" fill="#0d1b6e"/>
+        <rect x="32.5" y="0" width="1" height="22" fill="#0d1b6e"/>
+        <rect x="35" y="0" width="1.5" height="22" fill="#0d1b6e"/>
+        <rect x="38" y="0" width="2.5" height="22" fill="#0d1b6e"/>
+        <rect x="42" y="0" width="1"   height="22" fill="#0d1b6e"/>
+        <rect x="44.5" y="0" width="1.5" height="22" fill="#0d1b6e"/>
+        <rect x="47.5" y="0" width="1" height="22" fill="#0d1b6e"/>
+        <rect x="50" y="0" width="2"   height="22" fill="#0d1b6e"/>
+        <rect x="53.5" y="0" width="1" height="22" fill="#0d1b6e"/>
+        <rect x="56" y="0" width="1.5" height="22" fill="#0d1b6e"/>
+        <rect x="59" y="0" width="2.5" height="22" fill="#0d1b6e"/>
+        <rect x="63" y="0" width="1"   height="22" fill="#0d1b6e"/>
+        <rect x="65.5" y="0" width="1.5" height="22" fill="#0d1b6e"/>
+        <rect x="68.5" y="0" width="1" height="22" fill="#0d1b6e"/>
+        <rect x="70.5" y="0" width="1.5" height="22" fill="#0d1b6e"/>
+        <rect x="73.5" y="0" width="1" height="22" fill="#0d1b6e"/>
+        <rect x="76" y="0" width="2"   height="22" fill="#0d1b6e"/>
+        <rect x="79" y="0" width="1"   height="22" fill="#0d1b6e"/>
+      </svg>
+      <span class="f-right-barcode-num">IDL-2025-AB-023</span>
+    </div>
+
+    <!-- Left body -->
+    <div class="f-body">
+      <div class="f-name">Ahmad Bilal</div>
+      <div class="f-grid">
+        <!-- Row 1: Student ID | CNIC/B-Form -->
+        <div class="f-field">
+          <span class="f-flbl">Student ID</span>
+          <span class="f-fval">IDL-STD-2025-023</span>
+        </div>
+        <div class="f-field">
+          <span class="f-flbl">CNIC / B-Form</span>
+          <span class="f-fval">33102-4039566-5</span>
+        </div>
+        <!-- Row 2: Parent Name | Parent Phone -->
+        <div class="f-field">
+          <span class="f-flbl">Parent's Name</span>
+          <span class="f-fval">Mr. Bilal Hussain</span>
+        </div>
+        <div class="f-field">
+          <span class="f-flbl">Parent's Phone</span>
+          <span class="f-fval">0300-1234567</span>
+        </div>
+        <!-- Row 3: Address | Blood Group -->
+        <div class="f-field">
+          <span class="f-flbl">Address</span>
+          <span class="f-fval">H-24, Peoples Colony, Faisalabad</span>
+        </div>
+        <div class="f-field">
+          <span class="f-flbl">Blood Group</span>
+          <span class="f-fval">B+</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="f-gold-footer-line"></div>
+    <div class="f-footer">
+      <span class="f-ftxt">IDL-107-A, Peoples Colony No.1, Faisalabad</span>
+      <span class="f-ftxt">Ph: 0304-8555545</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== BACK ===== -->
+<div>
+  <div class="card-label">Back — Terms &amp; Conditions</div>
+  <div class="card back">
+    <div class="b-header">
+      <div class="b-logo-circle">
+        <img src="/mnt/user-data/uploads/1775830873508_idl-logo.jpeg" alt="IDL"
+          onerror="this.style.display='none';this.parentNode.innerHTML='<span style=\'font-size:7px;font-weight:700;color:#c9a84c;\'>IDL</span>'"/>
+      </div>
+      <div>
+        <div class="b-hname">INSTITUTE OF DYNAMIC LEARNING</div>
+        <div class="b-hsub">FAISALABAD · PAKISTAN</div>
+      </div>
+      <div class="b-dots">
+        <div class="b-dot"></div><div class="b-dot"></div><div class="b-dot"></div><div class="b-dot"></div>
+        <div class="b-dot"></div><div class="b-dot"></div><div class="b-dot"></div><div class="b-dot"></div>
+        <div class="b-dot"></div><div class="b-dot"></div><div class="b-dot"></div><div class="b-dot"></div>
+      </div>
+    </div>
+    <div class="b-gold-line"></div>
+
+    <div class="b-content">
+      <div class="b-tc-title">TERMS &amp; CONDITIONS</div>
+      <div class="b-gold-divider"></div>
+      <div class="b-tc-text">This card is property of IDL and must be carried by the student during all school hours as a means of identification.</div>
+      <div class="b-tc-text">If found, please return this card to IDL or the nearest authority. Loss must be reported immediately.</div>
+    </div>
+
+    <div class="b-contact-absolute">
+      <div class="b-contact-item">
+        <div class="b-contact-icon">
+          <svg width="7" height="7" viewBox="0 0 7 7"><circle cx="3.5" cy="3.5" r="2.5" fill="none" stroke="#c9a84c" stroke-width="0.8"/><path d="M3.5 2v1.5l1 0.8" stroke="#c9a84c" stroke-width="0.6" fill="none"/></svg>
+        </div>
+        <span class="b-contact-txt">idl.faisalabad.edu.pk</span>
+      </div>
+      <div class="b-contact-item">
+        <div class="b-contact-icon">
+          <svg width="7" height="7" viewBox="0 0 7 7"><rect x="1" y="1.5" width="5" height="4" rx="0.5" fill="none" stroke="#c9a84c" stroke-width="0.7"/><path d="M1 2l2.5 2 2.5-2" stroke="#c9a84c" stroke-width="0.6" fill="none"/></svg>
+        </div>
+        <span class="b-contact-txt">0304-8555545</span>
+      </div>
+    </div>
+
+    <div class="b-barcode-bottom">
+      <svg width="80" height="18" viewBox="0 0 80 18">
+        <rect x="0" y="0" width="1.5" height="18" fill="#0d1b6e"/>
+        <rect x="3" y="0" width="1" height="18" fill="#0d1b6e"/>
+        <rect x="5" y="0" width="2" height="18" fill="#0d1b6e"/>
+        <rect x="9" y="0" width="1" height="18" fill="#0d1b6e"/>
+        <rect x="11" y="0" width="1.5" height="18" fill="#0d1b6e"/>
+        <rect x="14" y="0" width="1" height="18" fill="#0d1b6e"/>
+        <rect x="17" y="0" width="2.5" height="18" fill="#0d1b6e"/>
+        <rect x="21" y="0" width="1" height="18" fill="#0d1b6e"/>
+        <rect x="23" y="0" width="1.5" height="18" fill="#0d1b6e"/>
+        <rect x="26" y="0" width="2" height="18" fill="#0d1b6e"/>
+        <rect x="30" y="0" width="1" height="18" fill="#0d1b6e"/>
+        <rect x="32" y="0" width="1.5" height="18" fill="#0d1b6e"/>
+        <rect x="35" y="0" width="2.5" height="18" fill="#0d1b6e"/>
+        <rect x="39" y="0" width="1" height="18" fill="#0d1b6e"/>
+        <rect x="41" y="0" width="1.5" height="18" fill="#0d1b6e"/>
+        <rect x="44" y="0" width="1" height="18" fill="#0d1b6e"/>
+        <rect x="47" y="0" width="2" height="18" fill="#0d1b6e"/>
+        <rect x="51" y="0" width="1" height="18" fill="#0d1b6e"/>
+        <rect x="53" y="0" width="1.5" height="18" fill="#0d1b6e"/>
+        <rect x="56" y="0" width="2.5" height="18" fill="#0d1b6e"/>
+        <rect x="60" y="0" width="1" height="18" fill="#0d1b6e"/>
+        <rect x="62" y="0" width="1.5" height="18" fill="#0d1b6e"/>
+        <rect x="65" y="0" width="1" height="18" fill="#0d1b6e"/>
+        <rect x="68" y="0" width="2" height="18" fill="#0d1b6e"/>
+        <rect x="72" y="0" width="1.5" height="18" fill="#0d1b6e"/>
+        <rect x="75" y="0" width="1" height="18" fill="#0d1b6e"/>
+        <rect x="78" y="0" width="2" height="18" fill="#0d1b6e"/>
+      </svg>
+      <span style="font-size:5.5px;color:#0d1b6e;font-family:'Montserrat',sans-serif;letter-spacing:1px;font-weight:700;">IDL-2025-AB-023</span>
+    </div>
+
+    <div class="b-gold-footer-line"></div>
+    <div class="b-footer">
+      <span class="b-ftxt">INSTITUTE OF DYNAMIC LEARNING · FAISALABAD</span>
+    </div>
+  </div>
+</div>
+
+</div>

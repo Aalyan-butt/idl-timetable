@@ -1,12 +1,7 @@
-<style>
-/* ── Student ID Cards ── page-specific only ────────────────── */
-/* Professional card styles live in css/components.css (.idc-*) */
-</style>
-
 <div class="page-header">
   <div>
     <div class="page-title">Student ID Cards</div>
-    <div class="page-subtitle">Professional printable barcode ID cards for all students</div>
+    <div class="page-subtitle">Blue &amp; Gold printable barcode ID cards — front &amp; back</div>
   </div>
   <button class="btn-action btn-download" onclick="window.print()" title="Print all visible cards">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -19,19 +14,103 @@
   </button>
 </div>
 
-<!-- Controls -->
-<div class="idc-controls">
-  <input type="text" id="idc-search" class="idc-search"
-         placeholder="Search by name, GR#, or code…"
-         oninput="daCardFilter()">
-  <select id="idc-class-filter" class="idc-filter" onchange="daCardFilter()" style="display:none">
-    <option value="">All Classes</option>
-  </select>
-  <span class="idc-count" id="idc-count">0 cards</span>
+<!-- ── Card Settings / Edit Panel ─────────────────────────── -->
+<div class="bgc-settings-panel sic-settings-panel" id="sic-settings-panel">
+  <div class="bgc-settings-title" id="sic-settings-toggle" onclick="sicToggleSettings()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+    Customize Card Text
+    <svg id="sic-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:auto;transition:transform .22s">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  </div>
+
+  <div class="bgc-settings-body" id="sic-settings-body">
+    <div class="bgc-settings-grid">
+      <!-- Front card -->
+      <div class="bgc-setting-row">
+        <label class="bgc-setting-lbl">Organisation Name (header)</label>
+        <input class="bgc-setting-inp" id="sics-org-name" value="INSTITUTE OF DYNAMIC LEARNING" oninput="sicApplySettings()">
+      </div>
+      <div class="bgc-setting-row">
+        <label class="bgc-setting-lbl">Card Sub-title (header)</label>
+        <input class="bgc-setting-inp" id="sics-org-sub" value="STUDENT IDENTITY CARD" oninput="sicApplySettings()">
+      </div>
+      <div class="bgc-setting-row">
+        <label class="bgc-setting-lbl">Footer — Address</label>
+        <input class="bgc-setting-inp" id="sics-footer-addr" value="IDL-107-A, Peoples Colony No.1, Faisalabad" oninput="sicApplySettings()">
+      </div>
+      <div class="bgc-setting-row">
+        <label class="bgc-setting-lbl">Footer — Phone</label>
+        <input class="bgc-setting-inp" id="sics-footer-phone" value="Ph: 0304-8555545" oninput="sicApplySettings()">
+      </div>
+      <!-- Back card -->
+      <div class="bgc-setting-row">
+        <label class="bgc-setting-lbl">Back — School Name</label>
+        <input class="bgc-setting-inp" id="sics-back-hname" value="INSTITUTE OF DYNAMIC LEARNING" oninput="sicApplySettings()">
+      </div>
+      <div class="bgc-setting-row">
+        <label class="bgc-setting-lbl">Back — Location line</label>
+        <input class="bgc-setting-inp" id="sics-back-sub" value="FAISALABAD · PAKISTAN" oninput="sicApplySettings()">
+      </div>
+      <div class="bgc-setting-row" style="grid-column:1/-1">
+        <label class="bgc-setting-lbl">Terms &amp; Conditions — Line 1</label>
+        <input class="bgc-setting-inp" id="sics-tc1" value="This card is property of IDL and must be carried by the student during all school hours as a means of identification." oninput="sicApplySettings()">
+      </div>
+      <div class="bgc-setting-row" style="grid-column:1/-1">
+        <label class="bgc-setting-lbl">Terms &amp; Conditions — Line 2</label>
+        <input class="bgc-setting-inp" id="sics-tc2" value="If found, please return this card to IDL or the nearest authority. Loss must be reported immediately." oninput="sicApplySettings()">
+      </div>
+      <div class="bgc-setting-row">
+        <label class="bgc-setting-lbl">Back — Website</label>
+        <input class="bgc-setting-inp" id="sics-website" value="idl.faisalabad.edu.pk" oninput="sicApplySettings()">
+      </div>
+      <div class="bgc-setting-row">
+        <label class="bgc-setting-lbl">Back — Contact Phone</label>
+        <input class="bgc-setting-inp" id="sics-back-phone" value="0304-8555545" oninput="sicApplySettings()">
+      </div>
+      <div class="bgc-setting-row">
+        <label class="bgc-setting-lbl">Back — Footer Text</label>
+        <input class="bgc-setting-inp" id="sics-back-footer" value="INSTITUTE OF DYNAMIC LEARNING · FAISALABAD" oninput="sicApplySettings()">
+      </div>
+      <!-- Principal Signature (shared with staff cards) -->
+      <div class="bgc-setting-row" style="grid-column:1/-1">
+        <label class="bgc-setting-lbl">Principal Signature / Stamp Image</label>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px">
+          <div id="sics-sig-preview" style="width:110px;height:36px;border:1px dashed rgba(201,168,76,0.4);border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:rgba(32,44,122,0.08)">
+            <span id="sics-sig-placeholder" style="font-size:.62rem;color:var(--text-muted)">No image</span>
+            <img id="sics-sig-img" style="max-width:100%;max-height:100%;object-fit:contain;display:none" alt="Principal Sig">
+          </div>
+          <label class="btn-action btn-edit" style="cursor:pointer;font-size:.75rem;padding:5px 12px;margin:0">
+            Upload Image
+            <input type="file" accept="image/*" style="display:none" onchange="sicUploadSig(this)">
+          </label>
+          <button class="btn-action" style="font-size:.75rem;padding:5px 12px;background:rgba(224,82,82,0.1);border-color:rgba(224,82,82,0.3);color:var(--danger)" onclick="sicClearSig()">Remove</button>
+        </div>
+        <span style="font-size:.62rem;color:var(--text-muted);margin-top:4px;display:block">PNG with transparent background recommended. Shared with Staff ID Cards.</span>
+      </div>
+    </div>
+    <div class="bgc-settings-actions">
+      <button class="btn-action btn-edit" onclick="sicSaveSettings()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save Settings
+      </button>
+      <button class="btn-action" style="background:rgba(224,82,82,0.12);border-color:rgba(224,82,82,0.28);color:var(--danger)" onclick="sicResetSettings()">Reset to Defaults</button>
+    </div>
+  </div>
 </div>
 
-<!-- Card grid -->
-<div class="da-cards-grid" id="da-cards-grid">
+<!-- ── Search / count bar ─────────────────────────────────── -->
+<div class="idc-controls sic-page-controls">
+  <input type="text" id="sic-search" class="idc-search"
+         placeholder="Search by name, GR#, class, or code…"
+         oninput="sicCardFilter()">
+  <span class="idc-count" id="sic-count">0 cards</span>
+</div>
+
+<!-- ── Card grid ─────────────────────────────────────────── -->
+<div class="sic-grid" id="sic-cards-grid">
   <div class="da-cards-loading">
     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor"
          stroke-width="1.5" style="display:block;margin:0 auto 10px;opacity:.3">

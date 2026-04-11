@@ -901,7 +901,73 @@ function initDigitalAttendancePage() {
 }
 
 function initStaffIdCardsPage()   { bgcInitPage(); }
-function initStudentIdCardsPage() { daLoadCards('student'); }
+function initStudentIdCardsPage() { sicInitPage(); }
+
+// =============================================================
+//  SHARED — Principal Signature (used by both BGC + SIC)
+// =============================================================
+const PRINCIPAL_SIG_LS = 'idl_principal_sig';
+
+function principalSigGet() {
+  return localStorage.getItem(PRINCIPAL_SIG_LS) || '';
+}
+
+function principalSigBuildHtml(sigData, wrapCls, imgStyle) {
+  if (!sigData) return '';
+  return `<img src="${sigData}" style="${imgStyle || 'max-width:100%;max-height:100%;object-fit:contain;display:block'}" alt="Principal Sig">`;
+}
+
+function bgcUpdateSigPreview(data, imgId, phId) {
+  const img = document.getElementById(imgId);
+  const ph  = document.getElementById(phId);
+  if (!img || !ph) return;
+  if (data) { img.src = data; img.style.display = 'block'; ph.style.display = 'none'; }
+  else       { img.style.display = 'none'; ph.style.display = ''; }
+}
+
+function bgcUploadSig(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const data = e.target.result;
+    localStorage.setItem(PRINCIPAL_SIG_LS, data);
+    bgcUpdateSigPreview(data, 'bgcs-sig-img', 'bgcs-sig-placeholder');
+    bgcRenderCards(_bgcData);
+    toast('Signature uploaded', 'success');
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function bgcClearSig() {
+  localStorage.removeItem(PRINCIPAL_SIG_LS);
+  bgcUpdateSigPreview('', 'bgcs-sig-img', 'bgcs-sig-placeholder');
+  bgcRenderCards(_bgcData);
+  toast('Signature removed', 'info');
+}
+
+function sicUploadSig(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const data = e.target.result;
+    localStorage.setItem(PRINCIPAL_SIG_LS, data);
+    bgcUpdateSigPreview(data, 'sics-sig-img', 'sics-sig-placeholder');
+    sicRenderCards(_sicData);
+    toast('Signature uploaded', 'success');
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function sicClearSig() {
+  localStorage.removeItem(PRINCIPAL_SIG_LS);
+  bgcUpdateSigPreview('', 'sics-sig-img', 'sics-sig-placeholder');
+  sicRenderCards(_sicData);
+  toast('Signature removed', 'info');
+}
 
 // =============================================================
 //  BLUE-GOLD STAFF ID CARDS  (BGC)
@@ -945,6 +1011,7 @@ function bgcLoadSettingsToForm() {
   set('bgcs-website',     s.website);
   set('bgcs-back-phone',  s.backPhone);
   set('bgcs-back-footer', s.backFooter);
+  bgcUpdateSigPreview(principalSigGet(), 'bgcs-sig-img', 'bgcs-sig-placeholder');
 }
 
 function bgcReadSettingsFromForm() {
@@ -1083,7 +1150,7 @@ function bgcRenderCards(people) {
       <div class="bgc-f-field"><span class="bgc-f-flbl">Joined</span><span class="bgc-f-fval">${escapeHtml(joined)}</span></div>
       <div class="bgc-f-field"><span class="bgc-f-flbl">NIC No.</span><span class="bgc-f-fval">${escapeHtml(p.nic || '—')}</span></div>
       <div class="bgc-f-field"><span class="bgc-f-flbl">Blood Group</span><span class="bgc-f-fval">${escapeHtml(p.blood || '—')}</span></div>
-      ${p.address ? `<div class="bgc-f-field" style="grid-column:1/-1"><span class="bgc-f-flbl">Address</span><span class="bgc-f-fval">${escapeHtml(p.address)}</span></div>` : ''}
+      <div class="bgc-f-field" style="grid-column:1/-1"><span class="bgc-f-flbl">Address</span><span class="bgc-f-fval">${escapeHtml(p.address || '—')}</span></div>
     `;
 
     return `
@@ -1112,6 +1179,13 @@ function bgcRenderCards(people) {
         <div class="bgc-f-gold-line"></div>
         <!-- Photo -->
         <div class="bgc-f-photo">${photoHtml}</div>
+        <!-- Principal signature -->
+        <div class="bgc-f-principal">
+          <div class="bgc-f-sig-area">
+            ${principalSigBuildHtml(principalSigGet(), '', 'max-width:100%;max-height:100%;object-fit:contain;display:block')}
+          </div>
+          <div class="bgc-f-principal-lbl">PRINCIPAL</div>
+        </div>
         <!-- Body -->
         <div class="bgc-f-body">
           <div class="bgc-f-name">${escapeHtml(p.name)}</div>
@@ -1120,8 +1194,7 @@ function bgcRenderCards(people) {
         </div>
         <!-- Barcode -->
         <div class="bgc-f-barcode">
-          <div id="${barcodeId}">${bgcBarcodeSVG(p.code, 72, 28)}</div>
-          <span class="bgc-f-barcode-num">${escapeHtml(p.code)}</span>
+          <div id="${barcodeId}">${bgcBarcodeSVG(p.code, 86, 28)}</div>
         </div>
         <div class="bgc-f-gold-footer-line"></div>
         <div class="bgc-f-footer">
@@ -1172,8 +1245,7 @@ function bgcRenderCards(people) {
             </div>
           </div>
           <div class="bgc-b-barcode">
-            <div id="${barcodeIdB}">${bgcBarcodeSVG(p.code, 150, 16)}</div>
-            <span class="bgc-b-barcode-num">${escapeHtml(p.code)}</span>
+            <div id="${barcodeIdB}">${bgcBarcodeSVG(p.code, 165, 22)}</div>
           </div>
         </div>
         <div class="bgc-b-gold-footer-line"></div>
@@ -1207,8 +1279,8 @@ function bgcRenderCards(people) {
         if (!svgEl) { svgEl = document.createElementNS('http://www.w3.org/2000/svg','svg'); container.innerHTML = ''; container.appendChild(svgEl); }
         try {
           JsBarcode(svgEl, p.code, {
-            format: 'CODE128', width: i === 0 ? 0.45 : 0.4,
-            height: i === 0 ? 22 : 16,
+            format: 'CODE128', width: i === 0 ? 0.46 : 0.42,
+            height: i === 0 ? 28 : 22,
             displayValue: false, margin: 1,
             background: 'transparent', lineColor: '#0d1b6e',
           });
@@ -1252,6 +1324,10 @@ function bgcPrintSingle(idx) {
     .f-os{font-size:7px;color:#f1cf7a;letter-spacing:2px;margin-top:1px}
     .f-gl{position:absolute;top:68px;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,#c9a84c 25%,#f0c45e 50%,#c9a84c 75%,transparent 100%);z-index:5}
     .f-ph{position:absolute;top:38px;right:18px;width:70px;height:76px;border-radius:8px;background:linear-gradient(180deg,#f7f3e6 0%,#ede4c8 100%);border:2.5px solid #fff;box-shadow:0 8px 18px rgba(18,25,72,.18);display:flex;align-items:center;justify-content:center;overflow:hidden;position:absolute;z-index:3}
+    .f-pri{position:absolute;top:118px;right:6px;width:88px;display:flex;flex-direction:column;align-items:center;z-index:3}
+    .f-pri-sa{width:76px;height:24px;border-bottom:1.4px solid #2a3990;display:flex;align-items:center;justify-content:center;overflow:hidden;padding-bottom:2px}
+    .f-pri-sa img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+    .f-pri-lbl{font-size:6.5px;font-weight:700;color:#2a3990;letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;font-family:'Montserrat',sans-serif}
     .f-body{position:absolute;top:84px;left:14px;right:102px;bottom:32px;overflow:hidden;display:flex;flex-direction:column}
     .f-name{font-family:'Cormorant Garamond',serif;font-size:21px;font-weight:700;color:#24327f;line-height:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0}
     .f-role{font-size:8px;color:#b88619;font-weight:700;letter-spacing:2px;margin:4px 0 8px;text-transform:uppercase;overflow:hidden;white-space:nowrap;flex-shrink:0}
@@ -1260,9 +1336,8 @@ function bgcPrintSingle(idx) {
     .f-flbl{font-size:6.5px;color:#7a7685;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
     .f-fval{font-size:7.6px;color:#22263a;font-weight:600;line-height:1.45;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
     /* Front barcode — fixed 90px column, SVG clamped */
-    .f-bc{position:absolute;bottom:34px;right:8px;width:90px;overflow:hidden;display:flex;flex-direction:column;align-items:center;gap:2px}
-    .f-bc svg{width:90px !important;max-width:90px;height:22px !important}
-    .f-bcn{font-size:5px;color:#4d5266;letter-spacing:.5px;font-weight:600;font-family:'Montserrat',sans-serif;white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis}
+    .f-bc{position:absolute;bottom:30px;right:6px;width:94px;overflow:hidden;display:flex;flex-direction:column;align-items:center}
+    .f-bc svg{width:94px !important;max-width:94px;height:28px !important}
     .f-gfl{position:absolute;bottom:28px;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,#c9a84c 25%,#f0c45e 50%,#c9a84c 75%,transparent 100%);z-index:3}
     .f-footer{position:absolute;bottom:0;left:0;right:0;height:28px;background:linear-gradient(135deg,#1f2a73 0%,#2a3990 100%);display:flex;align-items:center;padding:0 10px;justify-content:space-between;border-top:1px solid rgba(240,191,85,.35)}
     .f-ft{font-size:6.4px;color:#f9e6b0;font-weight:500;letter-spacing:.3px}
@@ -1288,9 +1363,8 @@ function bgcPrintSingle(idx) {
     .b-ci{display:flex;align-items:center;gap:4px;min-width:0;overflow:hidden}
     .b-cic{width:12px;height:12px;background:linear-gradient(135deg,#24327f 0%,#3d4eb5 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
     .b-ct{font-family:'Playfair Display',serif;font-size:7px;color:#2f3346;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .b-bc{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:1px;width:100%;max-width:150px;overflow:hidden;padding:1px 0}
-    .b-bc svg{width:100% !important;max-width:150px;height:16px !important}
-    .b-bcn{font-size:5px;color:#0d1b6e;font-family:'Montserrat',sans-serif;letter-spacing:.5px;font-weight:700;white-space:nowrap}
+    .b-bc{flex-shrink:0;display:flex;flex-direction:column;align-items:center;width:100%;max-width:170px;overflow:hidden;padding:1px 0}
+    .b-bc svg{width:100% !important;max-width:170px;height:22px !important}
     .b-gfl{position:absolute;bottom:28px;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,#c9a84c 25%,#f0c45e 50%,#c9a84c 75%,transparent 100%)}
     .b-footer{position:absolute;bottom:0;left:0;right:0;height:28px;background:linear-gradient(135deg,#1f2a73 0%,#2a3990 100%);display:flex;align-items:center;justify-content:center;border-top:1px solid rgba(240,191,85,.35)}
     .b-ft{font-family:'Playfair Display',serif;font-size:7px;color:#f7df9e;letter-spacing:1.5px;font-weight:600}
@@ -1306,6 +1380,10 @@ function bgcPrintSingle(idx) {
     </div>
     <div class="f-gl"></div>
     <div class="f-ph" style="position:absolute;">${photoHtml}</div>
+    <div class="f-pri">
+      <div class="f-pri-sa">${principalSigBuildHtml(principalSigGet(),'','max-width:100%;max-height:100%;object-fit:contain;display:block')}</div>
+      <div class="f-pri-lbl">PRINCIPAL</div>
+    </div>
     <div class="f-body">
       <div class="f-name">${escapeHtml(p.name)}</div>
       <div class="f-role">${escapeHtml(p.role)}</div>
@@ -1314,10 +1392,10 @@ function bgcPrintSingle(idx) {
         <div class="f-field"><span class="f-flbl">Joined</span><span class="f-fval">${escapeHtml(joined)}</span></div>
         <div class="f-field"><span class="f-flbl">NIC No.</span><span class="f-fval">${escapeHtml(p.nic||'—')}</span></div>
         <div class="f-field"><span class="f-flbl">Blood Group</span><span class="f-fval">${escapeHtml(p.blood||'—')}</span></div>
-        ${p.address?`<div class="f-field" style="grid-column:1/-1"><span class="f-flbl">Address</span><span class="f-fval">${escapeHtml(p.address)}</span></div>`:''}
+        <div class="f-field" style="grid-column:1/-1"><span class="f-flbl">Address</span><span class="f-fval">${escapeHtml(p.address||'—')}</span></div>
       </div>
     </div>
-    <div class="f-bc"><svg id="bc-front"></svg><span class="f-bcn">${escapeHtml(p.code)}</span></div>
+    <div class="f-bc"><svg id="bc-front"></svg></div>
     <div class="f-gfl"></div>
     <div class="f-footer"><span class="f-ft">${escapeHtml(s.footerAddr)}</span><span class="f-ft">${escapeHtml(s.footerPhone)}</span></div>
   </div>
@@ -1341,7 +1419,7 @@ function bgcPrintSingle(idx) {
         <div class="b-ci"><div class="b-cic"><svg width="7" height="7" viewBox="0 0 7 7"><circle cx="3.5" cy="3.5" r="2.5" fill="none" stroke="#c9a84c" stroke-width=".8"/><path d="M3.5 2v1.5l1 .8" stroke="#c9a84c" stroke-width=".6" fill="none"/></svg></div><span class="b-ct">${escapeHtml(s.website)}</span></div>
         <div class="b-ci"><div class="b-cic"><svg width="7" height="7" viewBox="0 0 7 7"><rect x="1" y="1.5" width="5" height="4" rx=".5" fill="none" stroke="#c9a84c" stroke-width=".7"/><path d="M1 2l2.5 2 2.5-2" stroke="#c9a84c" stroke-width=".6" fill="none"/></svg></div><span class="b-ct">${escapeHtml(s.backPhone)}</span></div>
       </div>
-      <div class="b-bc"><svg id="bc-back"></svg><span class="b-bcn">${escapeHtml(p.code)}</span></div>
+      <div class="b-bc"><svg id="bc-back"></svg></div>
     </div>
     <div class="b-gfl"></div>
     <div class="b-footer"><span class="b-ft">${escapeHtml(s.backFooter)}</span></div>
@@ -1350,8 +1428,443 @@ function bgcPrintSingle(idx) {
   <script>
     window.onload = function() {
       if (typeof JsBarcode !== 'undefined') {
-        JsBarcode('#bc-front', '${p.code}', {format:'CODE128',width:0.45,height:22,displayValue:false,margin:1,background:'transparent',lineColor:'#0d1b6e'});
-        JsBarcode('#bc-back',  '${p.code}', {format:'CODE128',width:0.40,height:16,displayValue:false,margin:1,background:'transparent',lineColor:'#0d1b6e'});
+        JsBarcode('#bc-front', '${p.code}', {format:'CODE128',width:0.46,height:28,displayValue:false,margin:1,background:'transparent',lineColor:'#0d1b6e'});
+        JsBarcode('#bc-back',  '${p.code}', {format:'CODE128',width:0.42,height:22,displayValue:false,margin:1,background:'transparent',lineColor:'#0d1b6e'});
+      }
+      setTimeout(() => window.print(), 800);
+    };
+  <\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+// =============================================================
+//  BLUE-GOLD STUDENT ID CARDS  (SIC)
+// =============================================================
+const SIC_DEFAULTS = {
+  orgName:     'INSTITUTE OF DYNAMIC LEARNING',
+  orgSub:      'STUDENT IDENTITY CARD',
+  footerAddr:  'IDL-107-A, Peoples Colony No.1, Faisalabad',
+  footerPhone: 'Ph: 0304-8555545',
+  backHname:   'INSTITUTE OF DYNAMIC LEARNING',
+  backSub:     'FAISALABAD · PAKISTAN',
+  tc1:         'This card is property of IDL and must be carried by the student during all school hours as a means of identification.',
+  tc2:         'If found, please return this card to IDL or the nearest authority. Loss must be reported immediately.',
+  website:     'idl.faisalabad.edu.pk',
+  backPhone:   '0304-8555545',
+  backFooter:  'INSTITUTE OF DYNAMIC LEARNING · FAISALABAD',
+};
+const SIC_LS_KEY = 'sic_card_settings';
+
+let _sicAll  = [];
+let _sicData = [];
+
+function sicGetSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SIC_LS_KEY) || '{}');
+    return Object.assign({}, SIC_DEFAULTS, saved);
+  } catch(e) { return { ...SIC_DEFAULTS }; }
+}
+
+function sicLoadSettingsToForm() {
+  const s = sicGetSettings();
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+  set('sics-org-name',    s.orgName);
+  set('sics-org-sub',     s.orgSub);
+  set('sics-footer-addr', s.footerAddr);
+  set('sics-footer-phone',s.footerPhone);
+  set('sics-back-hname',  s.backHname);
+  set('sics-back-sub',    s.backSub);
+  set('sics-tc1',         s.tc1);
+  set('sics-tc2',         s.tc2);
+  set('sics-website',     s.website);
+  set('sics-back-phone',  s.backPhone);
+  set('sics-back-footer', s.backFooter);
+  bgcUpdateSigPreview(principalSigGet(), 'sics-sig-img', 'sics-sig-placeholder');
+}
+
+function sicReadSettingsFromForm() {
+  const v = id => document.getElementById(id)?.value?.trim() || '';
+  return {
+    orgName:    v('sics-org-name')    || SIC_DEFAULTS.orgName,
+    orgSub:     v('sics-org-sub')     || SIC_DEFAULTS.orgSub,
+    footerAddr: v('sics-footer-addr') || SIC_DEFAULTS.footerAddr,
+    footerPhone:v('sics-footer-phone')|| SIC_DEFAULTS.footerPhone,
+    backHname:  v('sics-back-hname')  || SIC_DEFAULTS.backHname,
+    backSub:    v('sics-back-sub')    || SIC_DEFAULTS.backSub,
+    tc1:        v('sics-tc1')         || SIC_DEFAULTS.tc1,
+    tc2:        v('sics-tc2')         || SIC_DEFAULTS.tc2,
+    website:    v('sics-website')     || SIC_DEFAULTS.website,
+    backPhone:  v('sics-back-phone')  || SIC_DEFAULTS.backPhone,
+    backFooter: v('sics-back-footer') || SIC_DEFAULTS.backFooter,
+  };
+}
+
+function sicSaveSettings() {
+  const s = sicReadSettingsFromForm();
+  try { localStorage.setItem(SIC_LS_KEY, JSON.stringify(s)); } catch(e) {}
+  sicRenderCards(_sicData);
+  toast('Card settings saved', 'success');
+}
+
+function sicResetSettings() {
+  try { localStorage.removeItem(SIC_LS_KEY); } catch(e) {}
+  sicLoadSettingsToForm();
+  sicRenderCards(_sicData);
+  toast('Reset to defaults', 'success');
+}
+
+function sicApplySettings() { sicRenderCards(_sicData); }
+
+function sicToggleSettings() {
+  const body  = document.getElementById('sic-settings-body');
+  const title = document.getElementById('sic-settings-toggle');
+  const caret = document.getElementById('sic-caret');
+  if (!body) return;
+  const open = body.classList.toggle('open');
+  if (title) title.classList.toggle('open', open);
+  if (caret) caret.style.transform = open ? 'rotate(180deg)' : '';
+}
+
+function sicCardFilter() {
+  const q = (document.getElementById('sic-search')?.value || '').toLowerCase().trim();
+  _sicData = q
+    ? _sicAll.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        p.code.toLowerCase().includes(q) ||
+        (p.gr||'').toLowerCase().includes(q) ||
+        (p.className||'').toLowerCase().includes(q))
+    : [..._sicAll];
+  sicRenderCards(_sicData);
+}
+
+async function sicInitPage() {
+  sicLoadSettingsToForm();
+  const grid = document.getElementById('sic-cards-grid');
+  if (grid) grid.innerHTML = `<div class="da-cards-loading"><div style="opacity:.4">Loading student cards…</div></div>`;
+  const srch = document.getElementById('sic-search');
+  if (srch) srch.value = '';
+  try {
+    const raw = await api('api/students.php');
+    _sicAll = (raw || []).map(s => ({
+      id:        s.id,
+      type:      'student',
+      code:      `IDL-STUDENT-${s.id}`,
+      name:      s.student_name || s.name || '—',
+      gr:        s.gr_number || '',
+      cnic:      s.b_form || '',
+      fatherName:s.father_name || '',
+      fatherPhone:s.father_phone || s.guardian_phone || '',
+      blood:     s.blood_group || '',
+      address:   s.father_address || s.student_address || s.address || '',
+      className: s.class_name || '',
+      photo:     s.photo || '',
+    }));
+    _sicData = [..._sicAll];
+    sicRenderCards(_sicData);
+  } catch(e) {
+    if (grid) grid.innerHTML = `<div class="da-cards-loading" style="color:var(--danger)">Error loading students: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function sicRenderCards(people) {
+  const grid    = document.getElementById('sic-cards-grid');
+  const countEl = document.getElementById('sic-count');
+  if (!grid) return;
+
+  if (countEl) countEl.textContent = `${people.length} card${people.length !== 1 ? 's' : ''}`;
+  if (!people.length) { grid.innerHTML = '<div class="da-cards-loading">No student cards found</div>'; return; }
+
+  const s       = sicReadSettingsFromForm();
+  const logoSrc = 'assets/logo.jpeg';
+  const sigData = principalSigGet();
+  const sigHtml = sigData
+    ? `<img src="${sigData}" style="max-width:100%;max-height:100%;object-fit:contain;display:block" alt="">`
+    : '';
+
+  grid.innerHTML = people.map((p, idx) => {
+    const initial    = (p.name || '?')[0].toUpperCase();
+    const barcodeId  = `sic-bc-${p.id}`;
+    const barcodeIdB = `sic-bc-back-${p.id}`;
+
+    const photoHtml = p.photo
+      ? `<img src="${escapeHtml(p.photo)}" alt=""
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+         <span class="sic-f-photo-init" style="display:none;align-items:center;justify-content:center;position:absolute;inset:0">${initial}</span>`
+      : `<span class="sic-f-photo-init">${initial}</span>`;
+
+    return `
+    <div class="sic-pair-wrap">
+      <div class="sic-pair-label">Front — ${escapeHtml(p.name)}</div>
+
+      <!-- ═══ STUDENT FRONT ═══ -->
+      <div class="sic-card sic-front">
+        <div class="sic-f-header"></div>
+        <div class="sic-f-dots">${'<div class="sic-f-dot"></div>'.repeat(12)}</div>
+        <div class="sic-f-hcontent">
+          <div class="sic-f-logo">
+            <img src="${logoSrc}" alt="IDL"
+                 onerror="this.style.display='none';this.parentNode.innerHTML='<span style=\\'font-size:8px;font-weight:700;color:#c9a84c;\\'>IDL</span>'"/>
+          </div>
+          <div>
+            <div class="sic-f-org-name">${escapeHtml(s.orgName)}</div>
+            <div class="sic-f-org-sub">${escapeHtml(s.orgSub)}</div>
+          </div>
+        </div>
+        <div class="sic-f-gold-line"></div>
+        <div class="sic-f-ribbon"><span>STUDENT</span></div>
+        <!-- Photo -->
+        <div class="sic-f-photo">${photoHtml}</div>
+        <!-- Principal -->
+        <div class="sic-f-principal">
+          <div class="sic-f-sig-area">${sigHtml}</div>
+          <div class="sic-f-principal-lbl">PRINCIPAL</div>
+        </div>
+        <!-- Barcode (right column, below principal) -->
+        <div class="sic-f-right-barcode">
+          <div id="${barcodeId}">${bgcBarcodeSVG(p.code, 86, 26)}</div>
+        </div>
+        <!-- Left body -->
+        <div class="sic-f-body">
+          <div class="sic-f-name">${escapeHtml(p.name)}</div>
+          <div class="sic-f-grid">
+            <div class="sic-f-field"><span class="sic-f-flbl">Student ID</span><span class="sic-f-fval">${escapeHtml(p.gr || '—')}</span></div>
+            <div class="sic-f-field"><span class="sic-f-flbl">CNIC / B-Form</span><span class="sic-f-fval">${escapeHtml(p.cnic || '—')}</span></div>
+            <div class="sic-f-field"><span class="sic-f-flbl">Parent's Name</span><span class="sic-f-fval">${escapeHtml(p.fatherName || '—')}</span></div>
+            <div class="sic-f-field"><span class="sic-f-flbl">Parent's Phone</span><span class="sic-f-fval">${escapeHtml(p.fatherPhone || '—')}</span></div>
+            <div class="sic-f-field" style="grid-column:1/-1"><span class="sic-f-flbl">Address</span><span class="sic-f-fval">${escapeHtml(p.address || '—')}</span></div>
+          </div>
+        </div>
+        <div class="sic-f-gold-footer-line"></div>
+        <div class="sic-f-footer">
+          <span class="sic-f-ftxt">${escapeHtml(s.footerAddr)}</span>
+          <span class="sic-f-ftxt">${escapeHtml(s.footerPhone)}</span>
+        </div>
+      </div>
+
+      <div class="sic-pair-label">Back — Terms &amp; Conditions</div>
+
+      <!-- ═══ STUDENT BACK ═══ -->
+      <div class="sic-card sic-back">
+        <div class="sic-b-header">
+          <div class="sic-b-logo">
+            <img src="${logoSrc}" alt="IDL"
+                 onerror="this.style.display='none';this.parentNode.innerHTML='<span style=\\'font-size:7px;font-weight:700;color:#c9a84c;\\'>IDL</span>'"/>
+          </div>
+          <div>
+            <div class="sic-b-hname">${escapeHtml(s.backHname)}</div>
+            <div class="sic-b-hsub">${escapeHtml(s.backSub)}</div>
+          </div>
+          <div class="sic-b-dots">${'<div class="sic-b-dot"></div>'.repeat(12)}</div>
+        </div>
+        <div class="sic-b-gold-line"></div>
+        <div class="sic-b-deco-tl"></div>
+        <div class="sic-b-deco-br"></div>
+        <div class="sic-b-inner">
+          <div class="sic-b-tc-block">
+            <div class="sic-b-tc-title">TERMS &amp; CONDITIONS</div>
+            <div class="sic-b-tc-line"></div>
+            <div class="sic-b-tc-text">${escapeHtml(s.tc1)}</div>
+            <div class="sic-b-tc-text">${escapeHtml(s.tc2)}</div>
+          </div>
+          <div class="sic-b-contact-row">
+            <div class="sic-b-contact-item">
+              <div class="sic-b-contact-icon">
+                <svg width="7" height="7" viewBox="0 0 7 7"><circle cx="3.5" cy="3.5" r="2.5" fill="none" stroke="#c9a84c" stroke-width=".8"/><path d="M3.5 2v1.5l1 .8" stroke="#c9a84c" stroke-width=".6" fill="none"/></svg>
+              </div>
+              <span class="sic-b-contact-txt">${escapeHtml(s.website)}</span>
+            </div>
+            <div class="sic-b-contact-item">
+              <div class="sic-b-contact-icon">
+                <svg width="7" height="7" viewBox="0 0 7 7"><rect x="1" y="1.5" width="5" height="4" rx=".5" fill="none" stroke="#c9a84c" stroke-width=".7"/><path d="M1 2l2.5 2 2.5-2" stroke="#c9a84c" stroke-width=".6" fill="none"/></svg>
+              </div>
+              <span class="sic-b-contact-txt">${escapeHtml(s.backPhone)}</span>
+            </div>
+          </div>
+          <div class="sic-b-barcode">
+            <div id="${barcodeIdB}">${bgcBarcodeSVG(p.code, 165, 22)}</div>
+          </div>
+        </div>
+        <div class="sic-b-gold-footer-line"></div>
+        <div class="sic-b-footer">
+          <span class="sic-b-ftxt">${escapeHtml(s.backFooter)}</span>
+        </div>
+      </div>
+
+      <div class="sic-btn-row">
+        <button class="btn-action btn-download" onclick="sicPrintSingle(${idx})" title="Print this card">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               style="vertical-align:middle;margin-right:4px">
+            <polyline points="6 9 6 2 18 2 18 9"/>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+            <rect x="6" y="14" width="12" height="8"/>
+          </svg>Print / PDF
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Upgrade fallback SVG barcodes with JsBarcode if available
+  if (typeof JsBarcode !== 'undefined') {
+    people.forEach(p => {
+      [`sic-bc-${p.id}`, `sic-bc-back-${p.id}`].forEach((containerId, i) => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        let svgEl = container.querySelector('svg');
+        if (!svgEl) { svgEl = document.createElementNS('http://www.w3.org/2000/svg','svg'); container.innerHTML = ''; container.appendChild(svgEl); }
+        try {
+          JsBarcode(svgEl, p.code, {
+            format: 'CODE128', width: i === 0 ? 0.44 : 0.42,
+            height: i === 0 ? 26 : 22,
+            displayValue: false, margin: 1,
+            background: 'transparent', lineColor: '#0d1b6e',
+          });
+        } catch(e) { /* keep fallback */ }
+      });
+    });
+  }
+}
+
+function sicPrintSingle(idx) {
+  const p = _sicData[idx];
+  if (!p) return;
+  const s       = sicReadSettingsFromForm();
+  const initial = (p.name || '?')[0].toUpperCase();
+  const sigData = principalSigGet();
+  const logoSrc = 'assets/logo.jpeg';
+
+  const photoHtml = p.photo
+    ? `<img src="${p.photo}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:6px"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+       <span style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:18px;font-weight:800;color:#24327f">${initial}</span>`
+    : `<span style="display:flex;align-items:center;justify-content:center;position:absolute;inset:0;font-family:'Playfair Display',serif;font-size:18px;font-weight:800;color:#24327f">${initial}</span>`;
+
+  const win = window.open('','_blank');
+  if (!win) { toast('Popup blocked — use Print All instead', 'warn'); return; }
+
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Student ID Card — ${p.name}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Montserrat',sans-serif;background:#f3f4f8;padding:24px;display:flex;gap:24px;flex-wrap:wrap}
+    .card{width:380px;height:230px;border-radius:16px;position:relative;overflow:hidden;border:1px solid rgba(40,53,147,.18);box-shadow:0 16px 34px rgba(25,34,89,.16);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    /* FRONT */
+    .front{background:linear-gradient(180deg,#fcfbf7 0%,#f5f2e9 100%)}
+    .f-hd{position:absolute;top:0;left:0;right:0;height:70px;background:linear-gradient(135deg,#202c7a 0%,#2f3fa7 55%,#3949b8 100%)}
+    .f-hc{position:absolute;top:0;left:0;right:0;height:70px;display:flex;align-items:center;padding:0 16px;gap:10px;z-index:2}
+    .f-lc{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.18);border:1.7px solid rgba(240,191,85,.7);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+    .f-lc img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .f-on{font-size:9px;font-weight:700;color:#fff8e8;letter-spacing:1.3px;line-height:1.45}
+    .f-os{font-size:7px;color:#f1cf7a;letter-spacing:2px;margin-top:1px}
+    .f-gl{position:absolute;top:68px;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,#c9a84c 25%,#f0c45e 50%,#c9a84c 75%,transparent 100%);z-index:5}
+    .f-rib{position:absolute;top:70px;left:0;width:68px;height:14px;background:linear-gradient(135deg,#c08b18 0%,#f0c45e 60%,#d4a535 100%);display:flex;align-items:center;justify-content:center;z-index:4;clip-path:polygon(0 0,100% 0,92% 100%,0 100%)}
+    .f-rib span{font-size:6px;font-weight:800;color:#1a2060;letter-spacing:1.5px;text-transform:uppercase;padding-left:4px}
+    .f-ph{position:absolute;top:34px;right:14px;width:66px;height:62px;border-radius:8px;background:linear-gradient(180deg,#f7f3e6 0%,#ede4c8 100%);border:2.5px solid #fff;box-shadow:0 8px 18px rgba(18,25,72,.18);display:flex;align-items:center;justify-content:center;overflow:hidden;z-index:3}
+    .f-pri{position:absolute;top:102px;right:6px;width:88px;display:flex;flex-direction:column;align-items:center;z-index:3}
+    .f-pri-sa{width:76px;height:26px;border-bottom:1.4px solid #2a3990;display:flex;align-items:center;justify-content:center;overflow:hidden;padding-bottom:2px}
+    .f-pri-sa img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+    .f-pri-lbl{font-size:6.5px;font-weight:700;color:#2a3990;letter-spacing:1.5px;text-transform:uppercase;margin-top:3px}
+    .f-rbc{position:absolute;top:162px;right:6px;width:94px;display:flex;flex-direction:column;align-items:center;z-index:3;overflow:hidden}
+    .f-rbc svg{width:94px !important;max-width:94px;height:26px !important}
+    .f-body{position:absolute;top:88px;left:14px;right:102px;bottom:32px;overflow:hidden;display:flex;flex-direction:column}
+    .f-name{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:700;color:#24327f;line-height:1;margin-bottom:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0}
+    .f-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 8px;overflow:hidden}
+    .f-field{display:flex;flex-direction:column;min-width:0;overflow:hidden}
+    .f-flbl{font-size:6px;color:#7a7685;font-weight:700;letter-spacing:.8px;text-transform:uppercase;white-space:nowrap}
+    .f-fval{font-size:7.2px;color:#22263a;font-weight:600;line-height:1.35;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+    .f-gfl{position:absolute;bottom:28px;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,#c9a84c 25%,#f0c45e 50%,#c9a84c 75%,transparent 100%);z-index:3}
+    .f-footer{position:absolute;bottom:0;left:0;right:0;height:28px;background:linear-gradient(135deg,#1f2a73 0%,#2a3990 100%);display:flex;align-items:center;padding:0 10px;justify-content:space-between;border-top:1px solid rgba(240,191,85,.35)}
+    .f-ft{font-size:6.4px;color:#f9e6b0;font-weight:500;letter-spacing:.3px}
+    /* BACK */
+    .back{background:linear-gradient(180deg,#fcfbf7 0%,#f6f2e7 100%)}
+    .b-hd{position:absolute;top:0;left:0;right:0;height:54px;background:linear-gradient(135deg,#202c7a 0%,#2f3fa7 55%,#3949b8 100%);display:flex;align-items:center;padding:0 16px;gap:10px}
+    .b-lc{width:35px;height:35px;border-radius:50%;background:rgba(255,255,255,.18);border:1.5px solid rgba(240,191,85,.7);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+    .b-lc img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .b-hn{font-family:'Playfair Display',serif;font-size:10.5px;font-weight:700;color:#fff8e8;letter-spacing:1px;line-height:1.4}
+    .b-hs{font-size:6.5px;color:#f1cf7a;letter-spacing:1.4px}
+    .b-dots{display:grid;grid-template-columns:repeat(4,5px);gap:3px;margin-left:auto}
+    .b-dot{width:5px;height:5px;border-radius:50%;background:rgba(240,191,85,.45)}
+    .b-gl{position:absolute;top:54px;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,#c9a84c 25%,#f0c45e 50%,#c9a84c 75%,transparent 100%);z-index:6}
+    .b-dtl{position:absolute;top:54px;left:0;width:92px;height:92px;background:linear-gradient(135deg,#f0c45e 0%,#d4a535 50%,#b07a10 100%);border-bottom-right-radius:100%;opacity:.92}
+    .b-dbr{position:absolute;bottom:28px;right:0;width:76px;height:76px;background:linear-gradient(315deg,#f0c45e 0%,#d4a535 50%,#b07a10 100%);border-top-left-radius:100%;opacity:.9}
+    .b-inner{position:absolute;top:56px;left:0;right:0;bottom:28px;display:flex;flex-direction:column;align-items:center;padding:4px 14px 2px;overflow:hidden;z-index:5;gap:3px}
+    .b-tc-blk{flex:1 1 auto;min-height:0;overflow:hidden;width:100%;display:flex;flex-direction:column;align-items:center;padding-bottom:2px}
+    .b-tct{font-family:'Playfair Display',serif;font-size:16px;font-weight:800;color:#1e2c7a;letter-spacing:1.5px;text-align:center;margin-bottom:3px;flex-shrink:0;white-space:nowrap}
+    .b-tcl{width:52px;height:2px;background:linear-gradient(90deg,#c69423 0%,#f0c45e 100%);margin:0 auto 7px;border-radius:2px;flex-shrink:0}
+    .b-tct2{font-family:'Playfair Display',serif;font-size:7.5px;color:#353a56;line-height:1.55;text-align:center;margin-bottom:3px;overflow:hidden;width:100%;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3}
+    .b-cr{flex-shrink:0;display:flex;justify-content:center;gap:12px;width:100%;padding:1px 0}
+    .b-ci{display:flex;align-items:center;gap:4px;min-width:0;overflow:hidden}
+    .b-cic{width:12px;height:12px;background:linear-gradient(135deg,#24327f 0%,#3d4eb5 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .b-ct{font-family:'Playfair Display',serif;font-size:7px;color:#2f3346;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .b-bc{flex-shrink:0;display:flex;flex-direction:column;align-items:center;width:100%;max-width:170px;overflow:hidden;padding:1px 0}
+    .b-bc svg{width:100% !important;max-width:170px;height:22px !important}
+    .b-gfl{position:absolute;bottom:28px;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,#c9a84c 25%,#f0c45e 50%,#c9a84c 75%,transparent 100%)}
+    .b-footer{position:absolute;bottom:0;left:0;right:0;height:28px;background:linear-gradient(135deg,#1f2a73 0%,#2a3990 100%);display:flex;align-items:center;justify-content:center;border-top:1px solid rgba(240,191,85,.35)}
+    .b-ft{font-family:'Playfair Display',serif;font-size:7px;color:#f7df9e;letter-spacing:1.5px;font-weight:600}
+    @media print{body{padding:8mm}@page{margin:8mm}}
+  </style></head><body>
+
+  <!-- FRONT -->
+  <div class="card front">
+    <div class="f-hd"></div>
+    <div class="f-hc">
+      <div class="f-lc"><img src="${logoSrc}" alt="IDL" onerror="this.style.display='none';this.parentNode.innerHTML='<span style=\\'font-size:8px;font-weight:700;color:#c9a84c\\'>IDL</span>'"/></div>
+      <div><div class="f-on">${escapeHtml(s.orgName)}</div><div class="f-os">${escapeHtml(s.orgSub)}</div></div>
+    </div>
+    <div class="f-gl"></div>
+    <div class="f-rib"><span>STUDENT</span></div>
+    <div class="f-ph" style="position:absolute;">${photoHtml}</div>
+    <div class="f-pri">
+      <div class="f-pri-sa">${sigData ? `<img src="${sigData}" style="max-width:100%;max-height:100%;object-fit:contain;display:block" alt="">` : ''}</div>
+      <div class="f-pri-lbl">PRINCIPAL</div>
+    </div>
+    <div class="f-rbc"><svg id="sbc-front"></svg></div>
+    <div class="f-body">
+      <div class="f-name">${escapeHtml(p.name)}</div>
+      <div class="f-grid">
+        <div class="f-field"><span class="f-flbl">Student ID</span><span class="f-fval">${escapeHtml(p.gr||'—')}</span></div>
+        <div class="f-field"><span class="f-flbl">CNIC / B-Form</span><span class="f-fval">${escapeHtml(p.cnic||'—')}</span></div>
+        <div class="f-field"><span class="f-flbl">Parent's Name</span><span class="f-fval">${escapeHtml(p.fatherName||'—')}</span></div>
+        <div class="f-field"><span class="f-flbl">Parent's Phone</span><span class="f-fval">${escapeHtml(p.fatherPhone||'—')}</span></div>
+        <div class="f-field" style="grid-column:1/-1"><span class="f-flbl">Address</span><span class="f-fval">${escapeHtml(p.address||'—')}</span></div>
+      </div>
+    </div>
+    <div class="f-gfl"></div>
+    <div class="f-footer"><span class="f-ft">${escapeHtml(s.footerAddr)}</span><span class="f-ft">${escapeHtml(s.footerPhone)}</span></div>
+  </div>
+
+  <!-- BACK -->
+  <div class="card back">
+    <div class="b-hd">
+      <div class="b-lc"><img src="${logoSrc}" alt="IDL" onerror="this.style.display='none';this.parentNode.innerHTML='<span style=\\'font-size:7px;font-weight:700;color:#c9a84c\\'>IDL</span>'"/></div>
+      <div><div class="b-hn">${escapeHtml(s.backHname)}</div><div class="b-hs">${escapeHtml(s.backSub)}</div></div>
+      <div class="b-dots">${'<div class="b-dot"></div>'.repeat(12)}</div>
+    </div>
+    <div class="b-gl"></div><div class="b-dtl"></div><div class="b-dbr"></div>
+    <div class="b-inner">
+      <div class="b-tc-blk">
+        <div class="b-tct">TERMS &amp; CONDITIONS</div>
+        <div class="b-tcl"></div>
+        <div class="b-tct2">${escapeHtml(s.tc1)}</div>
+        <div class="b-tct2">${escapeHtml(s.tc2)}</div>
+      </div>
+      <div class="b-cr">
+        <div class="b-ci"><div class="b-cic"><svg width="7" height="7" viewBox="0 0 7 7"><circle cx="3.5" cy="3.5" r="2.5" fill="none" stroke="#c9a84c" stroke-width=".8"/><path d="M3.5 2v1.5l1 .8" stroke="#c9a84c" stroke-width=".6" fill="none"/></svg></div><span class="b-ct">${escapeHtml(s.website)}</span></div>
+        <div class="b-ci"><div class="b-cic"><svg width="7" height="7" viewBox="0 0 7 7"><rect x="1" y="1.5" width="5" height="4" rx=".5" fill="none" stroke="#c9a84c" stroke-width=".7"/><path d="M1 2l2.5 2 2.5-2" stroke="#c9a84c" stroke-width=".6" fill="none"/></svg></div><span class="b-ct">${escapeHtml(s.backPhone)}</span></div>
+      </div>
+      <div class="b-bc"><svg id="sbc-back"></svg></div>
+    </div>
+    <div class="b-gfl"></div>
+    <div class="b-footer"><span class="b-ft">${escapeHtml(s.backFooter)}</span></div>
+  </div>
+
+  <script>
+    window.onload = function() {
+      if (typeof JsBarcode !== 'undefined') {
+        JsBarcode('#sbc-front', '${p.code}', {format:'CODE128',width:0.44,height:26,displayValue:false,margin:1,background:'transparent',lineColor:'#0d1b6e'});
+        JsBarcode('#sbc-back',  '${p.code}', {format:'CODE128',width:0.42,height:22,displayValue:false,margin:1,background:'transparent',lineColor:'#0d1b6e'});
       }
       setTimeout(() => window.print(), 800);
     };
