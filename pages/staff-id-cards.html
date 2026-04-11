@@ -1,22 +1,106 @@
-<style>
-/* ── Staff ID Cards ── page-specific only ──────────────────── */
-/* All da-id-card* and da-cards-* styles live in css/components.css */
-</style>
-
 <div class="page-header">
   <div>
     <div class="page-title">Staff ID Cards</div>
-    <div class="page-subtitle">Printable QR ID cards for all staff members</div>
+    <div class="page-subtitle">Blue &amp; Gold printable barcode ID cards — front &amp; back</div>
   </div>
-  <button class="btn-action btn-download" onclick="window.print()">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+  <button class="btn-action btn-download" onclick="window.print()" title="Print all visible cards">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         style="vertical-align:middle;margin-right:5px">
+      <polyline points="6 9 6 2 18 2 18 9"/>
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+      <rect x="6" y="14" width="12" height="8"/>
+    </svg>
     Print All Cards
   </button>
 </div>
 
-<div class="da-cards-grid" id="da-cards-grid">
+<!-- ── Card Settings / Edit Panel ─────────────────────────── -->
+<div class="bgc-settings-panel" id="bgc-settings-panel">
+  <div class="bgc-settings-title" id="bgc-settings-toggle" onclick="bgcToggleSettings()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+    Customize Card Text
+    <svg id="bgc-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:auto;transition:transform .22s">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  </div>
+
+  <div class="bgc-settings-body" id="bgc-settings-body">
+    <div class="bgc-settings-grid">
+      <!-- Front card -->
+      <div class="bgc-setting-row">
+        <label class="bgc-setting-lbl">Organisation Name (header)</label>
+        <input class="bgc-setting-inp" id="bgcs-org-name" value="INSTITUTE OF DYNAMIC LEARNING" oninput="bgcApplySettings()">
+      </div>
+      <div class="bgc-setting-row">
+        <label class="bgc-setting-lbl">Card Sub-title (header)</label>
+        <input class="bgc-setting-inp" id="bgcs-org-sub" value="STAFF IDENTITY CARD" oninput="bgcApplySettings()">
+      </div>
+      <div class="bgc-setting-row">
+        <label class="bgc-setting-lbl">Footer — Address</label>
+        <input class="bgc-setting-inp" id="bgcs-footer-addr" value="IDL-107-A, Peoples Colony No.1, Faisalabad" oninput="bgcApplySettings()">
+      </div>
+      <div class="bgc-setting-row">
+        <label class="bgc-setting-lbl">Footer — Phone</label>
+        <input class="bgc-setting-inp" id="bgcs-footer-phone" value="Ph: 0304-8555545" oninput="bgcApplySettings()">
+      </div>
+      <!-- Back card -->
+      <div class="bgc-setting-row">
+        <label class="bgc-setting-lbl">Back — School Name</label>
+        <input class="bgc-setting-inp" id="bgcs-back-hname" value="INSTITUTE OF DYNAMIC LEARNING" oninput="bgcApplySettings()">
+      </div>
+      <div class="bgc-setting-row">
+        <label class="bgc-setting-lbl">Back — Location line</label>
+        <input class="bgc-setting-inp" id="bgcs-back-sub" value="FAISALABAD · PAKISTAN" oninput="bgcApplySettings()">
+      </div>
+      <div class="bgc-setting-row" style="grid-column:1/-1">
+        <label class="bgc-setting-lbl">Terms &amp; Conditions — Line 1</label>
+        <input class="bgc-setting-inp" id="bgcs-tc1" value="This card is property of IDL and must be carried during working hours as a means of identification." oninput="bgcApplySettings()">
+      </div>
+      <div class="bgc-setting-row" style="grid-column:1/-1">
+        <label class="bgc-setting-lbl">Terms &amp; Conditions — Line 2</label>
+        <input class="bgc-setting-inp" id="bgcs-tc2" value="Return this card immediately upon resignation, termination, or expiry of contract." oninput="bgcApplySettings()">
+      </div>
+      <div class="bgc-setting-row">
+        <label class="bgc-setting-lbl">Back — Website</label>
+        <input class="bgc-setting-inp" id="bgcs-website" value="idl.faisalabad.edu.pk" oninput="bgcApplySettings()">
+      </div>
+      <div class="bgc-setting-row">
+        <label class="bgc-setting-lbl">Back — Contact Phone</label>
+        <input class="bgc-setting-inp" id="bgcs-back-phone" value="0304-8555545" oninput="bgcApplySettings()">
+      </div>
+      <div class="bgc-setting-row">
+        <label class="bgc-setting-lbl">Back — Footer Text</label>
+        <input class="bgc-setting-inp" id="bgcs-back-footer" value="INSTITUTE OF DYNAMIC LEARNING · FAISALABAD" oninput="bgcApplySettings()">
+      </div>
+    </div>
+    <div class="bgc-settings-actions">
+      <button class="btn-action btn-edit" onclick="bgcSaveSettings()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save Settings
+      </button>
+      <button class="btn-action" style="background:rgba(224,82,82,0.12);border-color:rgba(224,82,82,0.28);color:var(--danger)" onclick="bgcResetSettings()">Reset to Defaults</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Search / count bar ─────────────────────────────────── -->
+<div class="idc-controls bgc-page-controls">
+  <input type="text" id="idc-search" class="idc-search"
+         placeholder="Search by name, designation, or code…"
+         oninput="bgcCardFilter()">
+  <span class="idc-count" id="idc-count">0 cards</span>
+</div>
+
+<!-- ── Card grid ─────────────────────────────────────────── -->
+<div class="bgc-grid" id="da-cards-grid">
   <div class="da-cards-loading">
-    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 10px;opacity:.3"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="1.5" style="display:block;margin:0 auto 10px;opacity:.3">
+      <rect x="2" y="7" width="20" height="14" rx="2"/>
+      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+    </svg>
     Loading staff cards…
   </div>
 </div>

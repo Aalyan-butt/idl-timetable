@@ -465,7 +465,7 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.5); cur
 .ao-filter-card {
   background:linear-gradient(135deg,#0d0d22 60%,#0a0a1a);
   border:1px solid rgba(201,168,76,0.25); border-radius:var(--radius);
-  padding:18px 20px; margin-bottom:18px; position:relative; overflow:hidden;
+  padding:18px 20px; margin-bottom:18px; position:relative; z-index:10;
 }
 .ao-filter-card::before {
   content:''; position:absolute; top:0; left:0; right:0; height:2px;
@@ -550,47 +550,453 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.5); cur
 .ao-ds-l { color:#ffd54f; border-color:rgba(255,193,7,.5);  background:rgba(255,193,7,.1); }
 .ao-ds-v { color:#80cbc4; border-color:rgba(0,137,123,.5);  background:rgba(0,137,123,.1); }
 
-/* ── ID Cards (staff-id-cards.html + student-id-cards.html) ─── */
-.da-cards-ctrl {
-  display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom:18px;
+/* ── ID Cards — Landscape White+Blue Template ───────────────── */
+/* Controls bar */
+.idc-controls {
+  display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:20px;
 }
+.idc-search {
+  flex:1; min-width:180px; background:#14142a;
+  border:1px solid rgba(201,168,76,0.22); border-radius:8px;
+  color:var(--text); padding:7px 12px; font-size:0.84rem; outline:none;
+  font-family:inherit;
+}
+.idc-search:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(201,168,76,0.09); }
+.idc-search::placeholder { color:var(--text-muted); }
+.idc-filter {
+  background:#1c1c2c; border:1px solid rgba(201,168,76,0.28); border-radius:8px;
+  color:#f0ead0; padding:7px 10px; font-size:0.82rem; outline:none; cursor:pointer;
+}
+.idc-filter:focus { border-color:var(--accent); }
+.idc-count {
+  font-size:0.72rem; color:var(--text-muted); padding:6px 12px;
+  background:rgba(201,168,76,0.07); border:1px solid rgba(201,168,76,0.15);
+  border-radius:20px; font-family:'Cinzel',serif; white-space:nowrap;
+}
+/* Card grid — wider columns for landscape cards */
 .da-cards-grid {
-  display:grid; grid-template-columns:repeat(auto-fill,minmax(178px,1fr)); gap:14px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(340px, 1fr));
+  gap:28px;
 }
-.da-id-card {
-  background:linear-gradient(155deg,#0d0d22,#080818);
-  border:1px solid rgba(201,168,76,0.28); border-radius:12px;
-  padding:16px 14px 14px; text-align:center; position:relative; overflow:hidden;
-  break-inside:avoid;
+.da-cards-loading { text-align:center; padding:48px; color:var(--text-muted); }
+/* Card wrapper */
+.idc-wrap { display:flex; flex-direction:column; align-items:center; gap:10px; }
+
+/* ── Landscape card shell (credit-card ratio 85.6×54mm) ──── */
+.idc-card {
+  width:340px; height:214px;
+  border-radius:12px; overflow:hidden; position:relative;
+  display:flex; flex-direction:row;
+  background:#fff;
+  box-shadow:0 6px 28px rgba(0,0,0,0.35);
+  break-inside:avoid; transition:box-shadow .2s;
 }
-.da-id-card::before {
-  content:''; position:absolute; top:0; left:0; right:0; height:2px;
-  background:linear-gradient(90deg,transparent,#c9a84c,transparent);
+.idc-card:hover { box-shadow:0 10px 38px rgba(0,0,0,0.45); }
+
+/* ── Left blue panel ─────────────────────────────────────── */
+.idc-left {
+  width:130px; flex-shrink:0;
+  background:linear-gradient(160deg,#2d3aad 0%, #3b4ec4 60%, #1e2d9e 100%);
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; padding:16px 12px; position:relative;
 }
-.da-id-card-logo {
-  font-family:'Cinzel',serif; font-size:0.6rem; font-weight:700;
-  letter-spacing:.15em; color:var(--accent); text-transform:uppercase;
-  margin-bottom:10px; opacity:.7;
+/* decorative dots top-right like reference */
+.idc-left::after {
+  content:'';
+  position:absolute; top:10px; right:10px;
+  width:30px; height:18px;
+  background-image:radial-gradient(circle, rgba(255,255,255,0.35) 1.5px, transparent 1.5px);
+  background-size:6px 6px;
 }
-.da-id-card-qr {
-  display:flex; align-items:center; justify-content:center; margin-bottom:8px;
+/* diagonal accent slash */
+.idc-left::before {
+  content:'';
+  position:absolute; top:0; right:0;
+  width:0; height:0;
+  border-style:solid;
+  border-width:0 28px 60px 0;
+  border-color:transparent rgba(255,255,255,0.08) transparent transparent;
 }
-.da-id-card-qr canvas { border-radius:6px; background:#fff; padding:4px; }
-.da-id-card-name {
-  font-family:'Cinzel',serif; font-size:0.72rem; font-weight:700;
-  color:var(--accent2); margin-bottom:3px; line-height:1.3;
-  word-break:break-word;
+/* Photo circle */
+.idc-photo {
+  width:78px; height:78px; border-radius:50%; flex-shrink:0;
+  border:3px solid rgba(255,255,255,0.7); overflow:hidden;
+  background:rgba(255,255,255,0.15);
+  display:flex; align-items:center; justify-content:center;
+  margin-bottom:10px;
 }
-.da-id-card-sub { font-size:0.63rem; color:var(--text-muted); margin-bottom:8px; }
-.da-id-card-code {
-  font-size:0.58rem; color:rgba(201,168,76,0.5); letter-spacing:.06em;
-  font-family:monospace; border-top:1px solid rgba(201,168,76,0.12);
-  padding-top:6px; margin-top:2px;
+.idc-photo img { width:100%; height:100%; object-fit:cover; display:block; }
+.idc-photo-init {
+  font-family:'Cinzel',serif; font-size:1.6rem; font-weight:700; color:#fff;
 }
-.da-cards-loading { text-align:center; padding:40px; color:var(--text-muted); }
+/* Card type label on left panel */
+.idc-card-label {
+  font-size:0.48rem; color:rgba(255,255,255,0.85); letter-spacing:.14em;
+  text-transform:uppercase; font-weight:700; text-align:center; line-height:1.4;
+}
+
+/* ── Right white panel ───────────────────────────────────── */
+.idc-right {
+  flex:1; display:flex; flex-direction:column;
+  padding:14px 14px 10px; background:#fff; position:relative;
+  overflow:hidden;
+}
+/* green-yellow accent arc top-right (like reference image) */
+.idc-right::after {
+  content:'';
+  position:absolute; top:-30px; right:-30px;
+  width:90px; height:90px; border-radius:50%;
+  border:18px solid #8fc43a;
+  opacity:.18;
+  pointer-events:none;
+}
+/* blue diagonal corner bottom-left */
+.idc-right::before {
+  content:'';
+  position:absolute; bottom:0; left:0;
+  width:0; height:0;
+  border-style:solid;
+  border-width:40px 0 0 40px;
+  border-color:transparent transparent transparent #2d3aad;
+  opacity:.12;
+  pointer-events:none;
+}
+/* School / card heading row */
+.idc-school-name {
+  font-family:'Cinzel',serif; font-size:0.62rem; font-weight:700;
+  color:#2d3aad; letter-spacing:.06em; text-transform:uppercase;
+  margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.idc-name {
+  font-size:0.88rem; font-weight:800; color:#1a1a2e;
+  margin-bottom:2px; line-height:1.2; word-break:break-word;
+}
+.idc-role {
+  font-size:0.62rem; color:#2d3aad; letter-spacing:.05em; text-transform:uppercase;
+  margin-bottom:9px; font-weight:600;
+}
+/* Info rows */
+.idc-info { display:flex; flex-direction:column; gap:3px; margin-bottom:8px; }
+.idc-info-row { display:flex; font-size:0.6rem; line-height:1.5; }
+.idc-info-lbl {
+  color:#888; min-width:52px; flex-shrink:0;
+  font-weight:700; letter-spacing:.04em; font-size:0.55rem; text-transform:uppercase;
+}
+.idc-info-val { color:#1a1a2e; flex:1; font-size:0.6rem; }
+/* Bottom row: issued date + QR */
+.idc-bottom-row {
+  margin-top:auto; display:flex; align-items:flex-end; justify-content:space-between;
+}
+.idc-issued {
+  font-size:0.52rem; color:#aaa; line-height:1.5;
+}
+.idc-issued strong { color:#444; }
+/* Barcode */
+.idc-qr { display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.idc-qr svg { max-width:100%; border-radius:3px; background:#fff; display:block; }
+/* Action buttons under each card */
+.idc-btn-row { display:flex; gap:6px; }
+/* legacy — no longer rendered but kept for safety */
+.idc-header,.idc-body,.idc-footer,.idc-hr,.idc-code,.idc-barcode,.idc-footer-id,
+.idc-logo-box,.idc-hdr-text { display:none; }
+
+/* ── Print ──────────────────────────────────────────────────── */
 @media print {
-  .page-header, .da-cards-ctrl, .nav-sidebar { display:none !important; }
-  .da-cards-grid { grid-template-columns:repeat(4,1fr); gap:8px; }
-  .da-id-card { border-color:#999; page-break-inside:avoid; }
-  body { background:#fff !important; }
+  .page-header,.idc-controls,.nav-sidebar,.idc-btn-row { display:none !important; }
+  .da-cards-grid { grid-template-columns:repeat(2,1fr) !important; gap:8mm !important; }
+  .idc-wrap { break-inside:avoid; }
+  .idc-card {
+    box-shadow:none !important;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  .idc-left { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  /* Blue-Gold staff card print */
+  .bgc-page-controls,.bgc-settings-panel,.bgc-btn-row { display:none !important; }
+  .bgc-grid { grid-template-columns:repeat(2,1fr) !important; gap:6mm !important; }
+  .bgc-pair-wrap { break-inside:avoid; }
+  .bgc-card { box-shadow:none !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .bgc-front,.bgc-back { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+}
+
+/* ===================================================================
+   BLUE-GOLD STAFF ID CARD — Full Template
+   Matches IDL_id_card_blue_gold.html design
+   =================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,700&display=swap');
+
+/* Settings / edit panel */
+.bgc-settings-panel {
+  background: linear-gradient(135deg,rgba(32,44,122,0.18) 0%,rgba(32,44,122,0.08) 100%);
+  border: 1px solid rgba(201,168,76,0.25);
+  border-radius: 12px; padding: 18px 22px; margin-bottom: 22px;
+}
+.bgc-settings-title {
+  font-family:'Cinzel',serif; font-size:.78rem; color:var(--accent2);
+  text-transform:uppercase; letter-spacing:2px; font-weight:700;
+  display:flex; align-items:center; gap:8px; cursor:pointer;
+  user-select:none;
+}
+.bgc-settings-title svg { flex-shrink:0; transition:transform .22s; }
+.bgc-settings-title.open svg { transform:rotate(180deg); }
+.bgc-settings-body { display:none; margin-top:14px; }
+.bgc-settings-body.open { display:block; }
+.bgc-settings-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px;
+}
+.bgc-setting-row { display:flex; flex-direction:column; gap:4px; }
+.bgc-setting-lbl {
+  font-size:.7rem; color:var(--text-muted); font-weight:700;
+  text-transform:uppercase; letter-spacing:1px;
+}
+.bgc-setting-inp {
+  background:var(--surface2); border:1px solid var(--border);
+  color:var(--text); padding:8px 10px; border-radius:6px;
+  font-size:.82rem; font-family:inherit; outline:none;
+  transition:border-color .18s;
+}
+.bgc-setting-inp:focus { border-color:var(--accent); }
+.bgc-settings-actions { display:flex; gap:8px; margin-top:14px; }
+
+/* Card grid */
+.bgc-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(390px,1fr));
+  gap:32px;
+}
+
+/* Each teacher's front+back wrapper */
+.bgc-pair-wrap { display:flex; flex-direction:column; gap:8px; }
+.bgc-pair-label {
+  font-size:.62rem; font-weight:700; letter-spacing:3px;
+  color:var(--text-muted); text-transform:uppercase; text-align:center;
+}
+.bgc-btn-row { display:flex; gap:6px; justify-content:center; }
+
+/* ── The physical card shell ── */
+.bgc-card {
+  width:380px; height:230px;
+  border-radius:16px; position:relative; overflow:hidden;
+  border:1px solid rgba(40,53,147,0.18);
+  box-shadow:0 16px 34px rgba(25,34,89,0.16);
+  font-family:'Montserrat',sans-serif;
+  flex-shrink:0;
+}
+
+/* ═══════════════  FRONT  ═══════════════ */
+.bgc-front {
+  background:linear-gradient(180deg,#fcfbf7 0%,#f5f2e9 100%);
+}
+/* Blue header band */
+.bgc-f-header {
+  position:absolute; top:0; left:0; right:0; height:70px;
+  background:linear-gradient(135deg,#202c7a 0%,#2f3fa7 55%,#3949b8 100%);
+}
+/* Header content: logo + org name */
+.bgc-f-hcontent {
+  position:absolute; top:0; left:0; right:0; height:70px;
+  display:flex; align-items:center; padding:0 16px; gap:10px; z-index:2;
+}
+.bgc-f-logo {
+  width:46px; height:46px; border-radius:50%;
+  background:rgba(255,255,255,0.18); border:1.7px solid rgba(240,191,85,0.7);
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden; flex-shrink:0; box-shadow:0 4px 10px rgba(0,0,0,0.15);
+}
+.bgc-f-logo img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.bgc-f-org-name {
+  font-size:9px; font-weight:700; color:#fff8e8; letter-spacing:1.3px; line-height:1.45;
+}
+.bgc-f-org-sub { font-size:7px; color:#f1cf7a; letter-spacing:2px; margin-top:1px; }
+/* Gold separator line */
+.bgc-f-gold-line {
+  position:absolute; top:68px; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent 0%,#c9a84c 25%,#f0c45e 50%,#c9a84c 75%,transparent 100%);
+  z-index:5;
+}
+/* Dot grid top-right */
+.bgc-f-dots {
+  position:absolute; top:9px; right:13px;
+  display:grid; grid-template-columns:repeat(4,6px); gap:5px; z-index:4;
+}
+.bgc-f-dot { width:6px; height:6px; border-radius:50%; background:rgba(240,191,85,0.55); }
+/* Photo box */
+.bgc-f-photo {
+  position:absolute; top:38px; right:18px; width:70px; height:76px;
+  border-radius:8px;
+  background:linear-gradient(180deg,#f7f3e6 0%,#ede4c8 100%);
+  border:2.5px solid #fff;
+  box-shadow:0 8px 18px rgba(18,25,72,0.18);
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden; z-index:3;
+}
+.bgc-f-photo img { width:100%; height:100%; object-fit:cover; display:block; }
+.bgc-f-photo-init {
+  font-family:'Playfair Display',serif; font-size:22px; font-weight:800;
+  color:#24327f;
+}
+/* Body text area — constrained so it never touches the right photo/barcode column */
+.bgc-f-body {
+  position:absolute; top:84px; left:14px; right:102px; bottom:32px;
+  overflow:hidden;
+  display:flex; flex-direction:column;
+}
+.bgc-f-name {
+  font-family:'Cormorant Garamond',serif; font-size:21px; font-weight:700;
+  color:#24327f; line-height:1;
+  overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+  flex-shrink:0;
+}
+.bgc-f-role {
+  font-size:8px; color:#b88619; font-weight:700; letter-spacing:2px;
+  margin:4px 0 8px; text-transform:uppercase;
+  overflow:hidden; white-space:nowrap; flex-shrink:0;
+}
+.bgc-f-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px 10px; overflow:hidden; }
+.bgc-f-field { display:flex; flex-direction:column; min-width:0; overflow:hidden; }
+.bgc-f-flbl { font-size:6.5px; color:#7a7685; font-weight:700; letter-spacing:1px; text-transform:uppercase; white-space:nowrap; }
+.bgc-f-fval { font-size:7.6px; color:#22263a; font-weight:600; line-height:1.45; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+/* Barcode column on front — fixed width, clamps JsBarcode SVG output */
+.bgc-f-barcode {
+  position:absolute; bottom:34px; right:8px;
+  width:90px; overflow:hidden;
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+}
+.bgc-f-barcode svg { width:90px !important; max-width:90px; height:22px !important; flex-shrink:0; }
+.bgc-f-barcode-num { font-size:5px; color:#4d5266; letter-spacing:.5px; font-weight:600; white-space:nowrap; max-width:90px; overflow:hidden; text-overflow:ellipsis; }
+/* Gold footer line */
+.bgc-f-gold-footer-line {
+  position:absolute; bottom:28px; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent 0%,#c9a84c 25%,#f0c45e 50%,#c9a84c 75%,transparent 100%);
+  z-index:3;
+}
+/* Footer band */
+.bgc-f-footer {
+  position:absolute; bottom:0; left:0; right:0; height:28px;
+  background:linear-gradient(135deg,#1f2a73 0%,#2a3990 100%);
+  display:flex; align-items:center; padding:0 10px;
+  justify-content:space-between;
+  border-top:1px solid rgba(240,191,85,0.35);
+}
+.bgc-f-ftxt { font-size:6.4px; color:#f9e6b0; font-weight:500; letter-spacing:.3px; }
+
+/* ═══════════════  BACK  ═══════════════ */
+.bgc-back { background:linear-gradient(180deg,#fcfbf7 0%,#f6f2e7 100%); }
+.bgc-b-header {
+  position:absolute; top:0; left:0; right:0; height:54px;
+  background:linear-gradient(135deg,#202c7a 0%,#2f3fa7 55%,#3949b8 100%);
+  display:flex; align-items:center; padding:0 16px; gap:10px;
+}
+.bgc-b-logo {
+  width:35px; height:35px; border-radius:50%;
+  background:rgba(255,255,255,0.18); border:1.5px solid rgba(240,191,85,0.7);
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden; flex-shrink:0;
+}
+.bgc-b-logo img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.bgc-b-hname {
+  font-family:'Playfair Display',serif; font-size:10.5px; font-weight:700;
+  color:#fff8e8; letter-spacing:1px; line-height:1.4;
+}
+.bgc-b-hsub { font-size:6.5px; color:#f1cf7a; letter-spacing:1.4px; }
+.bgc-b-dots {
+  display:grid; grid-template-columns:repeat(4,5px); gap:3px; margin-left:auto;
+}
+.bgc-b-dot { width:5px; height:5px; border-radius:50%; background:rgba(240,191,85,0.55); }
+.bgc-b-gold-line {
+  position:absolute; top:54px; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent 0%,#c9a84c 25%,#f0c45e 50%,#c9a84c 75%,transparent 100%);
+  z-index:6;
+}
+/* Corner gold accents */
+.bgc-b-deco-tl {
+  position:absolute; top:54px; left:0; width:92px; height:92px;
+  background:linear-gradient(135deg,#f0c45e 0%,#d4a535 50%,#b07a10 100%);
+  border-bottom-right-radius:100%; opacity:.92;
+}
+.bgc-b-deco-br {
+  position:absolute; bottom:28px; right:0; width:76px; height:76px;
+  background:linear-gradient(315deg,#f0c45e 0%,#d4a535 50%,#b07a10 100%);
+  border-top-left-radius:100%; opacity:.9;
+}
+/* ── Back card inner flex container ────────────────────────
+   Replaces the three separately-absolute-positioned sections.
+   z-index:5 keeps it above the gold corner accents.          */
+.bgc-b-inner {
+  position:absolute; top:56px; left:0; right:0; bottom:28px;
+  display:flex; flex-direction:column; align-items:center;
+  padding:4px 14px 2px;
+  overflow:hidden;
+  z-index:5;
+  gap:3px;
+}
+/* T&C block — fills remaining space, clips if text is too long */
+.bgc-b-tc-block {
+  flex:1 1 auto; min-height:0;
+  overflow:hidden;
+  width:100%;
+  display:flex; flex-direction:column; align-items:center;
+  padding-bottom:2px;
+}
+.bgc-b-tc-title {
+  font-family:'Playfair Display',serif; font-size:16px; font-weight:800;
+  color:#1e2c7a; letter-spacing:1.5px; text-align:center; margin-bottom:3px;
+  flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%;
+}
+.bgc-b-tc-line {
+  width:52px; height:2px;
+  background:linear-gradient(90deg,#c69423 0%,#f0c45e 100%);
+  margin:0 auto 7px; border-radius:2px; flex-shrink:0;
+}
+.bgc-b-tc-text {
+  font-family:'Playfair Display',serif; font-size:7.5px; color:#353a56;
+  line-height:1.55; text-align:center; margin-bottom:3px;
+  overflow:hidden; width:100%;
+  /* clamp multi-line overflow */
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3;
+}
+/* Contact row — never shrinks, always visible */
+.bgc-b-contact-row {
+  flex-shrink:0;
+  display:flex; justify-content:center; gap:12px;
+  width:100%; padding:1px 0;
+}
+.bgc-b-contact-item { display:flex; align-items:center; gap:4px; min-width:0; overflow:hidden; }
+.bgc-b-contact-icon {
+  width:12px; height:12px;
+  background:linear-gradient(135deg,#24327f 0%,#3d4eb5 100%);
+  border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.bgc-b-contact-txt {
+  font-family:'Playfair Display',serif; font-size:7px; color:#2f3346; font-weight:600;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+/* Back barcode — fixed slot, SVG clamped to container width */
+.bgc-b-barcode {
+  flex-shrink:0;
+  display:flex; flex-direction:column; align-items:center; gap:1px;
+  width:100%; max-width:160px; overflow:hidden; padding:1px 0;
+}
+.bgc-b-barcode svg { width:100% !important; max-width:150px; height:16px !important; }
+.bgc-b-barcode-num {
+  font-size:5px; color:#0d1b6e; font-family:'Montserrat',sans-serif;
+  letter-spacing:.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  max-width:150px;
+}
+/* Keep old .bgc-b-content class inert so nothing breaks */
+.bgc-b-content { display:none; }
+/* Back gold lines */
+.bgc-b-gold-footer-line {
+  position:absolute; bottom:28px; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent 0%,#c9a84c 25%,#f0c45e 50%,#c9a84c 75%,transparent 100%);
+}
+.bgc-b-footer {
+  position:absolute; bottom:0; left:0; right:0; height:28px;
+  background:linear-gradient(135deg,#1f2a73 0%,#2a3990 100%);
+  display:flex; align-items:center; justify-content:center;
+  border-top:1px solid rgba(240,191,85,0.35);
+}
+.bgc-b-ftxt {
+  font-family:'Playfair Display',serif; font-size:7px; color:#f7df9e;
+  letter-spacing:1.5px; font-weight:600;
 }

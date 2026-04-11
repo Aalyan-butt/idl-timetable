@@ -22,12 +22,12 @@ $db     = getDB();
 if ($method === 'GET') {
     $type = $_GET['type'] ?? '';
 
-    // ------ QR Lookup: validate a QR code and return person info ------
+    // ------ Barcode Lookup: validate a barcode and return person info ------
     if ($type === 'qr_lookup') {
         $code = trim($_GET['code'] ?? '');
         if (!$code) jsonResponse(['error' => 'No code provided'], 400);
-        $info = parseAttendanceQR($db, $code);
-        if (!$info) jsonResponse(['error' => 'Unknown QR code'], 404);
+        $info = parseAttendanceBarcode($db, $code);
+        if (!$info) jsonResponse(['error' => 'Unknown barcode'], 404);
         jsonResponse($info);
     }
 
@@ -130,38 +130,57 @@ if ($method === 'GET') {
         jsonResponse(['records' => $rows, 'stats' => $stats]);
     }
 
-    // ------ Student attendance for a date + class ------
+    // ------ Student attendance for a date + class (class_id=0 = all classes) ------
     if ($type === 'student') {
         $date     = $_GET['date']     ?? date('Y-m-d');
         $class_id = intval($_GET['class_id'] ?? 0);
         if (!isValidDate($date)) jsonResponse(['error' => 'Invalid date'], 400);
-        if ($class_id < 1) jsonResponse(['error' => 'class_id required'], 400);
 
-        // students in this class (class_id is on students table directly — no status filter)
-        $stmt = $db->prepare(
-            "SELECT s.id, s.student_name AS full_name, s.gr_number AS reg_number, s.photo
-             FROM students s
-             WHERE s.class_id = ?
-             ORDER BY s.student_name"
-        );
-        $stmt->bind_param('i', $class_id);
-        $stmt->execute();
         $students = [];
-        $res = $stmt->get_result();
-        while ($r = $res->fetch_assoc()) $students[] = $r;
+        if ($class_id > 0) {
+            // Single class
+            $stmt = $db->prepare(
+                "SELECT s.id, s.student_name AS full_name, s.gr_number AS reg_number, s.photo, s.class_id, '' AS class_name
+                 FROM students s
+                 WHERE s.class_id = ?
+                 ORDER BY s.student_name"
+            );
+            $stmt->bind_param('i', $class_id);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            while ($r = $res->fetch_assoc()) $students[] = $r;
 
-        // existing attendance
-        $attendance = [];
-        $stmt2 = $db->prepare("SELECT student_id, status, notes FROM student_attendance WHERE date = ? AND class_id = ?");
-        $stmt2->bind_param('si', $date, $class_id);
-        $stmt2->execute();
-        $res2 = $stmt2->get_result();
-        while ($r = $res2->fetch_assoc()) $attendance[$r['student_id']] = $r;
+            $attendance = [];
+            $stmt2 = $db->prepare("SELECT student_id, status, notes FROM student_attendance WHERE date = ? AND class_id = ?");
+            $stmt2->bind_param('si', $date, $class_id);
+            $stmt2->execute();
+            $res2 = $stmt2->get_result();
+            while ($r = $res2->fetch_assoc()) $attendance[$r['student_id']] = $r;
+        } else {
+            // All classes
+            $stmt = $db->prepare(
+                "SELECT s.id, s.student_name AS full_name, s.gr_number AS reg_number, s.photo, s.class_id,
+                        COALESCE(c.name, '—') AS class_name
+                 FROM students s
+                 LEFT JOIN classes c ON c.id = s.class_id
+                 ORDER BY c.name, s.student_name"
+            );
+            $stmt->execute();
+            $res = $stmt->get_result();
+            while ($r = $res->fetch_assoc()) $students[] = $r;
+
+            $attendance = [];
+            $stmt2 = $db->prepare("SELECT student_id, status, notes FROM student_attendance WHERE date = ?");
+            $stmt2->bind_param('s', $date);
+            $stmt2->execute();
+            $res2 = $stmt2->get_result();
+            while ($r = $res2->fetch_assoc()) $attendance[$r['student_id']] = $r;
+        }
 
         foreach ($students as &$s) {
             $a = $attendance[$s['id']] ?? null;
-            $s['status']    = $a ? $a['status'] : null;
-            $s['notes']     = $a ? $a['notes']  : '';
+            $s['status'] = $a ? $a['status'] : null;
+            $s['notes']  = $a ? $a['notes']  : '';
         }
         jsonResponse(['date' => $date, 'class_id' => $class_id, 'students' => $students]);
     }
@@ -260,7 +279,7 @@ if ($method === 'POST') {
     if (!is_array($records))     jsonResponse(['error' => 'Records required'], 400);
     if (!in_array($type, ['staff','student'])) jsonResponse(['error' => 'Unknown type'], 400);
 
-    // ── QR / Digital mark ──────────────────────────────────────────
+    // ── Barcode / Digital mark ──────────────────────────────────────
     if ($body['qr_mark'] ?? false) {
         $code   = trim($body['code'] ?? '');
         $status = $body['status'] ?? 'present';
@@ -268,8 +287,7 @@ if ($method === 'POST') {
         $date   = $body['date'] ?? date('Y-m-d');
         $marker = $_SESSION['user_id'] ?? null;
         if (!in_array($status, ['present','absent','late','leave','pending'])) $status = 'present';
-        $info = parseAttendanceQR($db, $code);
-        if (!$info) jsonResponse(['error' => 'Unknown QR code'], 404);
+        $info = parseAttendanceBarcode($db, $code);
         if ($info['person_type'] === 'staff') {
             $stmt = $db->prepare(
                 "INSERT INTO staff_attendance (teacher_id, date, status, notes, marked_by)
@@ -315,19 +333,20 @@ if ($method === 'POST') {
     }
 
     if ($type === 'student') {
-        $class_id = intval($body['class_id'] ?? 0);
-        if ($class_id < 1) jsonResponse(['error' => 'class_id required'], 400);
+        $global_class_id = intval($body['class_id'] ?? 0);
         $stmt = $db->prepare(
             "INSERT INTO student_attendance (student_id, class_id, date, status, notes, marked_by)
              VALUES (?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE status=VALUES(status), notes=VALUES(notes), marked_by=VALUES(marked_by), marked_at=CURRENT_TIMESTAMP"
         );
         foreach ($records as $rec) {
-            $sid    = intval($rec['id'] ?? 0);
-            $status = $rec['status'] ?? 'present';
-            $notes  = substr(trim($rec['notes'] ?? ''), 0, 255);
-            if ($sid < 1 || !in_array($status, ['present','absent','late','leave','pending'])) continue;
-            $stmt->bind_param('iisssi', $sid, $class_id, $date, $status, $notes, $marker);
+            $sid      = intval($rec['id'] ?? 0);
+            $status   = $rec['status'] ?? 'present';
+            $notes    = substr(trim($rec['notes'] ?? ''), 0, 255);
+            // Use per-record class_id (all-classes mode) or fall back to global class_id
+            $rec_cid  = intval($rec['class_id'] ?? $global_class_id);
+            if ($sid < 1 || $rec_cid < 1 || !in_array($status, ['present','absent','late','leave','pending'])) continue;
+            $stmt->bind_param('iisssi', $sid, $rec_cid, $date, $status, $notes, $marker);
             $stmt->execute();
             $saved++;
         }
@@ -382,7 +401,7 @@ function isValidDate($d) {
     return checkdate((int)$m, (int)$day, (int)$y);
 }
 
-function parseAttendanceQR($db, $code) {
+function parseAttendanceBarcode($db, $code) {
     // Format: IDL-STAFF-{id} or IDL-STUDENT-{id}
     if (preg_match('/^IDL-STAFF-(\d+)$/', strtoupper($code), $m)) {
         $id   = intval($m[1]);

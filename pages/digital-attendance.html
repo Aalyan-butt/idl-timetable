@@ -162,8 +162,8 @@
 
 <div class="page-header">
   <div>
-    <div class="page-title">Digital Attendance</div>
-    <div class="page-subtitle">QR code scanner — scan staff and student barcodes</div>
+    <div class="page-title">Digital Attendance Scanner</div>
+    <div class="page-subtitle">Scan barcodes for staff and students — auto-detects person type and marks late after start time</div>
   </div>
   <a href="scanner.html" target="_blank" style="
     display:inline-flex;align-items:center;gap:8px;
@@ -183,30 +183,33 @@
   </a>
 </div>
 
-<!-- ── QR Scanner ──────────────────────────────────────────── -->
+<!-- ── Barcode Scanner ──────────────────────────────────────── -->
 <div class="da-scanner-grid">
 
     <!-- Left: camera + controls -->
     <div class="da-panel">
       <div class="da-panel-title">Camera Scanner</div>
 
-      <!-- Mode + Status -->
-      <div class="da-ctrl-row">
-        <span class="da-ctrl-label">Mode</span>
-        <div class="da-toggle-group">
-          <button class="da-toggle-btn active" id="da-mode-staff"   onclick="daSetMode('staff')">Staff</button>
-          <button class="da-toggle-btn"        id="da-mode-student" onclick="daSetMode('student')">Students</button>
+      <!-- Date + Late-time settings -->
+      <div class="da-ctrl-row" style="flex-wrap:wrap;gap:14px">
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <span class="da-ctrl-label">Date</span>
+          <input type="date" id="da-date" class="att-date-input" style="font-size:0.82rem;padding:5px 10px">
         </div>
-        <span class="da-ctrl-label" style="margin-left:8px">Status</span>
-        <select id="da-status-select" class="da-status-select">
-          <option value="present">Present</option>
-          <option value="late">Late</option>
-          <option value="absent">Absent</option>
-          <option value="leave">Leave</option>
-          <option value="pending">Pending</option>
-        </select>
-        <span class="da-ctrl-label" style="margin-left:8px">Date</span>
-        <input type="date" id="da-date" class="att-date-input" style="font-size:0.82rem;padding:5px 10px">
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <span class="da-ctrl-label">Staff Late After</span>
+          <input type="hidden" id="da-staff-late-time" value="08:30">
+          <span id="da-staff-late-disp" class="da-status-select" style="min-width:110px;cursor:default;pointer-events:none;user-select:none;display:inline-flex;align-items:center;gap:6px" title="Change in Settings page"><span style="flex:1">08:30</span><span style="font-size:0.7rem;opacity:.55">🔒</span></span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <span class="da-ctrl-label">Student Late After</span>
+          <input type="hidden" id="da-student-late-time" value="08:00">
+          <span id="da-student-late-disp" class="da-status-select" style="min-width:110px;cursor:default;pointer-events:none;user-select:none;display:inline-flex;align-items:center;gap:6px" title="Change in Settings page"><span style="flex:1">08:00</span><span style="font-size:0.7rem;opacity:.55">🔒</span></span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;justify-content:flex-end">
+          <span class="da-ctrl-label" style="opacity:0">-</span>
+          <span style="font-size:0.72rem;color:var(--text-muted);padding:6px 0">Scans before start time → Present&nbsp;&nbsp;After → Late</span>
+        </div>
       </div>
 
       <!-- Video -->
@@ -250,7 +253,7 @@
         <div class="da-panel-title">Last Scan</div>
         <div class="da-result-card" id="da-result-card">
           <div class="da-result-idle">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5h2v14H3z"/><path d="M7 5h1v14H7z"/><path d="M10 5h2v14h-2z"/><path d="M14 5h1v14h-1z"/><path d="M17 5h1v14h-1z"/><path d="M20 5h1v14h-1z"/></svg>
             Waiting for scan…
           </div>
         </div>

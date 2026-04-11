@@ -1,6 +1,13 @@
 <style>
 /* ── Staff Attendance — page-specific only ──────────────────── */
 /* All shared att-* styles live in css/components.css */
+.att-pill {
+  cursor: pointer;
+  background: none;
+  transition: opacity .15s, transform .1s, box-shadow .15s;
+}
+.att-pill:hover { opacity: .85; transform: translateY(-1px); }
+.att-pill.pill-active { box-shadow: 0 0 0 2px currentColor; }
 </style>
 
 <div class="page-header">
@@ -17,12 +24,11 @@
     <input type="date" id="sa-date" class="att-date-input" onchange="saLoadAttendance()">
   </div>
   <div class="att-summary-pills" id="sa-pills">
-    <span class="att-pill att-pill-unmarked" id="sa-pill-unmarked">— Unmarked</span>
-    <span class="att-pill att-pill-present"  id="sa-pill-present">0 Present</span>
-    <span class="att-pill att-pill-absent"   id="sa-pill-absent">0 Absent</span>
-    <span class="att-pill att-pill-late"     id="sa-pill-late">0 Late</span>
-    <span class="att-pill att-pill-leave"    id="sa-pill-leave">0 Leave</span>
-    <span class="att-pill att-pill-pending"  id="sa-pill-pending">0 Pending</span>
+    <button class="att-pill att-pill-unmarked" id="sa-pill-unmarked" onclick="saFilterByStatus('unmarked')" title="Click to filter unmarked staff">0 Unmarked</button>
+    <button class="att-pill att-pill-present"  id="sa-pill-present"  onclick="saFilterByStatus('present')"  title="Click to filter present staff">0 Present</button>
+    <button class="att-pill att-pill-absent"   id="sa-pill-absent"   onclick="saFilterByStatus('absent')"   title="Click to filter absent staff">0 Absent</button>
+    <button class="att-pill att-pill-late"     id="sa-pill-late"     onclick="saFilterByStatus('late')"     title="Click to filter late staff">0 Late</button>
+    <button class="att-pill att-pill-leave"    id="sa-pill-leave"    onclick="saFilterByStatus('leave')"    title="Click to filter staff on leave">0 Leave</button>
   </div>
 </div>
 
@@ -34,10 +40,6 @@
   <button class="btn-action btn-edit"   onclick="saMarkAll('late')">Late</button>
   <button class="btn-action btn-download" onclick="saMarkAll('leave')">Leave</button>
   <span style="flex:1"></span>
-  <button class="btn-action btn-acct" id="sa-pending-btn" onclick="saFilterPending()">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    View Pending
-  </button>
   <span style="font-size:0.78rem;color:var(--text-muted)" id="sa-saved-note"></span>
 </div>
 

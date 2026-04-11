@@ -1,22 +1,43 @@
 <style>
 /* ── Student ID Cards ── page-specific only ────────────────── */
-/* All da-id-card* and da-cards-* styles live in css/components.css */
+/* Professional card styles live in css/components.css (.idc-*) */
 </style>
 
 <div class="page-header">
   <div>
     <div class="page-title">Student ID Cards</div>
-    <div class="page-subtitle">Printable QR ID cards for all students</div>
+    <div class="page-subtitle">Professional printable barcode ID cards for all students</div>
   </div>
-  <button class="btn-action btn-download" onclick="window.print()">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+  <button class="btn-action btn-download" onclick="window.print()" title="Print all visible cards">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         style="vertical-align:middle;margin-right:5px">
+      <polyline points="6 9 6 2 18 2 18 9"/>
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+      <rect x="6" y="14" width="12" height="8"/>
+    </svg>
     Print All Cards
   </button>
 </div>
 
+<!-- Controls -->
+<div class="idc-controls">
+  <input type="text" id="idc-search" class="idc-search"
+         placeholder="Search by name, GR#, or code…"
+         oninput="daCardFilter()">
+  <select id="idc-class-filter" class="idc-filter" onchange="daCardFilter()" style="display:none">
+    <option value="">All Classes</option>
+  </select>
+  <span class="idc-count" id="idc-count">0 cards</span>
+</div>
+
+<!-- Card grid -->
 <div class="da-cards-grid" id="da-cards-grid">
   <div class="da-cards-loading">
-    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 10px;opacity:.3"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="1.5" style="display:block;margin:0 auto 10px;opacity:.3">
+      <rect x="2" y="7" width="20" height="14" rx="2"/>
+      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+    </svg>
     Loading student cards…
   </div>
 </div>

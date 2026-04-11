@@ -255,10 +255,6 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
             Attendance Overview
           </div>
-          <div class="nav-sub-item" id="subnav-digital-attendance" onclick="showPage('digital-attendance')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="17" y="17" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg>
-            Digital Scanner
-          </div>
           <div class="nav-sub-item" id="subnav-staff-id-cards" onclick="showPage('staff-id-cards')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><circle cx="12" cy="14" r="2"/><path d="M12 16v2"/></svg>
             Staff ID Cards
@@ -287,6 +283,12 @@
             Student ID Cards
           </div>
         </div>
+      </div>
+
+      <!-- Digital Scanner — top-level, works for staff + students -->
+      <div class="nav-item admin-only" id="subnav-digital-attendance" onclick="showPage('digital-attendance')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="17" y="17" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/></svg>
+        Digital Scanner
       </div>
 
       <div class="nav-section admin-or-supervisor" id="admin-nav-section">Admin</div>
@@ -1626,8 +1628,8 @@
 <script src="js/performance.js"></script>
 <script src="js/class-list.js"></script>
 <script src="js/attendance.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 <script>
 checkAuth();
 tmAttachDraftListeners();

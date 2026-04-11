@@ -1,5 +1,14 @@
 <style>
 /* Student Attendance Mark page — reuses att-* classes from staff-attendance.html */
+/* Pills as clickable filter buttons */
+.att-pill {
+  cursor: pointer;
+  background: none;
+  transition: opacity .15s, transform .1s, box-shadow .15s;
+}
+.att-pill:hover { opacity: .85; transform: translateY(-1px); }
+.att-pill.pill-active { box-shadow: 0 0 0 2px currentColor; }
+
 .sa-class-select {
   background:#1c1c2c; border:1px solid rgba(201,168,76,0.3); border-radius:8px;
   color:#f0ead0; padding:6px 12px; font-size:0.88rem; outline:none; min-width:200px;
@@ -20,7 +29,7 @@
   <div class="att-date-group">
     <span class="att-date-label">Class</span>
     <select id="statt-class" class="sa-class-select" onchange="stattLoad()">
-      <option value="">— Select Class —</option>
+      <option value="">All Classes</option>
     </select>
   </div>
   <div class="att-date-group">
@@ -28,12 +37,11 @@
     <input type="date" id="statt-date" class="att-date-input" onchange="stattLoad()">
   </div>
   <div class="att-summary-pills" id="statt-pills" style="margin-left:auto">
-    <span class="att-pill att-pill-unmarked" id="statt-pill-unmarked">— Unmarked</span>
-    <span class="att-pill att-pill-present"  id="statt-pill-present">0 Present</span>
-    <span class="att-pill att-pill-absent"   id="statt-pill-absent">0 Absent</span>
-    <span class="att-pill att-pill-late"     id="statt-pill-late">0 Late</span>
-    <span class="att-pill att-pill-leave"    id="statt-pill-leave">0 Leave</span>
-    <span class="att-pill att-pill-pending"  id="statt-pill-pending">0 Pending</span>
+    <button class="att-pill att-pill-unmarked" id="statt-pill-unmarked" onclick="stattFilterByStatus('unmarked')" title="Click to filter unmarked students">0 Unmarked</button>
+    <button class="att-pill att-pill-present"  id="statt-pill-present"  onclick="stattFilterByStatus('present')"  title="Click to filter present students">0 Present</button>
+    <button class="att-pill att-pill-absent"   id="statt-pill-absent"   onclick="stattFilterByStatus('absent')"   title="Click to filter absent students">0 Absent</button>
+    <button class="att-pill att-pill-late"     id="statt-pill-late"     onclick="stattFilterByStatus('late')"     title="Click to filter late students">0 Late</button>
+    <button class="att-pill att-pill-leave"    id="statt-pill-leave"    onclick="stattFilterByStatus('leave')"    title="Click to filter students on leave">0 Leave</button>
   </div>
 </div>
 <div class="statt-enroll-info" id="statt-enroll-info"></div>
@@ -46,10 +54,6 @@
   <button class="btn-action btn-edit"     onclick="stattMarkAll('late')">Late</button>
   <button class="btn-action btn-download" onclick="stattMarkAll('leave')">Leave</button>
   <span style="flex:1"></span>
-  <button class="btn-action btn-acct" id="statt-pending-btn" onclick="stattFilterPending()">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    View Pending
-  </button>
   <span style="font-size:0.78rem;color:var(--text-muted)" id="statt-saved-note"></span>
 </div>
 
@@ -60,12 +64,13 @@
       <tr>
         <th>#</th>
         <th>Student</th>
+        <th id="statt-th-class" style="display:none">Class</th>
         <th>Status</th>
         <th>Remarks</th>
       </tr>
     </thead>
     <tbody id="statt-tbody">
-      <tr><td colspan="4" style="text-align:center;padding:48px 20px;color:var(--text-muted)">Select a class above to load students</td></tr>
+      <tr><td colspan="4" style="text-align:center;padding:48px 20px;color:var(--text-muted)">Loading students…</td></tr>
     </tbody>
   </table>
 </div>
